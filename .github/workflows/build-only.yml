@@ -1,0 +1,50 @@
+name: Build-Only
+# for debugging failing builds (including docs) without releasing or touching master
+# does not use cache
+
+env:
+  USE_LOCKFILE: false
+
+on:
+  push:
+    branches: [ build ]
+  repository_dispatch:
+    types: [ build-only ]
+
+jobs:
+  build-only:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["lts/*", "latest"]
+
+    steps:
+
+    # region Setup
+    - uses: actions/checkout@v2
+
+    - name: Setting Up Node.js (${{ matrix.node-version }})
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v2.0.1
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
+    # regionend
+
+    # region Steps
+    - run: pnpm install --frozen-lockfile
+      if: "env.USE_LOCKFILE == 'true'"
+
+    - run: pnpm install
+      if: "env.USE_LOCKFILE == 'false'"
+
+    - run: pnpm build
+
+    - run: pnpm lint:eslint # test command will lint types
+
+    - run: pnpm test
+    # regionend

@@ -1,0 +1,75 @@
+
+// from attempt to make demo own package
+// {
+// 	"name": "shortcuts-manager-demo",
+// 	"version": "0.0.0-none",
+// 	"main": "dist/index.js",
+// 	"types": "dist/index.d.ts",
+// 	"scripts": {
+// 		"demo:dev": "vite --force",
+// 		"demo:build": "vue-tsc --noEmit && vite build",
+// 		"demo:build:clean": "rm -rf dist && vue-tsc --noEmit && vite build",
+// 		"demo:serve": "vite preview",
+
+// 		"lint:eslint": "npx eslint \"{src,tests,src-demo}/**/*.{js,ts,vue}\" \"*.{js,ts,vue}\" --max-warnings=0 --report-unused-disable-directives",
+// 		"lint:types": "tsc --noEmit --pretty",
+// 		"lint:commits": "commitlint --from $(git rev-list HEAD --not --remotes | tail -1)^ --to HEAD --verbose",
+// 		"lint": "npm run lint:types && npm run lint:eslint",
+
+// 		"gen:exports": "npx indexit update"
+// 	},
+// 	"dependencies": {
+// 		"lodash": "4.17.21",
+// 		"@alanscodelog/utils": "^3.1.0",
+// 		"core-js": "^3.22.5",
+// 		"shortcuts-manager": "file:../"
+// 	},
+// 	"devDependencies": {
+// 		"@types/node": "^17.0.33",
+// 		"@types/lodash": "4.14.182",
+
+// 		"eslint": "^8.15.0",
+// 		"eslint-import-resolver-typescript": "^2.7.1",
+// 		"eslint-plugin-import": "^2.26.0",
+// 		"eslint-plugin-simple-import-sort": "^7.0.0",
+// 		"eslint-plugin-jsdoc": "^39.2.9",
+// 		"@typescript-eslint/eslint-plugin": "^5.23.0",
+// 		"@typescript-eslint/parser": "^5.23.0",
+// 		"@alanscodelog/eslint-config": "^3.0.1",
+
+// 		"typescript": "^4.6.4",
+// 		"@alanscodelog/tsconfigs": "^3.0.0",
+// 		"dts-alias": "^1.0.5",
+
+// 		"indexit": "^2.0.1",
+// 		"onchange": "^7.1.0",
+// 		"concurrently": "^7.2.0",
+
+// 		"vue": "3.2.33",
+// 		"@vitejs/plugin-vue": "^2.3.3",
+// 		"vite": "^2.9.9",
+// 		"vue-tsc": "^0.34.15",
+// 		"@rollup/plugin-node-resolve":"13.3.0",
+
+// 		"sass": "^1.51.0",
+
+// 		"@vue/eslint-config-typescript": "^10.0.0",
+// 		"eslint-plugin-vue": "^8.7.1"
+// 	},
+// 	"author": "Alan <alanscodelog@gmail.com>",
+// 	"repository": "https://github.com/alanscodelog/shortcuts-manager",
+// 	"license": "MIT",
+// 	"files": [
+// 		"src",
+// 		"dist"
+// 	],
+// 	"browserslist":"> 0.5%, last 2 versions, not dead, not < 0.25%, not IE > 0, maintained node versions",
+// 	"engines": { "node": ">=14.0.0" },
+// 	"@comments": {
+// 		"scripts": {
+// 			"prepare": "Needed so that if we pull the package from git it will get built and installed properly.",
+// 			"actions:debug": "For debugging github build action locally with nektos/act. Requires act and docker. Note: Cache will never work locally because of https://github.com/nektos/act/issues/285"
+// 		}
+// 	},
+// 	"private": true
+// }

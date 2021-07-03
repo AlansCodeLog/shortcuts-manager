@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@demo/*": ["src/*"],
+      "@/*": ["../src/*"],
+      "@lib/*": ["../dist/*"],
+      "@utils/*": [ "../node_modules/@alanscodelog/utils/dist/*"],
+    },
+    "target": "esnext",
+    "useDefineForClassFields": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "strict": true,
+    "jsx": "preserve",
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "lib": ["esnext", "dom"],
+    "typeRoots": ["src/types"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+  ]
+}
