@@ -1,0 +1,27 @@
+// https://www.typescriptlang.org/tsconfig/
+{
+  // ./node_modules/@alanscodelog/tsconfigs/tsconfig.json
+  // https://github.com/AlansCodeLog/my-tsconfigs
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@lib/*": ["../src/*"],
+      "@utils/*": [ "../node_modules/@alanscodelog/utils/dist/*"],
+    },
+    "jsx": "preserve",
+    "resolveJsonModule": true,
+    "allowJs": true,
+    "lib": [
+      "esnext",
+      "dom",
+    ],
+  },
+  "include": [
+    "src/**/*.tsx",
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.vue",
+  ],
+}

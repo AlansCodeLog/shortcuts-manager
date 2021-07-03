@@ -1,0 +1,74 @@
+name: Docs
+
+env:
+  USE_LOCKFILE: false
+
+on:
+  push:
+    branches: [ master ]
+  repository_dispatch:
+    types: [ docs ]
+    # to trigger: curl -v -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/alanscodelog/shortcuts-visualizer/dispatches -d '{ "event_type": "docs" }'
+
+jobs:
+  docs:
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        #TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [latest]
+        node-version: [14.x]
+
+    steps:
+
+    # region Setup
+    - uses: actions/checkout@v2
+
+    - name: Get Yarn Cache Path
+      id: yarn-cache-dir-path
+      run: echo "::set-output name=dir::$(yarn cache dir)"
+
+    - uses: actions/cache@v2
+      id: yarn-cache
+      with:
+        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        key: ${{ runner.os }}-node-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: ${{ runner.os }}-node-${{ matrix.node }}-yarn-
+
+    - run: "echo Cache Key: ${{ runner.os }}-node-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}"
+    - run: "echo Cache Restore-Keys: ${{ runner.os }}-node-${{ matrix.node }}-yarn-"
+    - run: "echo Yarn Cache Hit: ${{ steps.yarn-cache.outputs.cache-hit }}"
+
+    - name: Setting Up Node.js (${{ matrix.node-version }})
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    # regionend
+
+    # region Steps
+    - run: yarn install --frozen-lockfile
+      if: "env.USE_LOCKFILE == 'true'"
+
+    # awaiting --ignore engines is temporary because of "typedoc-plugin-param-names" having engines >=12
+    # only this command needs it because I only use no lockfile for libs and only libs need typedoc
+    - run: yarn install --no-lockfile --ignore-engines
+      if: "env.USE_LOCKFILE == 'false'"
+
+    - run: yarn build
+
+    - run: yarn lint:eslint # test command will lint types
+
+    - run: yarn test
+
+    - run: yarn doc
+
+    - name: Documentation
+      # TOCONFIGURE
+      if: "env.REMOVE_LINE_TO_ENABLE == 'true'"
+      uses: crazy-max/ghaction-github-pages@v2
+      with:
+        target_branch: gh-pages
+        build_dir: docs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    # regionend

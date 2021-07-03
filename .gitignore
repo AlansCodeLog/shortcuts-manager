@@ -1,0 +1,12 @@
+**/*.log*
+*lock*
+.vscode
+node_modules
+worktree*/**/*
+# TOCONFIGURE
+docs
+coverage
+
+# TOCONFIGURE
+dist
+bin

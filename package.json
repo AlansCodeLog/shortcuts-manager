@@ -1,0 +1,152 @@
+{
+	"name": "shortcuts-visualizer",
+	"description": "TOCONFIGURE",
+	"version": "0.0.0-semantically-released",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"babel:run": "npx babel-node --extensions \".ts,.js\" --",
+		"babel:run:dev": "npx onchange -i \"src/**/*.ts\" -- npx babel-node --extensions \".ts,.js\" --",
+
+		"build:babel": "npx babel --extensions \".ts,.js\" src --out-dir dist --source-maps inline",
+		"build:watch": "npm run build:babel -- --watch",
+		"build:clean": "rm -rf dist && npm run build",
+		"build:types": "npx tsc -p tsconfig.types.json && npx dts-alias -p tsconfig.types.json",
+
+		"demo:dev": "vite",
+		"demo:build": "vue-tsc --noEmit && vite build",
+		"demo:serve": "vite preview",
+
+		"build": "npm run build:babel && npm run build:types",
+
+		"lint:eslint": "npx eslint \"{src,tests,demo}/**/*.{js,ts}\" \"*.{js,ts}\" --max-warnings=0 --report-unused-disable-directives",
+		"lint:types": "npx tsc --noEmit --pretty",
+		"lint:commits": "npx commitlint --from $(git rev-list HEAD --not --remotes | tail -1)^ --to HEAD --verbose",
+		"lint": "npm run lint:types && npm run lint:eslint",
+
+		"coverage": "npm run test -- --coverage",
+		"coverage:dev": "concurrently \"npx http-server coverage/lcov-report --port=5000\" \"onchange -k -i \\\"src/**/*.ts\\\" \\\"jest.config.js\\\" --  npm run coverage -- --watch\"",
+
+		"test": "npm run lint:types && npx jest test --verbose",
+		"test:debug": "node --inspect-brk node_modules/jest/bin/jest test --verbose",
+		"test:inspect-errors": "set INSPECT_ERRORS=true && npx test",
+
+		"doc": "npx typedoc --options typedoc.config.js",
+		"doc:build": "npx onchange -i \"src/**/*.ts\" \"typedoc.config.js\" -- npm run doc",
+		"doc:serve": "npx http-server docs --port=5001",
+		"doc:dev": "npx concurrently \"yarn doc:build\" \"yarn doc:serve\"",
+		"doc:check-invalid": "npx typedoc --options typedoc.config.js --listInvalidSymbolLinks",
+		"doc:check-missing": "rg \"@packageDocumentation @module\" --files-without-match -g \"*.ts\" -g \"!*.spec.ts\" -g \"!tests/**/*\" -g \"!src/index.ts\"",
+
+		"actions:debug": "act -r -v -j build-only",
+
+		"gen:exports": "npx indexit update",
+
+		"audit:prod": "yarn audit --level moderate --groups dependencies",
+		"prepare": "npm run build"
+	},
+	"husky": {
+		"hooks": {
+			"pre-commit": "npm run build && npm run lint && npm run test -- --no-cache",
+			"pre-push": "npm run lint:commits"
+		}
+	},
+	"dependencies": {
+		"@alanscodelog/utils": "^2.1.0",
+		"core-js": "^3.15.2"
+	},
+	"devDependencies": {
+		"type-fest": "^1.2.1",
+
+		"@types/node": "^16.0.0",
+
+		"semantic-release": "^17.4.4",
+		"@semantic-release/changelog": "^5.0.1",
+		"@semantic-release/commit-analyzer": "^8.0.1",
+		"@semantic-release/github": "^7.2.3",
+		"@semantic-release/npm": "^7.1.3",
+		"@semantic-release/release-notes-generator": "^9.0.3",
+		"conventional-changelog-conventionalcommits": "^4.6.0",
+		"@alanscodelog/semantic-release-config": "^1.0.3",
+		"@alanscodelog/commitlint-config": "^1.0.2",
+		"commitlint": "^12.1.4",
+
+		"@babel/cli": "^7.14.5",
+		"@babel/core": "^7.14.6",
+		"@babel/node": "^7.14.7",
+		"@babel/preset-env": "^7.14.7",
+		"@babel/preset-typescript": "^7.14.5",
+		"@babel/plugin-proposal-export-namespace-from": "^7.14.5",
+		"@babel/plugin-proposal-class-properties": "^7.14.5",
+		"babel-plugin-module-resolver": "^4.1.0",
+		"@alanscodelog/babel-preset": "^1.2.0",
+
+		"eslint": "^7.30.0",
+		"eslint-import-resolver-typescript": "^2.4.0",
+		"eslint-plugin-import": "^2.23.4",
+		"eslint-plugin-simple-import-sort": "^7.0.0",
+		"eslint-plugin-jsdoc": "^35.4.1",
+		"@typescript-eslint/eslint-plugin": "^4.28.1",
+		"@typescript-eslint/parser": "^4.28.1",
+		"@alanscodelog/eslint-config": "^2.0.3",
+
+		"chai": "^4.3.4",
+		"jest": "^27.0.6",
+		"jest-watch-typeahead": "^0.6.4",
+		"@types/chai": "^4.2.19",
+		"@types/jest": "^26.0.23",
+
+		"typedoc": "^0.21.2",
+		"typedoc-neo-theme": "^1.1.1",
+		"typedoc-plugin-external-module-name": "^4.0.6",
+		"typedoc-plugin-param-names": "^2.0.0",
+
+		"typescript": "^4.3.5",
+		"@alanscodelog/tsconfigs": "^2.2.1",
+		"dts-alias": "^1.0.5",
+
+		"husky-v4": "^4.3.8",
+		"indexit": "^1.3.0",
+		"onchange": "^7.1.0",
+		"concurrently": "^6.2.0",
+
+		"vue": "^3.0.5",
+		"@vitejs/plugin-vue": "^1.2.2",
+		"@vue/compiler-sfc": "^3.0.5",
+		"vite": "^2.3.4",
+		"vue-tsc": "^0.0.24",
+
+		"@types/spotify-web-api-node": "^5.0.2",
+
+		"sass": "^1.34.0",
+
+		"@vue/eslint-config-typescript": "^7.0.0",
+		"eslint-plugin-vue": "^7.9.0"
+	},
+	"author": "Alan <alanscodelog@gmail.com>",
+	"repository": "https://github.com/alanscodelog/shortcuts-visualizer",
+	"license": "MIT",
+	"files": [
+		"src",
+		"dist"
+	],
+	"release": { "extends": [ "@alanscodelog/semantic-release-config" ] },
+	"commitlint": { "extends": [ "@alanscodelog" ] },
+	"babel": { "presets": [ "@alanscodelog" ] },
+	"browserslist":"> 0.5%, last 2 versions, not dead, not < 0.25%, not IE > 0, maintained node versions",
+	"engines": { "node": ">=10.0.0" },
+	"@comments": {
+		"scripts": {
+			"test": "Runs `lint:types` before (so that flags can be passed to the test command) so that we can test type assertions. See expect_type function in @alanscodelog/utils.",
+			"lint:commits": "Lints all unpushed commits in the active branch.",
+			"test:inspect_errors": "For use with my inspect_error utility function from @alanscodelog/utils",
+			"prepare": "Needed so that if we pull the package from git it will get built and installed properly.",
+			"actions:debug": "For debugging github build action locally with nektos/act. Requires act and docker. Note: Cache will never work locally because of https://github.com/nektos/act/issues/285",
+			"demo:lint": "Linting is hit or miss on VS Code."
+
+		}
+	},
+	"private": true,
+	"TEMPLATE:bca349b": "Ignore. Commit of the template this was created with / last updated to."
+}
+
