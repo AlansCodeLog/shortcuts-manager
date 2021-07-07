@@ -17,11 +17,14 @@
       "esnext",
       "dom",
     ],
+    "types": [
+      "vite/client",
+    ]
   },
   "include": [
-    "src/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.d.ts",
     "src/**/*.vue",
+    "*.js",
   ],
 }

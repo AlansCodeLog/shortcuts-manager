@@ -1,0 +1,16 @@
+// https://www.typescriptlang.org/tsconfig/
+// see https://github.com/babel/babel/issues/9668 for why a tsconfig specifically for types
+{
+	"extends": "./tsconfig",
+	"compilerOptions": {
+		"outDir": "dist",
+		"declaration": true,
+		"declarationMap": true,
+		"emitDeclarationOnly": true,
+		"noEmit": false,
+		"allowJs": false,
+	},
+	"exclude": [
+		"tests/**/*.ts",
+	]
+}

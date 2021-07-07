@@ -1,0 +1,90 @@
+import { crop, mixin } from "@alanscodelog/utils"
+
+import { Command } from "./Command"
+import type { Condition } from "./Condition"
+import type { Plugin } from "./Plugin"
+
+import { defaultCallback, KnownError } from "@/helpers"
+import { Hookable, HookableCollection, Plugable } from "@/mixins"
+import { CommandsHook, CommandsOptions, ERROR, ErrorCallback, HOOKABLE_CONSTRUCTOR_KEY, OnlyRequire, RecordFromArray } from "@/types"
+
+
+/**
+ * Creates a set of commands.
+ *
+ * It will mutate the object passed. In the case it's already an instance, if plugins are passed, it forces the commands to conform to those (adds missing properties, etc.).
+ *
+ * @throws (see [[ERROR]] for why):
+ * - [[TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES]]
+ * - [[ERROR.DUPLICATE_COMMAND]] (because of [[Commands.add]])
+ */
+export class Commands<
+	// See [[Plugable]]
+	TPlugins extends
+		Plugin<any>[] =
+		Plugin<any>[],
+	// See [[./README #Collection Entries]] for how this works
+	TCommand extends
+		Command<any, Condition, TPlugins> =
+		Command<any, Condition, TPlugins>,
+	TRawCommands extends
+		OnlyRequire<TCommand, "name">[] =
+		OnlyRequire<TCommand, "name">[],
+	TEntries extends
+		RecordFromArray<TRawCommands, "name", TCommand> =
+		RecordFromArray<TRawCommands, "name", TCommand>,
+> {
+	entries: TEntries
+	private readonly plugins?: TPlugins
+	constructor(
+		commands: TRawCommands,
+		// todo
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		_opts: Partial<CommandsOptions> = {},
+		plugins?: TPlugins,
+	) {
+		this[HOOKABLE_CONSTRUCTOR_KEY](["allows", "add"])
+		if (plugins) {
+			Plugable.canAddPlugins(plugins)
+			this.plugins = plugins
+		}
+		this.entries = {} as TEntries
+
+		commands.forEach(command => {
+			this.add(command, defaultCallback)
+		})
+	}
+	#add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
+		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
+		instance.addHook("allows", (type, value, old) => {
+			if (type === "name") {
+				const existing = this.entries[value as keyof TEntries]
+				if (existing !== undefined && existing !== instance) {
+					return new KnownError(ERROR.DUPLICATE_COMMAND, crop`
+						Command name "${old}" cannot be changed to "${value}" because it would create a duplicate command in a "Commands" instance that this command was added to.
+					`, { existing, self: this })
+				}
+			}
+			return true
+		})
+		instance.addHook("set", (type, value, old) => {
+			if (type === "name") {
+				const existing = this.entries[old as keyof TEntries]
+				delete this.entries[old as keyof TEntries]
+				this.entries[value as keyof TEntries] = existing
+			}
+		})
+		HookableCollection._addToDict<Command>(this, this.entries, instance, t => t.name, cb)
+	}
+	get(name: TRawCommands[number]["name"] | string): TCommand {
+		return this.entries[name as keyof TEntries]
+	}
+	info(id: TRawCommands[number]["name"] | string): TCommand["info"] {
+		return this.entries[id as keyof TEntries].info
+	}
+	get opts(): CommandsOptions {
+		return {}
+	}
+}
+export interface Commands extends HookableCollection<CommandsHook> { }
+mixin(Commands, [Hookable, HookableCollection])

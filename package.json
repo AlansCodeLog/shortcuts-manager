@@ -19,7 +19,7 @@
 
 		"build": "npm run build:babel && npm run build:types",
 
-		"lint:eslint": "npx eslint \"{src,tests,demo}/**/*.{js,ts}\" \"*.{js,ts}\" --max-warnings=0 --report-unused-disable-directives",
+		"lint:eslint": "npx eslint \"{src,tests,src-demo}/**/*.{js,ts,vue}\" \"*.{js,ts,vue}\" --max-warnings=0 --report-unused-disable-directives",
 		"lint:types": "npx tsc --noEmit --pretty",
 		"lint:commits": "npx commitlint --from $(git rev-list HEAD --not --remotes | tail -1)^ --to HEAD --verbose",
 		"lint": "npm run lint:types && npm run lint:eslint",
@@ -53,12 +53,14 @@
 	},
 	"dependencies": {
 		"@alanscodelog/utils": "^2.1.0",
+		"lodash": "4.17.21",
 		"core-js": "^3.15.2"
 	},
 	"devDependencies": {
 		"type-fest": "^1.2.1",
 
 		"@types/node": "^16.0.0",
+		"@types/lodash": "4.14.170",
 
 		"semantic-release": "^17.4.4",
 		"@semantic-release/changelog": "^5.0.1",

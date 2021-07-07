@@ -11,7 +11,7 @@ module.exports = {
 		"src/index.ts",
 		...fs.readdirSync("src")
 			.filter(dir => fs.statSync(path.join("src", dir)).isDirectory())
-			.map(dir => `src/${dir}/index.ts`)
+			.map(dir => `src/${dir}/index.ts`),
 	],
 	out: "docs",
 	excludePrivate: true,
@@ -31,8 +31,8 @@ module.exports = {
 	// plugin:"none",
 	// topbar
 	links: [
-		{label: "Repository", url: pkg.repository},
-		{label: "Issues", url: `${pkg.repository}/issues`},
+		{ label: "Repository", url: pkg.repository },
+		{ label: "Issues", url: `${pkg.repository}/issues` },
 	],
 	// TOCONFIGURE
 	// customStyles: [{
