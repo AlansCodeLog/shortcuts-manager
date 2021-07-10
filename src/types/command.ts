@@ -19,18 +19,23 @@ export type CommandParserOptions = {
 	}
 }
 
-
 export type CommandOptions<
 	TExec extends ((...args: any) => any) | undefined = ((...args: any) => any) | undefined,
 	TCondition extends Condition = Condition,
 > = {
+	/**
+	 * See {@link Command.execute}
+	 * TODO
+	 */
 	execute: TExec
+	/**
+	 * See {@link Command.condition}
+	 *
+	 * If the command is created without a condition, it is assigned a blank condition. If you are using plugins on your commands you should pass a blank condition made with your plugins.
+	 */
 	condition: TCondition
+	/** See {@link Command.description} */
 	description?: string
-}
-
-export type CommandsOptions = {
-
 }
 
 

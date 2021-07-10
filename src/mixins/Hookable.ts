@@ -2,7 +2,6 @@ import { crop, indent, pretty } from "@utils/utils"
 
 import { KnownError } from "@/helpers"
 import { TYPE_ERROR } from "@/types"
-import { HOOKABLE_CONSTRUCTOR_KEY } from "@/types/symbolKeys"
 
 
 export class Hookable<
@@ -10,10 +9,30 @@ export class Hookable<
 	TTypes extends keyof THooks = keyof THooks,
 > {
 	listeners!: {[K in keyof THooks]: THooks[K][] }
-	[HOOKABLE_CONSTRUCTOR_KEY](keys: TTypes[]): void {
+	protected _hookableConstructor(keys: TTypes[]): void {
 		this.listeners = {} as any
 		for (const key of keys) this.listeners[key] = [] as any
 	}
+	/**
+	 * Add a hook.
+	 *
+	 * This works just like adding an event listener:
+	 *
+	 * ```ts
+	 * const allowsHook = ... // keep a reference if you want to remove it later
+	 * keys.addHook("allows", allowsHook)
+	 *
+	 * if (keys.allows(...)) // your hook will fire
+	 * ```
+	 *
+	 * Note that typescript can only understand the types of the errors of the builtin listeners. Therefore if you're adding listeners afterwards, you will need to pass the possible errors the listener can return as the first type parameter if you want them typed correctly:
+	 * ```ts
+	 * class MyError extends Error {
+	 *  	property: boolean
+	 * }
+	 * let allowed = keys.allows<MyError>(...)
+	 * ```
+	 */
 	addHook<
 		TType extends
 			TTypes =
@@ -24,6 +43,17 @@ export class Hookable<
 	>(type: TType, listener: TListener): void {
 		this.listeners[type].push(listener as any)
 	}
+	/**
+	 * Remove a hook.
+	 *
+	 * This works just like removing an event listener:
+	 *
+	 * ```ts
+	 * const allowsHook = ... // keep a reference to the listener
+	 * keys.addHook("allows", allowsHook)
+	 * keys.removeHook("allows", allowsHook)
+	 * ```
+	 */
 	removeHook<
 		TType extends
 			TTypes =

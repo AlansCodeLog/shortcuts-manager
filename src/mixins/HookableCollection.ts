@@ -20,17 +20,20 @@ export class HookableCollection<
 	TEntries extends THook["values"] = THook["values"],
 > extends Hookable<{ allows: TAllowsListener, add: TAddListener }> {
 	entries!: TEntries
-	#add!: (value: THook["value"], cb: ErrorCallback<any>) => void // needs to be implemented by class extending
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	protected _add(_value: THook["value"], _cb: ErrorCallback<any>): void {
+		unreachable("Should be implemented by extending class.")
+	}
 	/**
 	 * Tells you whether an entry is allowed to be added.
-	 * Can return true or the error that would throw so check it against `true` (because errors are objects and objects are truthy):
+	 *
+	 * Can return true or the error that would throw:
 	 * ```ts
-	 * let allowed = shortcuts.allows(shortcut)
-	 * if (allowed === true) {
-	 * 	// true
-	 * } else {
-	 * 	let error = allowed
-	 * }
+	 * const allowed = shortcut.allows("keys", [[key.a]])
+	 * // Careful to check against true
+	 * if (allowed === true) {...} else { const error = allowed }
+	 * // Alternatively
+	 * if (allowed instanceof Error) {...} else {...}
 	 * ```
 	 */
 	allows(
@@ -44,9 +47,13 @@ export class HookableCollection<
 		return true
 	}
 	/**
+	 * ---
 	 * Adds an entry. Note that this will mutate the object passed.
-	 * Also keys added like this can't be autocomplete properly without recasting the instance.
+	 *
+	 * Also keys added like this can't be autocompleted properly without recasting the instance.
+	 *
 	 * You can either be really strict and recast on each addition with the provided ExpandRecord utility type:
+	 *
 	 * ```ts
 	 * let keys = new Keys(new Key("a"))
 	 * let dict = keys.dict
@@ -59,7 +66,8 @@ export class HookableCollection<
 	 * // now can be used repeatedly
 	 * expanded.b //good
 	 * ```
-	 * Or if you don't mind that it will no longer error out if you try to access a non-existant key you can do this:
+	 *
+	 * Or if you don't mind that it will no longer error out if you try to access a non-existent key you can do this:
 	 * ```ts
 	 * let keys = new Keys(new Key("a"))
 	 * // by default ExpandRecord will make the type accept any string key
@@ -69,7 +77,11 @@ export class HookableCollection<
 	 * dict.b // good (does not get autosuggested)
 	 * dict.c // good (does not get autosuggested) // error in production
 	 * ```
-	 * TODO in the future asserts might make this easier (they don't yet)
+	 *
+	 * @param cb A callback in case the entry is not allowed to be added. A default callback is provided that will just throw the error.
+	 * @param {true} check If true, check if the property is allowed to be set (if it's not, the function will throw).
+	 *
+	 * If you already checked whether an entry can be added with {@link HookableCollection.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
 	 */
 	add(
 		value: THook["value"],
@@ -78,20 +90,14 @@ export class HookableCollection<
 	): void {
 		if (check) {
 			const e = this.allows(value)
-
-			if (e instanceof Error) {
-				cb(e)
-			}
+			if (e instanceof Error) cb(e)
 		}
 		const self = (this as any)
 		for (const listener of this.listeners.add) {
 			listener(value, this.entries, cb as (e: Error) => void)
 		}
 
-		if (self.#add === undefined) {
-			throw new Error(`You forgot to implement #add for "${self.constructor.name}".`)
-		}
-		self.#add(value, cb)
+		self._add(value, cb)
 	}
 	protected static _addToDict<
 		T extends Command | Key | Shortcut, // needed else we get an error on the callback type
@@ -133,13 +139,13 @@ export class HookableCollection<
 		`
 
 			const error =
-				existing instanceof Key // todo
+				existing instanceof Key
 				? new KnownError(ERROR.DUPLICATE_KEY, text, { existing: (existing as any), self: self as Keys })
 
-				: existing instanceof Command // todo
+				: existing instanceof Command
 				? new KnownError(ERROR.DUPLICATE_COMMAND, text, { existing: (existing as any), self: self as Commands })
 
-				: existing instanceof Shortcut // todo
+				: existing instanceof Shortcut
 				? new KnownError(ERROR.DUPLICATE_SHORTCUT, text, { existing: (existing as any), self: self as Shortcuts })
 				: unreachable()
 				// not sure why this thinks cb takes a union of ALL possible types
@@ -155,7 +161,6 @@ export class HookableCollection<
 		}
 	}
 }
-
 
 type ErrorCallbackSubtype<T> =
 	T extends Key

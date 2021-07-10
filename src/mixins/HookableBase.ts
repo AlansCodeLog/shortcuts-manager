@@ -16,15 +16,17 @@ export class HookableBase<
 > extends Hookable<{ allows: TAllowsListener, set: TSetListener }> {
 	/**
 	 * Tells you whether a property is allowed to be set.
-	 * Can return true or the error that would throw so check it against `true` (because errors are objects and objects are truthy):
+	 *
+	 * Can return true or the error that would throw:
 	 * ```ts
-	 * let allowed = shortcut.allows("keys", [[key.a]])
-	 * if (allowed === true) {
-	 * 	// true
-	 * } else {
-	 * 	let error = allowed
-	 * }
+	 * const allowed = shortcut.allows("keys", [[key.a]])
+	 * // Careful to check against true
+	 * if (allowed === true) {...} else { const error = allowed }
+	 * // Alternatively
+	 * if (allowed instanceof Error) {...} else {...}
 	 * ```
+	 *
+	 * @inheritDoc
 	 */
 	allows<
 		TKey extends
@@ -42,9 +44,13 @@ export class HookableBase<
 		return true
 	}
 	/**
+	 * ---
 	 * Sets any settable properties and triggers any hooks on them.
 	 *
-	 * If you already checked whether a property was allowed to be set with [[allows]] immediately before calling this function, you should pass @param check = false so it doesn't check again, but still triggers hooks properly.
+	 * @param cb A callback in case the entry is not allowed to be added. A default callback is provided that will just throw the error.
+	 * @param {true} check If true, check if the property is allowed to be set (if it's not, the function will throw).
+	 *
+	 * If you already checked whether an entry can be added with {@link HookableCollection.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
 	 */
 	set<
 		TKey extends
@@ -54,14 +60,13 @@ export class HookableBase<
 		key: TKey,
 		value: THooks[TKey]["value"],
 		cb: (error: THooks[TKey]["error"] | Error | never) => void = defaultCallback,
+		/** Check if the property is allowed to be set (if it's not, the function will throw). */
 		check: boolean = true,
 	): void {
 		if (check) {
 			const e = this.allows<TKey>(key, value)
 
-			if (e instanceof Error) {
-				cb(e)
-			}
+			if (e instanceof Error) cb(e)
 		}
 		const self = this as any
 		for (const listener of this.listeners.set) {

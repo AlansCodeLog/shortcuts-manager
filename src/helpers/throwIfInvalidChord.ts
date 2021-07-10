@@ -1,6 +1,7 @@
 import { crop, findDuplicates, indent, readable } from "@utils/utils"
 
 import { isNormalKey } from "./isNormalKey"
+import { isWheelKey } from "./isWheelKey"
 import { KnownError } from "./KnownError"
 
 import type { Key, Shortcut } from "@/classes"
@@ -24,24 +25,20 @@ export function throwIfInvalidChord(
 	// const pretty_chord = parser.stringify.any(chord)
 	// const pretty_shortcut = parser.stringify.any(shortcut)
 	const repeated = findDuplicates(chord, { equals: (key, other, found) => {
-		if (key === other) {
+		if (key === other || key.id === other.id) {
 			return true
-		}
-		if (key.is.mouse !== false && other.is.mouse !== undefined) {
-			const button = key.is.mouse
-			const otherButton = other.is.mouse
-			return otherButton === button
 		}
 		if (key.is.toggle && other.is.toggle) {
 			const keyBase = key.root ?? key
 			const otherBase = other.root ?? other
 			if (keyBase === otherBase) {
-				if (!found.includes(other)) {
+				if (!found.includes(other)) { // todo
 					found.push(other)
 				}
 				return true
 			}
 		}
+		if (isWheelKey(key) && isWheelKey(other)) return true
 		return false
 	} })
 	if (repeated.length > 0) {
@@ -51,10 +48,7 @@ export function throwIfInvalidChord(
 		throw new KnownError(ERROR.CHORD_W_DUPLICATE_KEY, crop`
 			Chord "${prettyChord}" in shortcut "${prettyShortut}" contains duplicate or incompatible keys:
 				${indent(prettyRepeated, 4)}
-			Shortcut chords cannot contain duplicate keys.
-			This includes:
-				- more than one of the same mouse key, even if they have different options (e.g. one is a modifier and one is not.)
-				- more than one of the same toggle, regardless of the state.
+			Shortcut chords cannot contain duplicate keys. This includes more than one of the same toggle, regardless of the state.
 		`, { shortcut: self, chord, i, keys: repeated })
 	}
 	const onlyModifiers = chord.filter(key => key.is.modifier)
@@ -76,7 +70,7 @@ export function throwIfInvalidChord(
 		`, { shortcut: self, chord, i, keys: normalKeys })
 	}
 	/* It might actually be possible to allow this, similar to how emulated toggle keys are handled but it would be a pain for such an odd use case (even I don't have such weird shortcuts). */
-	const wheelKeys = chord.filter(key => key.is.wheel)
+	const wheelKeys = chord.filter(key => isWheelKey(key))
 	const prettyWheelKeys = readable(wheelKeys.map(key => key/* .string TODO */))
 	if (wheelKeys.length > 1) {
 		throw new KnownError(ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS, crop`

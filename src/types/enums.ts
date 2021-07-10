@@ -5,47 +5,46 @@ import type { KnownError } from "@/helpers"
 
 
 /**
- * Errors that are not thrown (unless they happen when you instantiate some instance*) and which should be passed to error callbacks.
- * It's not a good idea to allow passing a callback for errors in the constructor since the instance still gets constructed unless you throw.
- * See [[ErrorCallback]] for more info on the callbacks.
+ * All possible errors.
+ *
+ * Normally they are not thrown and are instead passed to error callbacks, but there is one instance they might be thrown, when instantiating an instance.
+ *
+ * We can't allow callbacks to be passed for errors in constructors since the instance still gets constructed unless an error is thrown.
+ *
+ * See {@link ErrorCallback} for more info on the callbacks and how to type them.
  */
 export enum ERROR {
-	// * - have internal versions
-	// ? It's reccomended you prompt the user as to what they want to do with these types of errors.
-
 	// === shortcut init related problems
-	CHORD_W_ONLY_MODIFIERS,
-	CHORD_W_MULTIPLE_NORMAL_KEYS,
-	CHORD_W_MULTIPLE_WHEEL_KEYS,
-	CHORD_W_DUPLICATE_KEY,
-	IMPOSSIBLE_TOGGLE_SEQUENCE,
-	INVALID_KEY_OPTIONS,
-
-	// === shortcut incompatabilities
-	INVALID_SHORTCUT_CONDITION, // ?
-	INVALIDATES_SHORTCUT_CONDITION, // ?
+	CHORD_W_ONLY_MODIFIERS = "CHORD_W_ONLY_MODIFIERS",
+	CHORD_W_MULTIPLE_NORMAL_KEYS = "CHORD_W_MULTIPLE_NORMAL_KEYS",
+	CHORD_W_MULTIPLE_WHEEL_KEYS = "CHORD_W_MULTIPLE_WHEEL_KEYS",
+	CHORD_W_DUPLICATE_KEY = "CHORD_W_DUPLICATE_KEY",
+	IMPOSSIBLE_TOGGLE_SEQUENCE = "IMPOSSIBLE_TOGGLE_SEQUENCE",
+	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
 
 	// === duplicate "bases"
-	DUPLICATE_KEY,
-	DUPLICATE_COMMAND,
-	DUPLICATE_SHORTCUT,
+	DUPLICATE_KEY = "DUPLICATE_KEY",
+	DUPLICATE_COMMAND = "DUPLICATE_COMMAND",
+	DUPLICATE_SHORTCUT = "DUPLICATE_SHORTCUT",
 }
 
 /** Errors that will throw since they should be caught at production. */
 export enum TYPE_ERROR {
-	CLONER_NOT_SPECIFIED,
-	CONFLICTING_PLUGIN_NAMESPACES,
-	ILLEGAL_OPERATION,
-	LISTENER_DOES_NOT_EXIST,
+	CLONER_NOT_SPECIFIED = "CLONER_NOT_SPECIFIED",
+	CONFLICTING_PLUGIN_NAMESPACES = "CONFLICTING_PLUGIN_NAMESPACES",
+	ILLEGAL_OPERATION = "ILLEGAL_OPERATION",
+	LISTENER_DOES_NOT_EXIST = "LISTENER_DOES_NOT_EXIST",
 }
 
 
 /**
  * Creates the type of error callback function for a specific error.
+ *
  * You can see what properties each error contains by looking at each [insert error type]_Info type:
- * [[ERROR_Info]]
- * [[TYPE_ERROR_Info]]
- * [[INTERNAL_ERROR_Info]]
+ *
+ * {@link ERROR_Info}
+ * {@link TYPE_ERROR_Info}
+ * {@link INTERNAL_ERROR_Info}
  */
 export type ErrorCallback<T extends ERROR | TYPE_ERROR> = (error: KnownError<T>) => void
 
@@ -70,7 +69,6 @@ export type ErrorInfo<T extends ERROR | TYPE_ERROR> =
 
 // note all these error types could be kept in the same type, but then we'd have to make all the keys unique and we can't because internal errors should use the same key
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 type ERROR_Info = {
 	// === shortcut init related problems
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
@@ -106,16 +104,6 @@ type ERROR_Info = {
 		self: Key
 	}
 
-	// // === shortcut incompatibilities
-	[ERROR.INVALID_SHORTCUT_CONDITION]: {
-	// 	condition: Condition
-	// 	command: Command
-	}
-	[ERROR.INVALIDATES_SHORTCUT_CONDITION]: {
-	// 	condition: Condition
-	// 	command: Command
-	}
-
 	// === duplicate "bases"
 	[ERROR.DUPLICATE_KEY]: {
 	// 	existing: Key
@@ -131,7 +119,6 @@ type ERROR_Info = {
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
 type TYPE_ERROR_Info = {
 	[TYPE_ERROR.CLONER_NOT_SPECIFIED]: {
 		info: any
@@ -181,6 +168,6 @@ export enum KEY_SORT_POS {
 	toggle,
 	togglemouse,
 	togglewheel,
-	// togglemousewheel = error
+	// modtogglemousewheel = error
 }
 /* eslint-enable @typescript-eslint/prefer-enum-initializers */

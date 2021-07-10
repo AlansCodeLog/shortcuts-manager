@@ -35,6 +35,12 @@ module.exports = {
 				// "@typescript-eslint/strict-boolean-expressions": ["warn", {allowNullableBoolean: true}], // 🟠
 				// "@typescript-eslint/no-unnecessary-condition": "warn", // 🟠
 				// "@typescript-eslint/no-confusing-void-expression": "warn", // 🟠
+
+			},
+			settings: {
+				jsdoc: {
+					mode: "typescript",
+				},
 			},
 		},
 	],

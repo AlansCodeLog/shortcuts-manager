@@ -15,25 +15,26 @@ module.exports = {
 	],
 	out: "docs",
 	excludePrivate: true,
+	excludeProtected: true,
 	excludeExternals: true,
-	theme: "./node_modules/typedoc-neo-theme/bin/default",
-	source: [{
-		path: `${pkg.repository.url}/tree/master/`,
-		line: "L",
-	}],
+	// theme: "./node_modules/typedoc-neo-theme/bin/default",
+	// source: [{
+	// 	path: `${pkg.repository.url}/tree/master/`,
+	// 	line: "L",
+	// }],
 	// prevents typedoc auto-detecting installed plugins
 	// explicity listing them also makes things easier to debug
 	plugin: [
-		"typedoc-neo-theme",
+		// "typedoc-neo-theme",
 		"typedoc-plugin-param-names",
 	],
 	// temporarily turn off plugins (just setting plugin: [] will not work)
 	// plugin:"none",
 	// topbar
-	links: [
-		{ label: "Repository", url: pkg.repository },
-		{ label: "Issues", url: `${pkg.repository}/issues` },
-	],
+	// links: [
+	// 	{ label: "Repository", url: pkg.repository },
+	// 	{ label: "Issues", url: `${pkg.repository}/issues` },
+	// ],
 	// TOCONFIGURE
 	// customStyles: [{
 	// 	"path": path.resolve("./docs-src/custom_styles.css")

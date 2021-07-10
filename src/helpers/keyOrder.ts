@@ -9,8 +9,8 @@ export function keyOrder(key: Key, dictOrEnum: typeof KEY_SORT_POS | Record<keyo
 	let type = [
 		is.modifier ? "mod" : "",
 		is.toggle ? "toggle" : "",
-		is.mouse !== false ? "mouse" : "",
-		is.wheel !== false ? "wheel" : "",
+		["0", "1", "2", "3", "4"].includes(key.id) ? "mouse" : "",
+		["WheelUp", "WheelDown"].includes(key.id) ? "wheel" : "",
 	].join("")
 	if (type === "") {
 		type = "normal"

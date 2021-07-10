@@ -4,21 +4,24 @@ import type { Plugin } from "@/classes"
 
 
 /** Can tell you the properties a Plugin would add to the class's info property. In combination with OrToAnd can be used to get all the properties an array of Plugins would return. */
-export type PluginInfo<T extends Plugin<any>> = T extends Plugin<any, any, string> ? Record<T["namespace"], T["defaults"]> : T["defaults"]
+export type PluginInfo<T extends Plugin<any, any>> = T extends Plugin<any, any, string> ? Record<T["namespace"], T["defaults"]> : T["defaults"]
 
 
 /** Same as [[PluginInfo]], but for multiple plugins. */
-export type PluginsInfo<T extends Plugin<any>[]> = OrToAnd<PluginInfo<T[number]>>
+export type PluginsInfo<T extends Plugin<any, any>[]> = OrToAnd<PluginInfo<T[number]>>
 
-// @ts-expect-error todo
-export type PluginOpts<T> = {
-	// on: {
-	// 	before: {
-	// 		/** Should throw if the entry should not be allowed to be added. */
-	// 		add?: (dict: Record<string, T>, entry: T | any) => void
-	// 	}
-	// 	/** Should throw if the entry should not be allowed to be initialized. */
-	// 	init?: (entry: T) => void
-	// }
+export type PluginOptions<
+	TInfo = any,
+> = {
+	/**
+	 * Override the default init method of a plugin. Note this is passed all the info properties, not the entire class or overrides. i.e. the info property passed to the class being created, the defaults, and the corresponding override.
+	 *
+	 * The order of priority should be: defaults(lowest), overrides, obj(highest).
+	 */
+	init(obj: Partial<TInfo>, defaults: TInfo, overrides: Partial<TInfo>): TInfo
+	/**
+	 * Override the default equals method of a plugin. This should be done for an condition plugins if the {@link Condition} uses boolean expressions. See {@link Condition.constructor} for why.
+	 */
+	equals(obj1: TInfo, obj2: TInfo): boolean
 }
 

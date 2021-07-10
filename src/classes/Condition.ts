@@ -3,41 +3,71 @@ import { mixin } from "@alanscodelog/utils"
 import type { Context } from "./Context"
 import type { Plugin } from "./Plugin"
 
-import { Plugable } from "@/mixins"
+import { Plugable, PlugableBase } from "@/mixins"
 import type { ConditionOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
-import { PLUGABLE_CONSTRUCTOR_KEY } from "@/types"
 
 
-/**
- * The base class doesn't really do anything except provide a standardized way to wrap conditions and trigger their evaluation.
- *
- * Conditions require a text representation. If you need an additional representation or information stored, you can use a plugin.
- *
- * You will need to provide an evaluation method.
- *
- * You can also provide an optional equality method, though unless you're using simple single variable conditions (i.e. not boolean expressions) you will probably want to just let the default method return true.
- *
- * Why? Because two conditions might be functionally equal but have differing representations (e.g: `a && b`, `b && a`). Normalizing them (converting them to CNF) can be dangerous with very long expressions because it can take exponential time.
- *
- * The main reason you might want to check the equality of two conditions is when checking the equality of two shortcuts to see if they might conflict. The simpler alternative is to not try to do this. Instead when the user triggers more than one shortcut, only trigger the first and display a warning regarding the others.
- */
 export class Condition<
 	TPlugins extends
-		Plugin<any>[] =
-		Plugin<any>[],
+		Plugin<any, any>[] =
+		Plugin<any, any>[],
 	TInfo extends
 		PluginsInfo<TPlugins> =
-		PluginsInfo<TPlugins>,
+	PluginsInfo<TPlugins>,
 	TOpts extends
-		ConditionOptions=
-		ConditionOptions,
+		ConditionOptions<TPlugins, TInfo> =
+		ConditionOptions<TPlugins, TInfo>,
 > {
+	/**
+	 * The main text representation of the condition. Note that this is NOT a unique identifier for conditions and cannot be used to compare them if you are using boolean expressions for your conditions. See {@link Condition.constructor} for an explanation.
+	 *
+	 */
 	text!: string
-	#eval: (self: Condition, context: Context) => boolean
-	#equals?: (self: Condition, condition: Condition) => boolean = () => true
+	#eval: NonNullable<ConditionOptions<TPlugins, TInfo>["eval"]>
+	#equals: NonNullable<ConditionOptions<TPlugins, TInfo>["equals"]>
+	/**
+	 * # Condition
+	 * Create a condition.
+	 *
+	 * This class doesn't really do anything except provide a standardized way to wrap conditions. They do not implement any evaluation. Those must be implemented by you or some external library. You can then pass an `eval` function to tell the class how to eval your condition.
+	 *
+	 * Conditions require a text representation. If you need an additional representation (e.g. to store a parsed condition) or other information stored, you can use a plugin.
+	 *
+	 * ```ts
+	 * // suppose we have an external library with the following interface:
+	 * class BooleanExpression {
+	 * 	...
+	 * 	evaluate(context: Record<string, boolean>): boolean { ... }
+	 * }
+	 * ```
+	 * Since expression is not a primitive type, we do not want to do not want to set the default value to `new BooleanExpression()` because it will get assigned everywhere and if you treat the property as mutable... chaos.
+	 *
+	 * Instead we can set it to `undefined` and pass the type expression could be as the first type parameter. You will also need to do this if a property can be multiple types.
+	 * ```ts
+	 * // You will probably want to pass an equals method for the plugin that always returns true if you're letting all conditions equal each other
+	 * const equals = () => true
+	 * const conditionPlugin = new Plugin<{ expression: BooleanExpression | undefined }>(false, { expression: undefined }, {}, {equals})
+	 * // You could also cast the properties, but it's not as safe
+	 * const conditionPlugin = new Plugin(false, { expression: undefined as BooleanExpression | undefined }, {})
+	 *
+	 * // We save the eval function to pass again to other conditions, because it's no longer inline, we need to type it
+	 * // Don't pass [typeof conditionPlugin, typeof otherPlugin] for the type parameter it will cause issues
+	 * const conditionEval: ConditionOptions<(typeof conditionPlugin | typeof otherPlugin)[]>["eval"] =
+	 * 	(self, context) => self.info.expression?.evaluate(context.variables) //autocompletes
+	 *
+	 * const condition = new Condition("a", { eval: conditionEval }, { expression: new BooleanExpression("a") }, [conditionPlugin])
+	 * ```
+	 *
+	 * @template TPlugins **@internal** See {@link PlugableBase}
+	 * @template TInfo **@internal** See {@link PlugableBase}
+	 * @param text See {@link Condition.text}
+	 * @param opts See {@link ConditionOptions}
+	 * @param info See {@link Condition.info}
+	 * @param plugins See {@link Condition.plugins}
+	 */
 	constructor(
 		text: string,
-		opts?: TOpts,
+		opts?: Optional<TOpts>,
 	)
 	constructor(
 		text: string,
@@ -47,39 +77,45 @@ export class Condition<
 	)
 	constructor(
 		text: string,
-		opts: TOpts,
+		opts: Optional<TOpts> = {} as TOpts,
 		info?: TInfo,
 		plugins?: TPlugins,
 	) {
 		this.text = text
-		this.#eval = opts.eval
+		this.#eval = opts.eval ?? this.#defaultEval
 		this.#equals = opts.equals ?? this.#defaultEquals
 		// eslint-disable-next-line @typescript-eslint/no-use-before-define
-		this[PLUGABLE_CONSTRUCTOR_KEY](plugins, info, undefined)
+		this._plugableConstructor(plugins, info, undefined)
 	}
-	#defaultEquals(): boolean {
+	#defaultEval(): boolean {
 		return true
 	}
-	/** Evals the condition against a context. */
+	#defaultEquals(self: Condition, other: Condition): boolean {
+		return self.equalsInfo(other)
+	}
+	/**
+	 * Evals the condition against a context.
+	 *
+	 * If the class was not passed an `eval` method, the method always returns true.
+	 *
+	 * See {@link ConditionOptions.eval} for more details.
+	 */
 	eval(context: Context): boolean {
 		return this.#eval(this, context)
 	}
 	/**
-	 * Returns the condition is equal to another.
+	 * Returns whether the condition passed is equal to this one.
 	 *
-	 * Note if no `equals` option was passed it always returns true.
+	 * To return true, the condition must be equal according to the class (see {@link ConditionOptions.equals}), and they must be equal according to their plugins.
 	 */
 	equals(condition: Condition): boolean {
-		if (this.#equals) {
-			return this.#equals(this, condition)
-		} else return true
+		return this.#equals(this, condition)
 	}
-	get opts(): ConditionOptions {
+	get opts(): ConditionOptions<TPlugins, TInfo> {
 		return { eval: this.#eval, equals: this.#equals }
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface Condition<TPlugins, TInfo, TOpts> extends Plugable<TPlugins, TInfo> { }
-mixin(Condition, [Plugable])
+export interface Condition<TPlugins, TInfo> extends PlugableBase<TPlugins, TInfo> { }
+mixin(Condition, [Plugable, PlugableBase])
 

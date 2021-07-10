@@ -14,19 +14,18 @@ export type RawShortcut = Pick<Shortcut, "keys"> & {
 }
 
 export type ShortcutOptions = {
+	/** See {@link Shortcut.command} */
 	command?: Optional<Command>
+	/**
+	 * See {@link Shortcut.condition}
+	 *
+	 * If the shortcut is created without a condition, it is assigned a blank condition. If you are using plugins on your conditions you should pass a blank condition made with your plugins.
+	 */
+	condition: Optional<Condition>
+	/** See {@link KeysSorter} */
 	sorter: KeysSorter
-	active: boolean
-}
-
-export type ShortcutsOptions = {
-	// on: {
-	// 	before: {
-	// 		/** Should throw if the entry should not be allowed to be added. */
-	// 		add?: (shortcut: Key[][]) => void
-	// 	}
-	// }
-
+	/** See {@link Shortcut.enabled} */
+	enabled: boolean
 }
 
 export type KeysErrors =
@@ -39,7 +38,7 @@ export type KeysErrors =
 export type ShortcutHooks = {
 	"active": BaseHookType<boolean, never>
 	"keys": BaseHookType<Key[][], KnownError<KeysErrors>>
-	"command": BaseHookType<Command | false, KnownError<ERROR.INVALIDATES_SHORTCUT_CONDITION>>
+	"command": BaseHookType<Command | undefined, KnownError<ERROR.INVALIDATES_SHORTCUT_CONDITION>>
 	"condition": BaseHookType<Condition, KnownError<ERROR.INVALID_SHORTCUT_CONDITION>>
 }
 

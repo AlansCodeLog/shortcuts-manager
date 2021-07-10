@@ -4,8 +4,8 @@ import { Key } from "./Key"
 import type { Plugin } from "./Plugin"
 
 import { defaultCallback } from "@/helpers"
-import { Hookable, HookableCollection } from "@/mixins"
-import { ERROR, ErrorCallback, HOOKABLE_CONSTRUCTOR_KEY, KeysHook, KeysOptions, OnlyRequire, RecordFromArray } from "@/types"
+import { Hookable, HookableCollection, Plugable, PlugableCollection } from "@/mixins"
+import type { ERROR, ErrorCallback, KeysHook, KeysOptions, OnlyRequire, RecordFromArray } from "@/types"
 
 
 export class Keys<
@@ -25,7 +25,7 @@ export class Keys<
 		RecordFromArray<TRawKeys, "id", TKey>,
 > implements KeysOptions {
 	entries: TEntries
-	private readonly plugins?: TPlugins
+	readonly plugins?: TPlugins
 	/**
 	 * Creates a set of keys.
 	 * In the case plugins are passed, forces the keys to conform to those, adds missing properties, etc.
@@ -35,12 +35,11 @@ export class Keys<
 	 */
 	constructor(
 		keys: TRawKeys,
-		// opts: Partial<KeysOptions> = {},
 		plugins?: TPlugins,
 	) {
-		this[HOOKABLE_CONSTRUCTOR_KEY](["allows", "add"])
+		this._hookableConstructor(["allows", "add"])
 		if (plugins) {
-			Plugable.canAddPlugins(plugins)
+			PlugableCollection._canAddPlugins(plugins)
 			this.plugins = plugins
 		}
 
@@ -50,8 +49,8 @@ export class Keys<
 			this.add(key)
 		})
 	}
-	#add(entry: OnlyRequire<Key, "id">, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
-		const instance = Plugable.create<Key, "id">(Key, this.plugins, "id", entry)
+	protected _add(entry: OnlyRequire<Key, "id">, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
+		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
 		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id, cb)
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {
@@ -75,4 +74,4 @@ export class Keys<
 }
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }
-mixin(Keys, [Hookable, HookableCollection, PlugableCollection])
+mixin(Keys, [Hookable, HookableCollection, Plugable, PlugableCollection])

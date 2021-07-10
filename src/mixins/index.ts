@@ -3,4 +3,6 @@
 export { Hookable } from "./Hookable"
 export { HookableBase } from "./HookableBase"
 export { HookableCollection } from "./HookableCollection"
-
+export { Plugable } from "./Plugable"
+export { PlugableBase } from "./PlugableBase"
+export { PlugableCollection } from "./PlugableCollection"

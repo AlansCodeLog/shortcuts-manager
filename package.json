@@ -100,7 +100,6 @@
 
 		"typedoc": "^0.21.2",
 		"typedoc-neo-theme": "^1.1.1",
-		"typedoc-plugin-external-module-name": "^4.0.6",
 		"typedoc-plugin-param-names": "^2.0.0",
 
 		"typescript": "^4.3.5",
@@ -141,7 +140,7 @@
 		"scripts": {
 			"test": "Runs `lint:types` before (so that flags can be passed to the test command) so that we can test type assertions. See expect_type function in @alanscodelog/utils.",
 			"lint:commits": "Lints all unpushed commits in the active branch.",
-			"test:inspect_errors": "For use with my inspect_error utility function from @alanscodelog/utils",
+			"test:inspectErrors": "For use with my inspectError utility function from @alanscodelog/utils",
 			"prepare": "Needed so that if we pull the package from git it will get built and installed properly.",
 			"actions:debug": "For debugging github build action locally with nektos/act. Requires act and docker. Note: Cache will never work locally because of https://github.com/nektos/act/issues/285",
 			"demo:lint": "Linting is hit or miss on VS Code."

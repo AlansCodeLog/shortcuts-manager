@@ -3,44 +3,53 @@ import { mixin } from "@alanscodelog/utils"
 import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
-import { Hookable, HookableBase, Plugable } from "@/mixins"
-import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
-import { HOOKABLE_CONSTRUCTOR_KEY, PLUGABLE_CONSTRUCTOR_KEY } from "@/types/symbolKeys"
+import { Hookable, HookableBase, Plugable, PlugableBase } from "@/mixins"
+import type { CommandHooks, CommandOptions, DeepPartialObj, IgnoreUnusedTypes, Optional, PluginsInfo } from "@/types"
 
 
-/**
- * Creates a command.
- */
 export class Command<
-	// capture the types of the execute function and the condition passed
 	TExec extends
 		CommandOptions["execute"] =
 		CommandOptions["execute"],
 	TCondition extends
 		Condition =
 		Condition,
-	// See [[Plugable]]
 	TPlugins extends
-		Plugin<any>[] =
-		Plugin<any>[],
+		Plugin<any, any>[] =
+		Plugin<any, any>[],
 	TInfo extends
 		PluginsInfo<TPlugins> =
 		PluginsInfo<TPlugins>,
-	// See [[./README #Collection Entries]] for why this is here
 	TName extends
 		string =
 		string,
-	// make the type of opts match depending on the execute function/condition the user passed
 	TOpts extends
 		Partial<CommandOptions<TExec, TCondition>> =
 		Partial<CommandOptions<TExec, TCondition>>,
 > implements CommandOptions {
 	/** Unique string to identify the command by. */
 	name: TName
+	/** The function to execute when a shortcut triggers it's command. */
 	execute!: TExec
+	/** Commands may have an additional condition that must be met, apart from the shortcut's that triggered it. */
 	condition!: TCondition
+	/** A description of what the command does. */
 	description: CommandOptions["description"]
-	// parser!: CommandOptions["parser"]
+	/**
+	 * # Command
+	 * Creates a command.
+	 *
+	 * @template TExec  Captures the type of the execute function.
+	 * @template TCondition  Captures the type of the condition.
+	 * @template TPlugins **@internal** See {@link Plugable}
+	 * @template TInfo **@internal** See {@link Plugable}
+	 * @template TName **@internal** See {@link ./README.md Collection Entries}
+	 * @template TOpts **@internal** Makes the type of opts match depending on the execute function/condition passed.
+	 * @param name See {@link Command.name}
+	 * @param opts See {@link CommandOptions}
+	 * @param info See {@link Command.info}
+	 * @param plugins See {@link Command.plugins}
+	 */
 	constructor(
 		name: TName,
 		opts?: TOpts,
@@ -51,13 +60,6 @@ export class Command<
 		info: DeepPartialObj<TInfo>,
 		plugins: TPlugins
 	)
-	/**
-	 * @param name See [[Command.id]]
-	 * @param info See [[Command.info]]
-	 * @param plugins See [[Command.plugins]]
-	 *
-	 * Note: You cannot add more plugins or change the structure of info after creating an instance. TODO
-	 */
 	constructor(
 		name: TName,
 		opts: Partial<TOpts> = {},
@@ -67,18 +69,19 @@ export class Command<
 		this.name = name
 		// eslint-disable-next-line @typescript-eslint/no-use-before-define
 		init(this, defaultOpts, opts)
-		this[PLUGABLE_CONSTRUCTOR_KEY](plugins, info, "name")
-		this[HOOKABLE_CONSTRUCTOR_KEY](["allows", "set"])
+		this._plugableConstructor(plugins, info, "name")
+		this._hookableConstructor(["allows", "set"])
 	}
 	get executable(): boolean {
 		return this.execute !== undefined
 	}
 	/**
-	 * Returns whether two commands are functionally the same for our purposes.
+	 * Returns whether the command passed is equal to this one.
 	 *
-	 * Note that this might return false negatives because conditions might be written differently (e.g. `a && b` and `b && a`) but be functionally the same.
+	 * To return true, their name, execute, and descriptions must be equal, their condition must be equal according to this command's condition, and they must be equal according to their plugins.
 	 */
-	equals(command: Command): command is Command<TExec, TCondition, TPlugins, TInfo> {
+	equals(command?: Command): command is Command<TExec, TCondition, TPlugins, TInfo> {
+		if (command === undefined) return false
 		return (
 			this === command
 			||
@@ -87,26 +90,21 @@ export class Command<
 				&& this.execute === command.execute
 				&& (
 					this.condition === command.condition
-					|| this.condition?.equals(command.condition)
-					|| false
+					|| this.condition.equals(command.condition)
 				)
 				&& this.description === command.description
 				&& this.equalsInfo(command)
 			)
 		)
 	}
-	// get string(): string {
-	// 	return this.parser.stringify.command(this)
-	// }
 	get opts(): CommandOptions {
 		const { description, execute, condition } = this
 		return { description, execute, condition }
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface Command<TExec, TCondition, TPlugins, TInfo> extends HookableBase<CommandHooks>, Plugable<TPlugins, TInfo> { }
-mixin(Command, [Hookable, HookableBase, Plugable])
+export interface Command<TExec, TCondition, TPlugins, TInfo> extends HookableBase<CommandHooks>, PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TExec, TCondition]> { }
+mixin(Command, [Hookable, HookableBase, Plugable, PlugableBase])
 
 
 export const defaultOpts: CommandOptions = {
@@ -120,3 +118,4 @@ function init(self: any, defaults: CommandOptions, opts: Partial<CommandOptions>
 	self.execute = opts.execute ?? defaults.execute
 	self.description = opts.description ?? defaults.description
 }
+

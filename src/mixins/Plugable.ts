@@ -2,34 +2,23 @@ import { crop, indent, pretty } from "@utils/utils"
 
 import type { Command, Condition, Key, Plugin, Shortcut } from "@/classes"
 import { KnownError } from "@/helpers"
-import { DeepPartialObj, OrToAnd, PluginInfo, TYPE_ERROR } from "@/types"
-import { PLUGABLE_CONSTRUCTOR_KEY } from "@/types/symbolKeys"
+import { DeepPartialObj, TYPE_ERROR } from "@/types"
 
 
 export class Plugable<
 	TPlugins extends Plugin<any>[],
-	TInfo extends
-		OrToAnd<PluginInfo<TPlugins[number]>> =
-		OrToAnd<PluginInfo<TPlugins[number]>>,
 > {
 	plugins?: TPlugins
-	#key?: string
-	[PLUGABLE_CONSTRUCTOR_KEY](plugins: Plugin<any>[] | undefined, info: DeepPartialObj<TInfo> | undefined, key: string | undefined): void {
-		this.#key = key
-		if (info && !plugins) this._throwNoPluginsError(info)
-		if (plugins !== undefined) {
-			this._addPlugins(plugins)
-		}
-	}
+	key?: string
 	protected _throwNoPluginsError(info: any): void {
 		throw new KnownError(TYPE_ERROR.CLONER_NOT_SPECIFIED, crop`
 		You passed an info object but no plugins to manage it:
 		${indent(pretty(info), 1)}
 		`, { info })
 	}
-	#addPlugin(plugin: Plugin<any>, check: boolean = true): void {
+	protected _addPlugin(plugin: Plugin<any>, check: boolean = true): void {
 		if (check) {
-			const can = Plugable.canAddPlugin(plugin, this.plugins)
+			const can = Plugable._canAddPlugin(plugin, this.plugins)
 			if (can !== true) throw can
 		}
 		this.plugins = this.plugins! ?? []
@@ -37,12 +26,12 @@ export class Plugable<
 		if (!added) this.plugins.push(plugin)
 	}
 	protected _addPlugins(plugins: Plugin<any>[]): void {
-		Plugable.canAddPlugins(plugins, { isShortcut: this.#key === undefined })
+		Plugable._canAddPlugins(plugins, { isShortcut: this.key === undefined })
 		for (const plugin of plugins) {
-			this.#addPlugin(plugin, false)
+			this._addPlugin(plugin, false)
 		}
 	}
-	protected static canAddPlugin(plugin: Plugin<any>, checkedPlugins: Plugin<any>[] = []): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
+	protected static _canAddPlugin(plugin: Plugin<any>, checkedPlugins: Plugin<any>[] = []): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
 		if (checkedPlugins.length === 0) return true
 		const properties: string[] = [plugin.namespace as string]
 
@@ -66,10 +55,10 @@ export class Plugable<
 		}
 		return true
 	}
-	protected static canAddPlugins(plugins: Plugin<any>[], { isShortcut = false }: { isShortcut?: boolean } = {}): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
+	protected static _canAddPlugins(plugins: Plugin<any>[], { isShortcut = false }: { isShortcut?: boolean } = {}): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
 		for (let i = 0; i < plugins.length; i++) {
 			const plugin = plugins[i]
-			const can = Plugable.canAddPlugin(plugin, plugins.slice(0, i))
+			const can = Plugable._canAddPlugin(plugin, plugins.slice(0, i))
 			if (can !== true) return can
 			if (isShortcut && plugin.overrides) {
 				// eslint-disable-next-line no-console

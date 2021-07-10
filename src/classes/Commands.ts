@@ -5,8 +5,8 @@ import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
 import { defaultCallback, KnownError } from "@/helpers"
-import { Hookable, HookableCollection, Plugable } from "@/mixins"
-import { CommandsHook, CommandsOptions, ERROR, ErrorCallback, HOOKABLE_CONSTRUCTOR_KEY, OnlyRequire, RecordFromArray } from "@/types"
+import { Hookable, HookableCollection, Plugable, PlugableCollection } from "@/mixins"
+import { CommandsHook, ERROR, ErrorCallback, OnlyRequire, RecordFromArray } from "@/types"
 
 
 /**
@@ -35,17 +35,14 @@ export class Commands<
 		RecordFromArray<TRawCommands, "name", TCommand>,
 > {
 	entries: TEntries
-	private readonly plugins?: TPlugins
+	readonly plugins?: TPlugins
 	constructor(
 		commands: TRawCommands,
-		// todo
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		_opts: Partial<CommandsOptions> = {},
 		plugins?: TPlugins,
 	) {
-		this[HOOKABLE_CONSTRUCTOR_KEY](["allows", "add"])
+		this._hookableConstructor(["allows", "add"])
 		if (plugins) {
-			Plugable.canAddPlugins(plugins)
+			Plugable._canAddPlugins(plugins)
 			this.plugins = plugins
 		}
 		this.entries = {} as TEntries
@@ -54,7 +51,7 @@ export class Commands<
 			this.add(command, defaultCallback)
 		})
 	}
-	#add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
+	protected _add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
 		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
 		instance.addHook("allows", (type, value, old) => {
 			if (type === "name") {
@@ -82,9 +79,6 @@ export class Commands<
 	info(id: TRawCommands[number]["name"] | string): TCommand["info"] {
 		return this.entries[id as keyof TEntries].info
 	}
-	get opts(): CommandsOptions {
-		return {}
-	}
 }
-export interface Commands extends HookableCollection<CommandsHook> { }
-mixin(Commands, [Hookable, HookableCollection])
+export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }
+mixin(Commands, [Hookable, HookableCollection, Plugable, PlugableCollection])
