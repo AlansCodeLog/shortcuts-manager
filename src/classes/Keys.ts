@@ -1,15 +1,13 @@
-import { mixin } from "@alanscodelog/utils"
-
+import { defaultCallback } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
+import type { ERROR, ErrorCallback, KeysHook, KeysOptions, OnlyRequire, RecordFromArray } from "@/types"
 import { Key } from "./Key"
+import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
-import { defaultCallback } from "@/helpers"
-import { Hookable, HookableCollection, Plugable, PlugableCollection } from "@/mixins"
-import type { ERROR, ErrorCallback, KeysHook, KeysOptions, OnlyRequire, RecordFromArray } from "@/types"
 
 
 export class Keys<
-	// See [[./README #Plugins]] for how TPlugins and TPluginsBase work
 	TPlugins extends
 		Plugin<any>[] =
 		Plugin<any>[],
@@ -19,25 +17,39 @@ export class Keys<
 	TRawKeys extends
 		OnlyRequire<TKey, "id">[] =
 		OnlyRequire<TKey, "id">[],
-	// See [[./README #Collection Entries]] for how this works
 	TEntries extends
 		RecordFromArray<TRawKeys, "id", TKey> =
 		RecordFromArray<TRawKeys, "id", TKey>,
-> implements KeysOptions {
+> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
 	entries: TEntries
-	readonly plugins?: TPlugins
+	stringifier: KeysOptions["stringifier"] = defaultStringifier
 	/**
 	 * Creates a set of keys.
 	 * In the case plugins are passed, forces the keys to conform to those, adds missing properties, etc.
+	 *
 	 * Note:
 	 * - This will mutate the keys passed to it.
-	 * - It can throw. See [[ERROR]] for why.
+	 * - It can throw. See {@link ERROR} for why.
+	 *
+	 * @template TPlugins **@internal** See {@link PlugableCollection}
+	 * @template TKey **@internal** Makes it so that all keys in this instance are correctly typed with the plugins of the instance.
+	 * @template TRawKeys **@internal** Allow passing raw keys.
+	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
+	 * @param keys A list of {@link Key | keys}.
+	 * @param opts A list of {@link KeysOptions}.
+	 * @param plugins See {@link Keys.plugins}
 	 */
 	constructor(
 		keys: TRawKeys,
+		opts?: Partial<KeysOptions>,
 		plugins?: TPlugins,
 	) {
-		this._hookableConstructor(["allows", "add"])
+		super()
+		if (opts?.stringifier) this.stringifier = opts.stringifier
+		this._mixin({
+			hookable: { keys: ["allows", "add"] },
+			plugableCollection: {plugins, key:"id"}
+		})
 		if (plugins) {
 			PlugableCollection._canAddPlugins(plugins)
 			this.plugins = plugins
@@ -49,7 +61,7 @@ export class Keys<
 			this.add(key)
 		})
 	}
-	protected _add(entry: OnlyRequire<Key, "id">, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
+	protected override _add(entry: OnlyRequire<Key, "id">, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
 		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
 		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id, cb)
 	}
@@ -72,6 +84,5 @@ export class Keys<
 		return this.entries[id as keyof TEntries].info
 	}
 }
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }
-mixin(Keys, [Hookable, HookableCollection, Plugable, PlugableCollection])
+// export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }
+// mixin(Keys, [Hookable, HookableCollection, Plugable, PlugableCollection])

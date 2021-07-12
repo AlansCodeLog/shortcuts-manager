@@ -1,16 +1,16 @@
-import { mixin } from "@utils/utils"
-
+import { KnownError } from "@/helpers"
+import { throwIfImpossibleToggles } from "@/helpers/throwIfImpossibleToggles"
+import { throwIfInvalidChord } from "@/helpers/throwIfInvalidChord"
+import { MixinHookablePlugableBase } from "@/mixins"
+import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 import type { Command } from "./Command"
 import { Condition } from "./Condition"
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
+import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
-import { KnownError } from "@/helpers"
-import { throwIfImpossibleToggles } from "@/helpers/throwIfImpossibleToggles"
-import { throwIfInvalidChord } from "@/helpers/throwIfInvalidChord"
-import { Hookable, HookableBase, Plugable, PlugableBase } from "@/mixins"
-import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
+
 
 
 export class Shortcut<
@@ -21,9 +21,11 @@ export class Shortcut<
 	TInfo extends
 		PluginsInfo<TPlugins> =
 		PluginsInfo<TPlugins>,
-> implements ShortcutOptions {
+> extends MixinHookablePlugableBase<ShortcutHooks, TPlugins, TInfo> implements ShortcutOptions {
 	/** The keys that make up the shortcut. Note that this is NOT a unique identifier for shortcuts and cannot be used to compare them if you are making use of the when/context/active options. */
-	keys!: Key[][]
+	keys: Key[][] = []
+	/** See {@link KeysStringifier} */
+	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/** See {@link KeysSorter} */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
 	/** The {@link Command} to associate with the shortcut. */
@@ -62,9 +64,13 @@ export class Shortcut<
 		info?: DeepPartialObj<TInfo>,
 		plugins?: TPlugins,
 	) {
-		this._hookableConstructor(["allows", "set"])
+		super()
+		if (opts.stringifier) this.stringifier = opts.stringifier
+		this._mixin({
+			hookable: { keys: ["allows", "set"] },
+			plugableBase: { plugins, info, key: undefined }
+		})
 		this.addHook("allows", this._hooks.bind(this))
-		this._plugableConstructor(plugins, info, undefined)
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
 		this.set("command", opts.command)
@@ -74,32 +80,35 @@ export class Shortcut<
 	/**
 	 * Returns whether the shortcut passed is equal to this one.
 	 *
-	 * To return true, their keys and command must be equal, and their condition must be equal according to this shortcut's condition, and they must be equal according to their plugins.
+	 * To return true, their keys and command must be equal, their condition must be equal according to this shortcut's condition, and they must be equal according to their plugins.
 	 */
 	equals(shortcut: Shortcut): shortcut is Shortcut<TPlugins, TInfo> {
 		return (
 			this === shortcut
 			||
 			(
-				this.keys
-					// Since they're pre-sorted this should be quite fast
-					.find((thisChord, c) => {
-						const otherChord = shortcut.keys[c]
-						if (otherChord.length !== thisChord.length) return true
-						return thisChord.find((thisKey, i) => {
-							const shortcutKey = otherChord[i]
-							if (!shortcutKey) return true
-							return !thisKey.equals(shortcutKey)
-						}) !== undefined
-					}) === undefined
+				this.equalsKeys(shortcut.keys)
 				&& this.equalsInfo(shortcut)
 				&& this.condition.equals(shortcut.condition)
 				&& (this.command?.equals(shortcut.command) || shortcut.command?.equals(this.command) || this.command === shortcut.command)
 			)
 		)
 	}
+	equalsKeys(keys: Shortcut["keys"]): keys is Shortcut<TPlugins, TInfo>["keys"] {
+		return this.keys
+			// Since they're pre-sorted this should be quite fast
+			.find((thisChord, c) => {
+				const otherChord = keys[c]
+				if (otherChord.length !== thisChord.length) return true
+				return thisChord.find((thisKey, i) => {
+					const shortcutKey = otherChord[i]
+					if (!shortcutKey) return true
+					return !thisKey.equals(shortcutKey)
+				}) !== undefined
+			}) === undefined
+	}
 	get opts(): ShortcutOptions {
-		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition }
+		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier}
 	}
 	private _hooks<T extends keyof ShortcutHooks>(key: T, value: ShortcutHooks[T]["value"]): true | ShortcutHooks[T]["error"] {
 		switch (key) {
@@ -111,10 +120,10 @@ export class Shortcut<
 		try {
 			const keys = value
 			this.keys = keys.map((chord, i) => {
-				throwIfInvalidChord({ keys }, chord, i)
-				return [...chord].sort(this.sorter.sort)
+				throwIfInvalidChord({ keys }, chord, i, this.stringifier)
+				return this.sorter.sort([...chord])
 			})
-			throwIfImpossibleToggles(this.keys)
+			throwIfImpossibleToggles(this.keys, this.stringifier)
 		} catch (e: unknown) {
 			if (e instanceof KnownError) return e
 			throw e
@@ -123,6 +132,5 @@ export class Shortcut<
 	}
 }
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-definitions
-export interface Shortcut<TPlugins, TInfo> extends HookableBase<ShortcutHooks>, PlugableBase<TPlugins, TInfo> { }
-mixin(Shortcut, [Hookable, HookableBase, Plugable, PlugableBase])
+// export interface Shortcut<TPlugins, TInfo> extends HookableBase<ShortcutHooks>, PlugableBase<TPlugins, TInfo> { }
+// mixin(Shortcut, [Hookable, HookableBase, Plugable, PlugableBase])

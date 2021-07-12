@@ -1,10 +1,9 @@
-import { mixin } from "@alanscodelog/utils"
-
+import { MixinHookablePlugableBase } from "@/mixins"
+import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
 import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
-import { Hookable, HookableBase, Plugable, PlugableBase } from "@/mixins"
-import type { CommandHooks, CommandOptions, DeepPartialObj, IgnoreUnusedTypes, Optional, PluginsInfo } from "@/types"
+
 
 
 export class Command<
@@ -24,17 +23,17 @@ export class Command<
 		string =
 		string,
 	TOpts extends
-		Partial<CommandOptions<TExec, TCondition>> =
-		Partial<CommandOptions<TExec, TCondition>>,
-> implements CommandOptions {
+		CommandOptions<TExec, TCondition> =
+		CommandOptions<TExec, TCondition>,
+> extends MixinHookablePlugableBase<CommandHooks, TPlugins, TInfo> implements CommandOptions {
 	/** Unique string to identify the command by. */
 	name: TName
 	/** The function to execute when a shortcut triggers it's command. */
-	execute!: TExec
+	execute: TExec = (() => { }) as TExec
 	/** Commands may have an additional condition that must be met, apart from the shortcut's that triggered it. */
-	condition!: TCondition
+	condition: TCondition = new Condition("") as TCondition
 	/** A description of what the command does. */
-	description: CommandOptions["description"]
+	description: TOpts["description"] = ""
 	/**
 	 * # Command
 	 * Creates a command.
@@ -66,11 +65,14 @@ export class Command<
 		info?: DeepPartialObj<TInfo>,
 		plugins?: TPlugins,
 	) {
+		super()
 		this.name = name
-		// eslint-disable-next-line @typescript-eslint/no-use-before-define
-		init(this, defaultOpts, opts)
-		this._plugableConstructor(plugins, info, "name")
-		this._hookableConstructor(["allows", "set"])
+		if (opts.execute) this.execute = opts.execute
+		if (opts.description) this.description = opts.description
+		this._mixin({
+			hookable: { keys: ["allows", "set"] },
+			plugableBase: { plugins, info, key: "name" }
+		})
 	}
 	get executable(): boolean {
 		return this.execute !== undefined
@@ -98,24 +100,10 @@ export class Command<
 		)
 	}
 	get opts(): CommandOptions {
-		const { description, execute, condition } = this
-		return { description, execute, condition }
+		return { description:this.description, execute:this.execute, condition:this.condition }
 	}
 }
 
-export interface Command<TExec, TCondition, TPlugins, TInfo> extends HookableBase<CommandHooks>, PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TExec, TCondition]> { }
-mixin(Command, [Hookable, HookableBase, Plugable, PlugableBase])
-
-
-export const defaultOpts: CommandOptions = {
-	execute: undefined,
-	description: undefined,
-	condition: new Condition(""),
-}
-
-function init(self: any, defaults: CommandOptions, opts: Partial<CommandOptions>): asserts self is CommandOptions {
-	self = self ?? {}
-	self.execute = opts.execute ?? defaults.execute
-	self.description = opts.description ?? defaults.description
-}
+// export interface Command<TExec, TCondition, TPlugins, TInfo> extends HookableBase<CommandHooks>, PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TExec, TCondition]> { }
+// mixin(Command, [Hookable, HookableBase, Plugable, PlugableBase])
 

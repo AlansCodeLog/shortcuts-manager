@@ -1,7 +1,7 @@
-import { Hookable } from "./Hookable"
-
 import { defaultCallback } from "@/helpers"
 import type { BaseHook, BaseHookType } from "@/types"
+import { Hookable } from "./Hookable"
+
 
 
 export class HookableBase<
@@ -14,6 +14,7 @@ export class HookableBase<
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsListener, set: TSetListener }> {
+	declare _constructor: Hookable<{ allows: TAllowsListener, set: TSetListener }>["_constructor"]
 	/**
 	 * Tells you whether a property is allowed to be set.
 	 *

@@ -1,12 +1,10 @@
-import { crop, indent, pretty, unreachable } from "@utils/utils"
-
-import { Hookable } from "./Hookable"
-
 import type { Commands, Keys } from "@/classes"
 import { Command, Key, Shortcut } from "@/classes"
 import type { Shortcuts } from "@/classes/Shortcuts"
 import { defaultCallback, KnownError } from "@/helpers"
 import { CollectionHook, CollectionHookType, ERROR, ErrorCallback, Optional } from "@/types"
+import { crop, indent, pretty, unreachable } from "@utils/utils"
+import { Hookable } from "./Hookable"
 
 
 export class HookableCollection<
@@ -19,10 +17,13 @@ export class HookableCollection<
 		CollectionHook<"add", THook>,
 	TEntries extends THook["values"] = THook["values"],
 > extends Hookable<{ allows: TAllowsListener, add: TAddListener }> {
+	declare _constructor: Hookable<{ allows: TAllowsListener, add: TAddListener }>["_constructor"]
 	entries!: TEntries
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _add(_value: THook["value"], _cb: ErrorCallback<any>): void {
+	protected _add(_value: THook["value"], _cb: (error: THook["error"] | Error) => void): void {
 		unreachable("Should be implemented by extending class.")
+	}
+	protected _allows(_value: THook["value"]): true | THook["error"] | Error | never {
+		return true
 	}
 	/**
 	 * Tells you whether an entry is allowed to be added.
@@ -44,6 +45,7 @@ export class HookableCollection<
 			const response = listener(value, self.entries)
 			if (response !== true) return response
 		}
+		if (self._allows) return self._allows(value)
 		return true
 	}
 	/**

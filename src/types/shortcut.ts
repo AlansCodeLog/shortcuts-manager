@@ -1,9 +1,10 @@
+import type { Command, Condition, Key, KeysSorter, Shortcut } from "@/classes"
+import type { KeysStringifier } from "@/classes/KeysStringifier"
+import type { KnownError } from "@/helpers"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { OnlyRequire, Optional } from "./utils"
 
-import type { Command, Condition, Key, KeysSorter, Shortcut } from "@/classes"
-import type { KnownError } from "@/helpers"
 
 
 /**
@@ -26,6 +27,17 @@ export type ShortcutOptions = {
 	sorter: KeysSorter
 	/** See {@link Shortcut.enabled} */
 	enabled: boolean
+	/**
+	 * See {@link KeysStringifier}
+	*/
+	stringifier: KeysStringifier
+}
+
+export type ShortcutsOptions = {
+	/**
+	 * See {@link KeysStringifier}
+	*/
+	stringifier: KeysStringifier
 }
 
 export type KeysErrors =
@@ -38,12 +50,12 @@ export type KeysErrors =
 export type ShortcutHooks = {
 	"active": BaseHookType<boolean, never>
 	"keys": BaseHookType<Key[][], KnownError<KeysErrors>>
-	"command": BaseHookType<Command | undefined, KnownError<ERROR.INVALIDATES_SHORTCUT_CONDITION>>
-	"condition": BaseHookType<Condition, KnownError<ERROR.INVALID_SHORTCUT_CONDITION>>
+	"command": BaseHookType<Command | undefined, never>
+	"condition": BaseHookType<Condition, never>
 }
 
 export type ShortcutsHook = CollectionHookType<
 	OnlyRequire<Shortcut, "keys">,
 	Shortcut[],
-	KnownError<ERROR.DUPLICATE_SHORTCUT>
+	KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS>
 >

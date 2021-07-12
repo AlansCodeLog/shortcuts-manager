@@ -1,7 +1,7 @@
+import type { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+import type { KnownError } from "@/helpers"
 import type { BaseHook } from "./hooks"
 
-import type { /* Command, Commands, Condition, */ Key, /* Keys,  */ Plugin } from "@/classes"
-import type { KnownError } from "@/helpers"
 
 
 /**
@@ -21,6 +21,7 @@ export enum ERROR {
 	CHORD_W_DUPLICATE_KEY = "CHORD_W_DUPLICATE_KEY",
 	IMPOSSIBLE_TOGGLE_SEQUENCE = "IMPOSSIBLE_TOGGLE_SEQUENCE",
 	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
+	CONFLICTING_ENTRY_PLUGINS = "CONFLICTING_ENTRY_PLUGINS",
 
 	// === duplicate "bases"
 	DUPLICATE_KEY = "DUPLICATE_KEY",
@@ -74,25 +75,25 @@ type ERROR_Info = {
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
 		chord: Key[]
 		i: number
-		// 	shortcut: { keys: Key[][] } | Shortcut
+		shortcut: { keys: Key[][] } | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS]: {
 		chord: Key[]
 		i: number
-		// shortcut: { keys: Key[][] } | Shortcut
+		shortcut: { keys: Key[][] } | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS]: {
 		chord: Key[]
 		i: number
-		// 	shortcut: { keys: Key[][] } | Shortcut
+			shortcut: { keys: Key[][] } | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_DUPLICATE_KEY]: {
 		chord: Key[]
 		i: number
-		// shortcut: { keys: Key[][] } | Shortcut
+		shortcut: { keys: Key[][] } | Shortcut
 		keys: Key[]
 	}
 	[ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE]: {
@@ -103,19 +104,23 @@ type ERROR_Info = {
 	[ERROR.INVALID_KEY_OPTIONS]: {
 		self: Key
 	}
+	[ERROR.CONFLICTING_ENTRY_PLUGINS]: {
+		entry: Key | Shortcut | Command
+		collection: Keys | Shortcuts | Commands
+	}
 
 	// === duplicate "bases"
 	[ERROR.DUPLICATE_KEY]: {
-	// 	existing: Key
-	// 	self: Keys
+		existing: Key
+		self: Keys
 	}
 	[ERROR.DUPLICATE_SHORTCUT]: {
-	// 	existing: Shortcut
-	// 	self: Shortcuts
+		existing: Shortcut
+		self: Shortcuts
 	}
 	[ERROR.DUPLICATE_COMMAND]: {
-	// 	existing: Command
-	// 	self: Commands
+		existing: Command
+		self: Commands
 	}
 }
 

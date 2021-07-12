@@ -1,11 +1,11 @@
-import { mixin } from "@utils/utils"
-
+import type { KnownError } from "@/helpers"
+import { defaultCallback } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { internalPlugableCollectionAllowsHook } from "@/mixins/PlugableCollection"
+import type { ERROR, ErrorCallback, OnlyRequire, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
+import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 import { Shortcut } from "./Shortcut"
-
-import { defaultCallback } from "@/helpers"
-import { Hookable, HookableCollection, Plugable, PlugableCollection } from "@/mixins"
-import type { ERROR, ErrorCallback, OnlyRequire, ShortcutsHook } from "@/types"
 
 
 export class Shortcuts<
@@ -21,10 +21,10 @@ export class Shortcuts<
 	TEntries extends
 		TShortcut[] =
 		TShortcut[],
-> {
+> extends MixinHookablePlugableCollection<ShortcutsHook, TPlugins> {
 	entries: TEntries
-	readonly plugins?: TPlugins
-	// TODO see if we can throw on shortcuts with existing shortcuts
+	/** See {@link KeysStringifier} */
+	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/**
 	 * # Shortcut
 	 *
@@ -37,32 +37,34 @@ export class Shortcuts<
 	 * - It can throw. See {@link ERROR} for why.
 	 *
 	 * @template TPlugins **@internal** See {@link PlugableCollection}
-	 * @template TInfo **@internal** See {@link PlugableCollection}
 	 * @template TShortcut **@internal** Makes it so that all shortcuts in this instance are correctly typed with the plugins of the instance.
 	 * @template TRawShortcuts **@internal** Allow passing raw shortcuts.
-	 * @template TRawShortcuts **@internal** Allow passing raw shortcuts.
-	 * @param keys A list of {@link Key | keys}.
-	 * @param opts Set {@link ShortcutOptions}
-	 * @param info See {@link Shortcut.info}
-	 * @param plugins See {@link Shortcut.plugins}
+	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
+	 * @param shortcuts A list of {@link Shortcut | shortcuts}.
+	 * @param plugins See {@link Shortcuts.plugins}
 	 */
 	constructor(
 		shortcuts: TRawShortcuts,
 		plugins?: TPlugins,
+		opts: Partial<ShortcutsOptions> = {}
 	) {
-		this._hookableConstructor(["allows", "add"])
-		if (plugins) {
-			Plugable._canAddPlugins(plugins, { isShortcut: true })
-			this.plugins = plugins
-		}
+		super()
+		if (opts.stringifier) this.stringifier = opts.stringifier
+		this._mixin({
+			hookable: { keys: ["allows", "add"] },
+			plugableCollection: { plugins, key: ""}
+		})
 		this.entries = [] as any
 		shortcuts.forEach(shortcut => {
 			this.add(shortcut, defaultCallback)
 		})
 	}
-	protected _add(entry: OnlyRequire<TShortcut, "keys">, cb: ErrorCallback<ERROR.DUPLICATE_SHORTCUT> = defaultCallback): void {
+	protected override _add(entry: OnlyRequire<TShortcut, "keys"> | Shortcut, cb: ErrorCallback<ERROR.DUPLICATE_SHORTCUT> = defaultCallback): void {
 		const instance = Plugable.create<Shortcut, "keys">(Shortcut, this.plugins, "keys", entry)
 		HookableCollection._addToDict<Shortcut>(this, this.entries, instance, undefined, cb)
+	}
+	protected override _allows(entry: OnlyRequire<TShortcut, "keys"> | Shortcut): true | KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS> {
+		return internalPlugableCollectionAllowsHook(this, entry)
 	}
 	/**
 	 * Query the class for some shortcut/s.
@@ -75,9 +77,9 @@ export class Shortcuts<
 	 *
 	 * @param all If set to true, uses filter and returns all matching entries. Otherwise uses find and only returns the first match.
 	 */
-	get(filter: (existing: TShortcut) => boolean, all?: true): TShortcut[] | undefined
-	get(filter: (existing: TShortcut) => boolean, all?: false): TShortcut | undefined
-	get(filter: (existing: TShortcut) => boolean, all: boolean = true): TShortcut[] | TShortcut | undefined {
+	get(filter: Parameters<Array<TShortcut>["filter"]>["0"], all?: true): TShortcut[] | undefined
+	get(filter: Parameters<Array<TShortcut>["find"]>["0"], all?: false): TShortcut | undefined
+	get(filter: Parameters<Array<TShortcut>["filter"] | Array<TShortcut>["find"]>["0"], all: boolean = true): TShortcut| TShortcut[] | undefined {
 		return all ? this.entries.filter(filter) : this.entries.find(filter)
 	}
 	/**
@@ -85,13 +87,11 @@ export class Shortcuts<
 	 *
 	 * @param all If set to true, uses filter and returns all matching entries. Otherwise uses find and only returns the first match.
 	 */
-	info(filter: (existing: TShortcut) => boolean, all?: true): TShortcut["info"][] | undefined
-	info(filter: (existing: TShortcut) => boolean, all?: false): TShortcut["info"] | undefined
-	info(filter: (existing: TShortcut) => boolean, all: boolean = true): TShortcut["info"] | TShortcut["info"][] | undefined {
-		return all
-			? this.entries.filter(filter).map(entry => entry.info)
-			: this.entries.find(filter)?.info
+	info(filter: Parameters<Array<TShortcut>["filter"]>["0"], all?: true): TShortcut["info"][] | undefined
+	info(filter: Parameters<Array<TShortcut>["find"]>["0"], all?: false): TShortcut["info"] | undefined
+	info(filter: Parameters<Array<TShortcut>["filter"] | Array<TShortcut>["find"]>["0"], all: boolean = true): TShortcut["info"] | TShortcut["info"][] | undefined {
+		return all ? this.entries.filter(filter).map(entry => entry.info) : this.entries.find(filter)?.info
 	}
 }
-export interface Shortcuts<TPlugins> extends HookableCollection<ShortcutsHook>, PlugableCollection<TPlugins> { }
-mixin(Shortcuts, [Hookable, HookableCollection, Plugable, PlugableCollection])
+// export interface Shortcuts<TPlugins> extends HookableCollection<ShortcutsHook>, PlugableCollection<TPlugins> { }
+// mixin(Shortcuts, [Hookable, HookableCollection, Plugable, PlugableCollection])

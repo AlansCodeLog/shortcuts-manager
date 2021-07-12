@@ -1,7 +1,7 @@
-import { Plugable } from "./Plugable"
-
 import type { Plugin } from "@/classes"
 import type { DeepPartialObj, OrToAnd, PluginInfo } from "@/types"
+import { Plugable } from "./Plugable"
+
 
 
 export class PlugableBase<
@@ -11,7 +11,16 @@ export class PlugableBase<
 		OrToAnd<PluginInfo<TPlugins[number]>>,
 > extends Plugable<TPlugins> {
 	info!: TInfo
-	protected _plugableConstructor(plugins: Plugin<any>[] | undefined, info: DeepPartialObj<TInfo> | undefined, key: string | undefined): void {
+	_constructor(
+		{ plugableBase: { plugins, info, key } }:
+		{
+			plugableBase: {
+				plugins: Plugin<any>[] | undefined,
+				info: DeepPartialObj<TInfo> | undefined,
+				key: string | undefined
+			}
+		}
+	): void {
 		this.key = key
 		if (info && !plugins) super._throwNoPluginsError(info)
 		if (plugins !== undefined) {

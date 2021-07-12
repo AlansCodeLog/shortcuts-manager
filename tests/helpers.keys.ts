@@ -1,170 +1,102 @@
-import { Key, Keys } from "@/classes"
+import { Key } from "@/classes"
 
 
-const keyA = new Key("a")
-const keyB = new Key("b")
-const keyC = new Key("c")
+const a = new Key("a")
+const b = new Key("b")
+const c = new Key("c")
 const modA = new Key("modA", { is: { modifier: true } })
 const modB = new Key("modB", { is: { modifier: true } })
-const mouse1 = new Key("mouse1", {
-	is: {
-		// mouse: 1
-	},
+const mouse1 = new Key("1", {
 })
-const mouse2 = new Key("mouse2", {
-	is: {
-		// mouse: 2
-	},
+const mouse2 = new Key("2", {
 })
-const wheelUp = new Key("wheelUp", {
-	is: {
-		// wheel: "up"
-	},
+const wheelUp = new Key("WheelUp", {
 })
-const wheelDown = new Key("wheelDown", {
-	is: {
-		// wheel: "down"
-	},
+const wheelDown = new Key("WheelDown", {
 })
-const modMouse1 = new Key("modMouse1", {
+const modMouse1 = new Key("1", {
 	is: {
-		// mouse: 1,
 		modifier: true,
 	},
 })
-const modToggleMouse3 = new Key("modToggleMouse3", {
-	is: {
-		// mouse: 3,
-		modifier: true,
-		toggle: "emulated",
-	},
-})
-const modToggle = new Key("modToggle", {
+const modToggleMouse3 = new Key("3", {
 	is: {
 		modifier: true,
 		toggle: "emulated",
 	},
 })
-const toggleMouse4 = new Key("toggleMouse4", {
+const modToggle = new Key("ControlLeft", {
+	is: {
+		modifier: true,
+		toggle: "emulated",
+	},
+})
+const toggleMouse4 = new Key("4", {
+	is: {
+		toggle: "emulated",
+	},
+})
+const toggleWheelUp = new Key("WheelUp", {
+	is: {
+		toggle: "emulated",
+	},
+})
+const toggleWheelDown = new Key("WheelDown", {
+	is: {
+		toggle: "emulated",
+	},
+})
+const modToggleWheelUp = new Key("WheelUp", {
+	is: {
+		toggle: "emulated",
+		modifier: true,
+	},
+})
+const modToggleWheelDown = new Key("WheelDown", {
+	is: {
+		modifier: true,
+		toggle: "emulated",
+	},
+})
+const modWheelUp = new Key("WheelUp", {
+	is: {
+		modifier: true,
+	},
+})
+const modWheelDown = new Key("WheelDown", {
+	is: {
+		modifier: true,
+	},
+})
+const toggle1 = new Key("Digit1", { is: { toggle: true } })
+const toggle2 = new Key("Digit2", { is: { toggle: true } })
+const explicitToggle = new Key("CapsLock", { is: { toggle: "native" } })
 
-	is: {
-		// mouse: 4,
-		toggle: "emulated",
-	},
-})
-const toggleWheelUp = new Key("toggleWheelUp", {
-	is: {
-		// wheel: "up",
-		toggle: "emulated",
-	},
-})
-const toggleWheelDown = new Key("toggleWheelDown", {
-	is: {
-		// wheel: "down",
-		toggle: "emulated",
-	},
-})
-const modToggleWheelUp = new Key("modToggleWheelUp", {
-	is: {
-		// wheel: "up",
-		toggle: "emulated",
-		modifier: true,
-	},
-})
-const modToggleWheelDown = new Key("modToggleWheelDown", {
-	is: {
-		// wheel: "down",
-		modifier: true,
-		toggle: "emulated",
-	},
-})
-const modWheelUp = new Key("modWheelUp", {
-	is: {
-		// wheel: "up",
-		modifier: true,
-	},
-})
-const modWheelDown = new Key("modWheelDown", {
-	is: {
-		// wheel: "down",
-		modifier: true,
-	},
-})
-const toggle1 = new Key("toggle1", { is: { toggle: true } })
-const toggle2 = new Key("toggle2", { is: { toggle: true } })
-const explicitToggle = new Key("explicitToggle", { is: { toggle: "native" } })
-
-export const keys = new Keys([
-	toggleWheelUp,
-	toggleWheelDown,
-	toggleMouse4,
-	toggle2,
-	toggle1,
-	explicitToggle,
-	wheelUp,
-	wheelDown,
-	mouse2,
-	mouse1,
-	keyC,
-	keyB,
-	keyA,
-	modToggleWheelUp,
-	modToggleWheelDown,
-	modToggleMouse3,
-	modToggle,
-	modWheelUp,
-	modWheelDown,
-	modMouse1,
-	modB,
+export const k = {
 	modA,
-])
+	modB,
+	modMouse1,
+	modWheelDown,
+	modWheelUp,
+	modToggle,
+	modToggleMouse3,
+	modToggleWheelDown,
+	modToggleWheelUp,
+	a,
+	b,
+	c,
+	mouse1,
+	mouse2,
+	wheelDown,
+	wheelUp,
+	explicitToggle,
+	toggle1,
+	toggle2,
+	toggleMouse4,
+	toggleWheelDown,
+	toggleWheelUp,
+}
 
-export const k = keys.entries
-
-export const reverseOrder = [
-	k.toggleWheelUp,
-	k.toggleWheelUp.on!,
-	k.toggleWheelUp.off!,
-	k.toggleWheelDown,
-	k.toggleWheelDown.on!,
-	k.toggleWheelDown.off!,
-	k.toggleMouse4,
-	k.toggleMouse4.on!,
-	k.toggleMouse4.off!,
-	k.toggle2,
-	k.toggle2.on!,
-	k.toggle2.off!,
-	k.toggle1,
-	k.toggle1.on!,
-	k.toggle1.off!,
-	k.explicitToggle,
-	k.explicitToggle.on!,
-	k.explicitToggle.off!,
-	k.wheelUp,
-	k.wheelDown,
-	k.mouse2,
-	k.mouse1,
-	k.c,
-	k.b,
-	k.a,
-	k.modToggleWheelUp,
-	k.modToggleWheelUp.on!,
-	k.modToggleWheelUp.off!,
-	k.modToggleWheelDown,
-	k.modToggleWheelDown.on!,
-	k.modToggleWheelDown.off!,
-	k.modToggleMouse3,
-	k.modToggleMouse3.on!,
-	k.modToggleMouse3.off!,
-	k.modToggle,
-	k.modToggle.on!,
-	k.modToggle.off!,
-	k.modWheelUp,
-	k.modWheelDown,
-	k.modMouse1,
-	k.modB,
-	k.modA,
-]
 
 export const properOrder = [
 	k.modA,
@@ -211,13 +143,5 @@ export const properOrder = [
 	k.toggleWheelUp.on!,
 ]
 
-/**
- * Generate the lists to paste here if we see the output is correct
- */
-export function logOrder(sorted: Key[], reverse: boolean = false): void {
-	let asVars = sorted.map(key => `k.${key.id.replace(/_(on|off)/, ".$1!")}`)
-	asVars = reverse
-		? asVars.reverse()
-		: asVars
-	console.log(asVars.join(",\n"))
-}
+// inspect the key sort type
+// console.log(properOrder.map(key => `${key} - ${KEY_SORT_POS[keyOrder(key, KEY_SORT_POS)]}`).join("\n"));

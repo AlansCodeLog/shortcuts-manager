@@ -1,10 +1,9 @@
-import { mixin } from "@utils/utils"
-
+import { KnownError } from "@/helpers"
+import { MixinHookablePlugableBase } from "@/mixins"
+import { DeepPartialObj, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleProxy, TYPE_ERROR } from "@/types"
 import type { Plugin } from "./Plugin"
 
-import { KnownError } from "@/helpers"
-import { Hookable, HookableBase, Plugable, PlugableBase } from "@/mixins"
-import { DeepPartialObj, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleProxy, TYPE_ERROR } from "@/types"
+
 
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
@@ -19,7 +18,7 @@ export class Key<
 	TId extends
 		string =
 		string,
-> implements Omit<KeyOptions, "toString"> {
+> extends MixinHookablePlugableBase<KeyHooks,TPlugins, TInfo> implements Omit<KeyOptions, "toString">  {
 	readonly #id: TId
 	/** See {@link KeyOptions.is} */
 	readonly is: KeyOptions["is"]
@@ -70,8 +69,22 @@ export class Key<
 		info?: DeepPartialObj<TInfo>,
 		plugins?: TPlugins
 	) {
+		super()
 		this.#id = id
 		this.#label = opts.label ?? id
+		// these should function like real properties, enumerable and visible to JSON.stringify
+		Object.defineProperties(this, {
+			id: {
+				get: function(): string { return this.#id },
+				set: function(_: string):void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
+				enumerable: true,
+			},
+			label: {
+				get: function (): string { return typeof this.#label === "function" ? this.#label(this) : this.#label },
+				set: function (_: string): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The label property of a key cannot be changed once set.", undefined) },
+				enumerable: true
+			}
+		});
 		this.variants = opts.variants ?? false
 
 		this.#stringify = opts.stringify
@@ -82,7 +95,7 @@ export class Key<
 		if (opts.is?.toggle) {
 			this.is.toggle = opts.is.toggle === true
 				? "native"
-				: this.is.toggle
+				: opts.is.toggle
 			/* eslint-disable @typescript-eslint/no-unused-vars */
 			/* eslint-disable prefer-rest-params */
 			if (arguments[4] !== BYPASS_TOGGLE_CREATION) {
@@ -95,8 +108,10 @@ export class Key<
 
 		Object.freeze(this.is)
 		Object.freeze(this.variants)
-		this._plugableConstructor(plugins, info, "id")
-		this._hookableConstructor(["allows", "set"])
+		this._mixin({
+			hookable: { keys: ["allows", "set"] },
+			plugableBase: { plugins, info, key: "id"}
+		})
 	}
 	/**
 	 * Adds on/off toggle states to the instance.
@@ -121,10 +136,13 @@ export class Key<
 	 *
 	 * For toggles, pass the key code like normal (e.g. `CapsLock`), see {@link KeyOptions.is.toggle} for how to implement toggles.
 	 */
-	get id(): string {return this.#id}
-	set id(_value: string) {throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined)}
-	get label(): string {return typeof this.#label === "function" ? this.#label(this) : this.#label}
-	set label(value: string) {this.#label = value}
+	declare id: string
+	/**
+	 * The preferred human readable version of a key.
+	 *
+	 * See {@link KeyOptions.label}
+	 */
+	declare label: string
 	/**
 	 * Returns whether the key passed is equal to this one.
 	 *
@@ -140,16 +158,15 @@ export class Key<
 			)
 		)
 	}
-	toString(): string {
+	override toString(): string {
 		if (this.#stringify) return this.#stringify(this)
 		return typeof this.opts.label === "function" ? this.opts.label(this) : this.opts.label
 	}
 	get opts(): KeyOptions {
-		const { is, variants, #stringify: stringify, #label: label } = this
-		return { is, variants, stringify, label }
+		return { is:this.is, variants: this.variants, stringify: this.#stringify, label: this.#label }
 	}
 }
 
-export interface Key<TPlugins, TInfo> extends HookableBase<KeyHooks>, PlugableBase<TPlugins, TInfo> {}
-mixin(Key, [Hookable, HookableBase, Plugable, PlugableBase])
+// export interface Key<TPlugins, TInfo> extends HookableBase<KeyHooks>, PlugableBase<TPlugins, TInfo> {}
+// mixin(Key, [Hookable, HookableBase, Plugable, PlugableBase])
 

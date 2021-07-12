@@ -1,23 +1,14 @@
-import { crop, mixin } from "@alanscodelog/utils"
-
+import { defaultCallback, KnownError } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { CommandsHook, ERROR, ErrorCallback, OnlyRequire, RecordFromArray } from "@/types"
+import { crop } from "@alanscodelog/utils"
 import { Command } from "./Command"
 import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
-import { defaultCallback, KnownError } from "@/helpers"
-import { Hookable, HookableCollection, Plugable, PlugableCollection } from "@/mixins"
-import { CommandsHook, ERROR, ErrorCallback, OnlyRequire, RecordFromArray } from "@/types"
 
 
-/**
- * Creates a set of commands.
- *
- * It will mutate the object passed. In the case it's already an instance, if plugins are passed, it forces the commands to conform to those (adds missing properties, etc.).
- *
- * @throws (see [[ERROR]] for why):
- * - [[TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES]]
- * - [[ERROR.DUPLICATE_COMMAND]] (because of [[Commands.add]])
- */
+
 export class Commands<
 	// See [[Plugable]]
 	TPlugins extends
@@ -33,14 +24,32 @@ export class Commands<
 	TEntries extends
 		RecordFromArray<TRawCommands, "name", TCommand> =
 		RecordFromArray<TRawCommands, "name", TCommand>,
-> {
+> extends MixinHookablePlugableCollection<CommandsHook, TPlugins> {
 	entries: TEntries
-	readonly plugins?: TPlugins
+	/**
+	 * # Commands
+	 * Creates a set of commands.
+	 *
+	 * Note:
+	 * - This will mutate the keys passed to it.
+	 * - It can throw. See {@link ERROR} for why.
+	 *
+	 * @template TPlugins **@internal** See {@link PlugableCollection}
+	 * @template TCommand **@internal** See {@link ./README.md Collection Entries}
+	 * @template TRawCommands **@internal** Allow passing raw commands.
+	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
+	 * @param commands A list of {@link Command | commands}.
+	 * @param plugins See {@link Commands.plugins}
+	 */
 	constructor(
 		commands: TRawCommands,
 		plugins?: TPlugins,
 	) {
-		this._hookableConstructor(["allows", "add"])
+		super()
+		this._mixin({
+			hookable: { keys: ["allows", "add"] },
+			plugableCollection: { plugins, key: "name" }
+		})
 		if (plugins) {
 			Plugable._canAddPlugins(plugins)
 			this.plugins = plugins
@@ -51,7 +60,7 @@ export class Commands<
 			this.add(command, defaultCallback)
 		})
 	}
-	protected _add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
+	protected override _add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
 		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
 		instance.addHook("allows", (type, value, old) => {
 			if (type === "name") {
@@ -80,5 +89,5 @@ export class Commands<
 		return this.entries[id as keyof TEntries].info
 	}
 }
-export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }
-mixin(Commands, [Hookable, HookableCollection, Plugable, PlugableCollection])
+// export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }
+// mixin(Commands, [Hookable, HookableCollection, Plugable, PlugableCollection])

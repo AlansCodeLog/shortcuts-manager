@@ -1,10 +1,11 @@
-import { inspectError, testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
 import { Key } from "@/classes"
+import { isToggleOffKey, isToggleOnKey } from "@/helpers"
+import { inspectError, testName } from "@alanscodelog/utils"
+import { expect } from "./chai"
 
 
-describe(testName(), () => {
+
+describe.skip(testName(), () => {
 	it("allows getting opts back", () => {
 		const key = new Key("a")
 		expect(Object.keys(key.opts).length).to.be.greaterThan(0)
@@ -26,9 +27,7 @@ describe(testName(), () => {
 	})
 	it("should create toggle key properly", () => {
 		function label(key: Key): string {
-			console.log(key.id)
-
-			return `a ${key.id.endsWith("_on") ? "(On)" : key.id.endsWith("_off") ? "(Off)" : ""}`
+			return isToggleOnKey(key) ? `${key.root.id} (On)` : isToggleOffKey(key) ? `${key.root.id} (Off)` : `${key.id}`
 		}
 		const key2 = new Key("a", { is: { toggle: false } })
 		expect(key2.on).to.not.exist
@@ -38,7 +37,7 @@ describe(testName(), () => {
 
 
 		expect(on).to.exist
-		expect(on.id).to.equal("a_on")
+		expect(on.id).to.equal("aOn")
 		expect(on.label).to.equal("a (On)")
 		expect(off.label).to.equal("a (Off)")
 		expect(on.toString()).to.equal("a (On)")
@@ -105,15 +104,10 @@ describe(testName(), () => {
 		expect(key.on!.id).to.equal("aOn")
 		expect(key.off!.id).to.equal("aOff")
 	})
-	// it("parser should correctly stringify", () => {
-	// 	const key = new Key("doesn't matter")
-	// 	const parser = key.parser
-	// 	expect(parser.stringify.any(k.a)).to.equal("a")
-	// 	expect(parser.stringify.any([k.a])).to.equal("a")
-	// 	expect(parser.stringify.any([k.modA, k.a])).to.equal("modA+a")
-	// 	expect(parser.stringify.any([[k.modA, k.a]])).to.equal("modA+a")
-	// 	expect(parser.stringify.any([[k.modA, k.a]])).to.equal("modA+a")
-	// 	expect(parser.stringify.any([[k.modA, k.a], [k.a]])).to.equal("modA+a a")
-	// 	expect(parser.stringify.any([[k.modA, k.a, k.toggle1], [k.toggle1.on!], [k.toggle1.off!]])).to.equal("modA+a+toggle1 toggle1_on toggle1_off")
-	// })
+	it("toString works", () => {
+		const key1 = new Key("a")
+		const key2 = new Key("a", { stringify: (_key) => "Bla" })
+		expect(`${key1}`).to.equal("a")
+		expect(`${key2}`).to.equal("Bla")
+	})
 })

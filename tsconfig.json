@@ -17,11 +17,12 @@
       "esnext",
       "dom",
     ],
+    "noImplicitOverride": true
   },
   "include": [
     "src/**/*.ts",
     "src/**/*.ts",
-    "tests/**/*.ts",
+    "tests/**/*.spec.ts",
     "*.ts",
   ],
 }

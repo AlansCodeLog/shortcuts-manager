@@ -1,7 +1,7 @@
-import { testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
 import { Condition, Context } from "@/classes"
+import { testName } from "@alanscodelog/utils"
+import { expect } from "./chai"
+
 
 
 describe(testName(), () => {

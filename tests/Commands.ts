@@ -1,7 +1,7 @@
-import { inspectError, testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
 import { Command, Commands } from "@/classes"
+import { inspectError, testName } from "@alanscodelog/utils"
+import { expect } from "./chai"
+
 
 
 describe(testName(), () => {

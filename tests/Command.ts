@@ -1,8 +1,8 @@
-import { inspectError, testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
 import { Command, Condition } from "@/classes"
 import type { CommandOptions } from "@/types"
+import { inspectError, testName } from "@alanscodelog/utils"
+import { expect } from "./chai"
+
 
 
 describe(testName(), () => {

@@ -1,11 +1,11 @@
+import type { Key, KeysStringifier } from "@/classes"
+import type { KnownError } from "@/helpers"
 import type { DeepPartial } from "@alanscodelog/utils"
-
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { OnlyRequire } from "./utils"
 
-import type { Key } from "@/classes"
-import type { KnownError } from "@/helpers"
+
 
 
 // import type{ KnownError } from "@/helpers"
@@ -130,6 +130,10 @@ export type KeyOptions = {
 }
 
 export type KeysOptions = {
+	/**
+	 * See {@link KeysStringifier}
+	 */
+	stringifier?: KeysStringifier
 }
 
 export type KeysSorterOptions = {
@@ -141,7 +145,7 @@ export type KeysSorterOptions = {
 	 * Specify a completely custom sort function.
 	 * [[ShortcutOptions.order]] will be ignored, though it will be available via this.sort because the function (which should NOT be an arrow function) is bound to [[ShortcutOptions]] which also means any other options (like [[ShortcutOptions.parser]]) are also available.
 	 */
-	sort: (shortcut1: Key, shortcut2: Key) => number
+	sort?: (shortcut1: Key, shortcut2: Key, order: KeysSorterOptions["order"]) => number
 }
 
 

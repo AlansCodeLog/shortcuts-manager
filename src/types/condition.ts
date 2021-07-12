@@ -1,7 +1,5 @@
-import type { PluginsInfo } from "./plugin"
-
 import type { Condition, Context, Plugin } from "@/classes"
-
+import type { PluginsInfo } from "./plugin"
 
 /**
  *	{@link Condition}'s options.
@@ -32,15 +30,15 @@ export type ConditionOptions<
 	 */
 	eval?: (self: Condition<TPlugins, TInfo>, context: Context) => boolean
 	/**
-	 * By default, all conditions only check any plugin properties according to the plugin's equals method. Otherwise (e.g. no plugins are being used) they are all considered equal.
+	 * By default, all conditions will check their `text` property for equality.
 	 *
-	 * Unless you're using simple single variable conditions (i.e. not boolean expressions) you will probably want to just use the default behavior and pass an `equals` method to plugins that always returns true.
+	 * Now, unless you're using simple single variable conditions that you can presort to make them uniquely identifiable (i.e. not boolean expressions, e.g. `!a b !c`), this will return A LOT of false negatives, to the point you might just want the equals method to always return false.
 	 *
-	 * Why? Because two conditions might be functionally equal but have differing representations (e.g: `a && b`, `b && a`). Normalizing them (converting them to CNF) can be dangerous with very long expressions because it can take exponential time.
+	 * Why the false negatives? Because two conditions might be functionally equal but have differing representations (e.g: `a && b`, `b && a`). You might think, okay, lets normalize them all, but normalizing boolean expressions (converting them to CNF)  can be dangerous with very long expressions because it can take exponential time.
 	 *
-	 * The main reason you might want to check the equality of two conditions is to check if two shortcuts might conflict. The simpler alternative is to not try to do this. Instead when the user triggers more than one shortcut, only trigger the first and display a warning regarding the others.
+	 * Why make this return false? Well, the main reason for checking the equality of two conditions is usually to check if two shortcuts might conflict. This is a personal preference, but it can be confusing that some shortcuts immediately error because they're duplicates, while others that feel like they should don't. The simpler, more consistent alternative is to instead just wait for the user to trigger more than one shortcut, only trigger the first and display a warning regarding the others. Also conflicting conditions can be shown on the keyboard layout *when* then user picks contexts to check against.
 	 *
-	 * If you do decide to implement a custom method, note, it will have to call {@link PlugableBase.equalsInfo equalsInfo} itself.
+	 * Why use the default implementation at all then? Well, shortcuts aren't the only ones that have conditions, commands can to, but unlike shortcuts, usually it's developers who are in charge of assigning a command's condition, and since they are usually simple, it's more possible to make sure the conditions are unique (e.g. tests could enforce they're unique by converting them all to CNF and pre-checking them for equality).
 	 */
 	equals?: (self: Condition<TPlugins, TInfo>, condition: Condition) => boolean
 }

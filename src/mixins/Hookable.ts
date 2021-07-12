@@ -1,7 +1,7 @@
-import { crop, indent, pretty } from "@utils/utils"
+import { KnownError } from "@/helpers";
+import { TYPE_ERROR } from "@/types";
+import { crop, indent, pretty } from "@utils/utils";
 
-import { KnownError } from "@/helpers"
-import { TYPE_ERROR } from "@/types"
 
 
 export class Hookable<
@@ -9,7 +9,7 @@ export class Hookable<
 	TTypes extends keyof THooks = keyof THooks,
 > {
 	listeners!: {[K in keyof THooks]: THooks[K][] }
-	protected _hookableConstructor(keys: TTypes[]): void {
+	protected _constructor({hookable:{ keys }}:{hookable:{ keys: TTypes[]}}): void {
 		this.listeners = {} as any
 		for (const key of keys) this.listeners[key] = [] as any
 	}

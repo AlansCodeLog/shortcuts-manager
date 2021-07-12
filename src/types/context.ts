@@ -25,8 +25,6 @@ export type ContextOptions<
 > = {
 	/**
 	 * If you have contexts that are more complicated than simple flat or nested objects (simple as in values should not be arrays), you will need to implement a custom `equals` method to use.
-	 *
-	 * Note the method will have to call {@link PlugableBase.equalsInfo equalsInfo} itself.
 	 */
 	equals?: (self: Context<TValue>, context: Context) => boolean
 }

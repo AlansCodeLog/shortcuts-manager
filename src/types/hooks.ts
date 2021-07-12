@@ -1,3 +1,4 @@
+
 export type BaseHookType<TValue, TError, TOld = TValue> = {
 	value: TValue
 	error: TError
@@ -70,3 +71,9 @@ export type CollectionHook<
 		cb: (e: TError) => void,
 	) => void
 )
+
+
+// export abstract class HookableCollectionImplementation<THook extends CollectionHookType<any, any, any>> {
+// 	protected abstract _add (_value: THook["value"], _cb: ErrorCallback<any>): void;
+// 	protected abstract  _allows(_value: THook["value"], _cb: ErrorCallback<any>): void
+// }

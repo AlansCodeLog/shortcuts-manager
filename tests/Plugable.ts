@@ -1,11 +1,11 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
 import { inspectError, testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
+import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
-import { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+
 
 
 const pluginInfoDict = {

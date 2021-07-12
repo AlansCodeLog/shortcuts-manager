@@ -1,9 +1,9 @@
+import type { Key, KeysStringifier } from "@/classes"
+import { ERROR } from "@/types"
 import { crop } from "@alanscodelog/utils"
-
 import { KnownError } from "./KnownError"
 
-import type { Key } from "@/classes"
-import { ERROR } from "@/types"
+
 
 
 /**
@@ -14,6 +14,7 @@ import { ERROR } from "@/types"
  */
 export function throwIfImpossibleToggles(
 	shortcut: Key[][],
+	stringifier: KeysStringifier
 ): void {
 	const prevToggles: [Key, number][] = []
 	let num = 0
@@ -65,12 +66,11 @@ export function throwIfImpossibleToggles(
 		if (found) break
 	}
 	if (impossible) {
-		const prettyShortcut = shortcut // TODO
-		// const prettyShortcut = parser.stringify.any(shortcut)
+		const prettyShortcut = stringifier.stringify(shortcut)
 		const { pos, key } = impossible
 		throw new KnownError(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE, crop`
 			Shortcut "${prettyShortcut}" is impossible.
-			This shortcut has a toggle key state "${key/* .string */}" at key #${pos + 1} that would be impossible to trigger.
-		`, { shortcut, key, i: pos }) // TODO           ^
+			This shortcut has a toggle key state "${stringifier.stringify(key)}" at key #${pos + 1} that would be impossible to trigger.
+		`, { shortcut, key, i: pos })
 	}
 }

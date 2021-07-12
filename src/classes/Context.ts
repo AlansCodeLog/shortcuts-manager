@@ -1,12 +1,8 @@
-import { mixin } from "@alanscodelog/utils"
-
+import { MixinPlugableBase } from "@/mixins"
+import type { PluginsInfo } from "@/types"
+import type { ContextOptions, RecursiveRecord } from "@/types/context"
 import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
-
-import { Plugable, PlugableBase } from "@/mixins"
-import type { IgnoreUnusedTypes, PluginsInfo } from "@/types"
-import type { ContextOptions, RecursiveRecord } from "@/types/context"
-
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
 	const keys1 = Object.keys(obj)
@@ -31,10 +27,10 @@ export class Context<
 	TInfo extends
 		PluginsInfo<TPlugins> =
 		PluginsInfo<TPlugins>,
-> {
+> extends MixinPlugableBase<TPlugins, TInfo>{
 	/** Where the context object is stored. */
 	value: TValue
-	#equals: NonNullable<ContextOptions<TValue>["equals"]>
+	#equals: ContextOptions<TValue>["equals"]
 	/**
 	 * # Context
 	 *
@@ -60,12 +56,12 @@ export class Context<
 		info?: TInfo,
 		plugins?: TPlugins
 	) {
+		super()
 		this.value = context
-		this.#equals = opts.equals ?? this.#defaultEquals
-		this._plugableConstructor(plugins, info, undefined)
-	}
-	#defaultEquals(self: Context<TValue>, context: Context<any>): boolean {
-		return fastIsEqual(self.value, context.value) && this.equalsInfo(context)
+		if (opts.equals) this.#equals = opts.equals
+		this._mixin({
+			plugableBase: { plugins, info, key: undefined }
+		})
 	}
 	/**
 	 * Returns whether the context passed is equal to this one.
@@ -73,13 +69,17 @@ export class Context<
 	 * To return true, their values must be equal according to the class (see {@link ContextOptions.equals}), and they must be equal according to their plugins.
 	 */
 	equals(context: Context<TValue, any, any>): context is Context<TValue, TPlugins, TInfo> {
-		return this.#equals(this, context)
+		if (this.#equals) return this.#equals(this, context) && this.equalsInfo(context)
+		return fastIsEqual(this.value, context.value) && this.equalsInfo(context)
 	}
 	/** A wrapper around the parameter's eval function if you prefer to write `context.eval(condition)` instead of `condition.eval(context)` */
 	eval(condition: Condition): boolean {
 		return condition.eval(this)
 	}
+	get opts() {
+		return { equals: this.#equals }
+	}
 }
 
-export interface Context<TValue, TPlugins, TInfo> extends PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TValue]> { }
-mixin(Context, [Plugable, PlugableBase])
+// export interface Context<TValue, TPlugins, TInfo> extends PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TValue]> { }
+// mixin(Context, [Plugable, PlugableBase])

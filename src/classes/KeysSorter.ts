@@ -1,49 +1,48 @@
+import { keyOrder } from "@/helpers"
+import { KeysSorterOptions, KEY_SORT_POS } from "@/types"
 import type { Key } from "./Key"
 
-import { keyOrder } from "@/helpers"
-import { KEY_SORT_POS, KeysSorterOptions } from "@/types"
-
-
-const defaultOpts: KeysSorterOptions = {
-	order: KEY_SORT_POS,
-	sort(a: Key, b: Key): number {
-		// -1 = a b
-		if (keyOrder(a, this.order) < keyOrder(b, this.order)) return -1
-		// 1 = b a
-		if (keyOrder(b, this.order) < keyOrder(a, this.order)) return 1
-		return a.id.localeCompare(b.id) // => alphabetical
-		// Note: technically this doesn't affect "normal" (non-modifier/mouse/wheel/toggle keys) keys since there can only ever be one per chord.
-	},
-}
-
-function init(self: any, defaults: KeysSorterOptions, opts: Partial<KeysSorterOptions>): asserts self is KeysSorterOptions {
-	self = self ?? {}
-	self.order = opts.order ?? defaults.order
-	self.sort = (opts.sort ?? defaults.sort).bind(self)
-}
 
 /**
- * Creates a keys sorter for shortcuts.
+ * Creates a keys sorter for shortcut chords.
  *
- * Can either be passed some re-arranged enum of KeySortPos, for example:
+ * Can either be passed some re-arranged enum of KeySortPos or it's keys, for example:
  * ```ts
  * let MyKeySortPos = {
- * 	KeySortPos.modmouse,
- * 	KeySortPos.mod,
+ * 	KEY_SORT_POS.modmouse,
+ * 	KEY_SORT_POS.mod,
+ * 	// or
+ * 	"modmouse",
+ * 	"mod",
  * 	//...
  * }
- * // They way this works is the enum should contain every possible combination of key "types". All sort does is determine the type and use it's position in the enum to know where to sort it.
+ *
+ * const mySorter = new KeysSorter({order: MyKeySortPos})
+ * new Shortcut([...keys], {sorter: mySorter})
  * ```
+ * They way this works is the enum should contain every possible combination of key "types". All sort does is determine the type and use it's position in the enum to know where to sort it. If two keys are of the same type, they are sorted alphabetically by their id.
+ *
  * Or you can pass a completely custom sort function if you really want to (in which case the order option will remain unused unless you use it).
  */
-export class KeysSorter implements KeysSorterOptions {
-	order!: KeysSorterOptions["order"]
-	sort!: KeysSorterOptions["sort"]
-	constructor(opts: Partial<KeysSorterOptions> = {}) {
-		init(this, defaultOpts, opts)
+export class KeysSorter {
+	order: KeysSorterOptions["order"] = KEY_SORT_POS
+	#sort: KeysSorterOptions["sort"]
+	#defaultSort(a: Key, b: Key, order: KeysSorterOptions["order"]): number {
+		// -1 = a b
+		if (keyOrder(a, order) < keyOrder(b, order)) return -1
+		// 1 = b a
+		if (keyOrder(b, order) < keyOrder(a, order)) return 1
+		return a.id.localeCompare(b.id) // => alphabetical
 	}
-	get opts(): KeysSorterOptions {
-		return { order: this.order, sort: this.sort }
+	constructor(opts: Partial<KeysSorterOptions> = {}) {
+		if (opts.order) this.order = opts.order
+		if (opts.sort) this.#sort = opts.sort
+	}
+	sort(keys: Key[]): Key[] {
+		if (this.#sort) {
+			return keys.sort((a, b) => this.#sort!(a, b, this.order))
+		}
+		return keys.sort((a, b) => this.#defaultSort!(a, b, this.order))
 	}
 }
 

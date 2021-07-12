@@ -1,10 +1,10 @@
-import { inspectError, testName } from "@alanscodelog/utils"
-import { expect } from "chai"
-
-import { k, properOrder, reverseOrder } from "./helpers.keys"
-
-import { Command, Condition, Shortcut } from "@/classes"
+import { Shortcut } from "@/classes"
 import { defaultSorter } from "@/classes/KeysSorter"
+import { inspectError, testName } from "@alanscodelog/utils"
+import { expect } from "./chai"
+import { k, properOrder } from "./helpers.keys"
+
+
 
 
 describe(testName(), () => {
@@ -21,7 +21,7 @@ describe(testName(), () => {
 	})
 	it("should throw if duplicate keys in chords", () => {
 		expect(inspectError(() => {
-			new Shortcut([[k.a, k.a]])
+			new Shortcut([[k.a, k.a, k.a]])
 		}, false)).to.throw()
 	})
 	it("should not throw if duplicate keys in different chords", () => {
@@ -122,108 +122,12 @@ describe(testName(), () => {
 		}, false)).to.not.throw()
 	})
 	it("should sort keys properly", () => {
-		/**
-		 * Tests the actual default sort function because if we tested this with an actual shortcut we wouldn't be able to feed it all the keys (since it would throw errors because of the duplicate keys).
-		 */
 
-		const keys = [...reverseOrder]
+		const reverseOrder = [...properOrder].reverse()
+		expect(reverseOrder[0]).to.not.equal(properOrder[0])
 
-		const sorted = keys.sort(defaultSorter.sort)
-		expect(sorted).to.deep.equal(properOrder)
-	})
-	describe("should handle it's condition and command's condition properly", () => {
-		describe("should throw", () => {
-			it("using a condition that is not a subcondition of the command", () => {
-				expect(inspectError(() => {
-					new Shortcut([[]], {
-						command: new Command("command", { condition: new Condition("a") }),
-						condition: new Condition("b"),
-					})
-				}, false)).to.throw()
-			})
-			it("trying to change to a condition that is not a subcondition of the command", () => {
-				const shortcut = new Shortcut([[]], {
-					command: new Command("command", { condition: new Condition("a") }),
-				})
-				expect(inspectError(() => {
-					shortcut.set("condition", new Condition("b"))
-				}, false)).to.throw()
-			})
-			it("trying to change to the command's condition to a narrower one", () => {
-				const command = new Command("command", { condition: new Condition("a") })
-				new Shortcut([[]], {
-					condition: new Condition("a"),
-					command,
-				})
-				expect(inspectError(() => {
-					command.set("condition", new Condition("b"))
-				}, false)).to.throw()
-			})
-		})
-		describe("should not throw ", () => {
-			it("condition is subcondition of command", () => {
-				expect(inspectError(() => {
-					new Shortcut([[]], {
-						command: new Command("command", { condition: new Condition("a") }),
-						condition: new Condition("a"),
-					})
-				}, false)).to.not.throw()
-			})
+		const sorted = defaultSorter.sort(reverseOrder)
 
-			it("trying to change condition to subcondition of command", () => {
-				const shortcut = new Shortcut([[]], {
-					command: new Command("command", { condition: new Condition("a") }),
-				})
-				expect(inspectError(() => {
-					shortcut.set("condition", new Condition("a"))
-				}, false)).to.not.throw()
-			})
-			it("trying to change command to a wider condition", () => {
-				const command = new Command("command", { condition: new Condition("b") })
-				new Shortcut([[]], {
-					command,
-					condition: new Condition("b"),
-				})
-				expect(inspectError(() => {
-					command.set("condition", new Condition("c || b"))
-				}, false)).to.not.throw()
-			})
-			it("condition is blank but command has condition", () => {
-				expect(inspectError(() => {
-					new Shortcut([[]], {
-						command: new Command("command", { condition: new Condition("a") }),
-						condition: new Condition(""),
-					})
-				}, false)).to.not.throw()
-			})
-			it("command condition is blank but had condition", () => {
-				expect(inspectError(() => {
-					new Shortcut([[]], {
-						command: new Command("command", { condition: new Condition("") }),
-						condition: new Condition("a"),
-					})
-				}, false)).to.not.throw()
-			})
-			it("trying to change to condition that is blank but command has condition", () => {
-				const condition = new Condition("a")
-				expect(inspectError(() => {
-					const shortcut = new Shortcut([[]], {
-						command: new Command("command", { condition: new Condition("a") }),
-						condition,
-					})
-					shortcut.set("condition", new Condition(""))
-				}, false)).to.not.throw()
-			})
-			it("trying to change to condition that  command condition is blank but had condition", () => {
-				const command = new Command("command", { condition: new Condition("a") })
-				expect(inspectError(() => {
-					new Shortcut([[]], {
-						command,
-						condition: new Condition("a"),
-					})
-					command.set("condition", new Condition(""))
-				}, false)).to.not.throw()
-			})
-		})
+		expect(sorted).to.partial.deep.equal(properOrder)
 	})
 })
