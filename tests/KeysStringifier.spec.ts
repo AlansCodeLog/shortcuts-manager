@@ -34,6 +34,4 @@ describe(testName(), () => {
 		expect(stringifier.stringify([keysList, keysList])).to.equal(`"a"~"b"~"c"="a"~"b"~"c"`)
 		expect(stringifier.stringifyKeys(keysList)).to.equal(crop`"a"!"b"!"c"`)
 	})
-
-
 })

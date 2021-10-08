@@ -23,6 +23,6 @@
     "src/**/*.ts",
     "src/**/*.ts",
     "tests/**/*.spec.ts",
-    "*.ts",
+    "*.ts", "tests/Shortcuts.ts", "tests/Command.ts",
   ],
 }

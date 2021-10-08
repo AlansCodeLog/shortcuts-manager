@@ -105,6 +105,7 @@ export class Condition<
 	 */
 	equals(condition: Condition): boolean {
 		if (this.#equals) return this.#equals(this, condition) && this.equalsInfo(condition)
+		if (this === condition) return true
 		return this.text === condition.text && this.equalsInfo(condition)
 	}
 	get opts(): ConditionOptions<TPlugins, TInfo> {

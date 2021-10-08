@@ -12,8 +12,8 @@ import type { Plugin } from "./Plugin"
 export class Commands<
 	// See [[Plugable]]
 	TPlugins extends
-		Plugin<any>[] =
-		Plugin<any>[],
+		Plugin<any, any>[] =
+		Plugin<any, any>[],
 	// See [[./README #Collection Entries]] for how this works
 	TCommand extends
 		Command<any, Condition, TPlugins> =
@@ -50,10 +50,6 @@ export class Commands<
 			hookable: { keys: ["allows", "add"] },
 			plugableCollection: { plugins, key: "name" }
 		})
-		if (plugins) {
-			Plugable._canAddPlugins(plugins)
-			this.plugins = plugins
-		}
 		this.entries = {} as TEntries
 
 		commands.forEach(command => {

@@ -29,7 +29,7 @@ export class Command<
 	/** Unique string to identify the command by. */
 	name: TName
 	/** The function to execute when a shortcut triggers it's command. */
-	execute: TExec = (() => { }) as TExec
+	execute: TExec = undefined as TExec
 	/** Commands may have an additional condition that must be met, apart from the shortcut's that triggered it. */
 	condition: TCondition = new Condition("") as TCondition
 	/** A description of what the command does. */
@@ -55,7 +55,7 @@ export class Command<
 	)
 	constructor(
 		name: TName,
-		opts: Optional<TOpts>,
+		opts: Optional<Partial<TOpts>>,
 		info: DeepPartialObj<TInfo>,
 		plugins: TPlugins
 	)
@@ -90,10 +90,7 @@ export class Command<
 			(
 				this.name === command.name
 				&& this.execute === command.execute
-				&& (
-					this.condition === command.condition
-					|| this.condition.equals(command.condition)
-				)
+				&& this.condition.equals(command.condition)
 				&& this.description === command.description
 				&& this.equalsInfo(command)
 			)

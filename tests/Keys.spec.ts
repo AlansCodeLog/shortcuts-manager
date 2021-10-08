@@ -1,10 +1,9 @@
 import { Key, Keys } from "@/classes"
-import { inspectError, testName } from "@alanscodelog/utils"
+import { ERROR } from "@/types"
+import { catchError, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
-
-
-describe.skip(testName(), () => {
+describe(testName(), () => {
 	it("should add keys", () => {
 		const keymap = new Keys([
 			new Key("a"),
@@ -21,18 +20,18 @@ describe.skip(testName(), () => {
 		expect(keymap.entries.b).to.exist
 	})
 	it("should throw on duplicate keys", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Keys([
 				new Key("a"),
 				new Key("a"),
 			])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.DUPLICATE_KEY)
+		expect(catchError(() => {
 			const keys = new Keys([
 				new Key("a"),
 			])
 			keys.add(new Key("a"))
-		}, false)).to.throw()
+		}).code).to.equal(ERROR.DUPLICATE_KEY)
 	})
 	describe("methods", () => {
 		const keyA = new Key("a")

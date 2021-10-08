@@ -19,8 +19,5 @@ export function keyOrder(key: Key, dictOrEnum: typeof KEY_SORT_POS | Record<keyo
 	if (type === "") {
 		type = "normal"
 	}
-	console.log(key.id, key.is, type);
-
-
 	return dictOrEnum[type as keyof typeof KEY_SORT_POS]
 }

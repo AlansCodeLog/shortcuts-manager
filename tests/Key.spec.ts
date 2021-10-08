@@ -1,21 +1,20 @@
 import { Key } from "@/classes"
 import { isToggleOffKey, isToggleOnKey } from "@/helpers"
-import { inspectError, testName } from "@alanscodelog/utils"
+import { TYPE_ERROR } from "@/types"
+import { catchError, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
-
-
-describe.skip(testName(), () => {
+describe(testName(), () => {
 	it("allows getting opts back", () => {
 		const key = new Key("a")
 		expect(Object.keys(key.opts).length).to.be.greaterThan(0)
 	})
 
 	it("should throw if info passed but no plugins", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			// @ts-expect-error we want the wrong overload to error
-			const key = new Key("a", { }, { test: "test" })
-		}, false)).to.throw()
+			const key = new Key("a", {}, { test: "test" })
+		}).code).to.equal(TYPE_ERROR.CLONER_NOT_SPECIFIED)
 	})
 	it("should compare equality properly", () => {
 		const key1 = new Key("a")

@@ -1,15 +1,15 @@
 import { Command, Condition } from "@/classes"
 import type { CommandOptions } from "@/types"
-import { inspectError, testName } from "@alanscodelog/utils"
+import { testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
 
 
 describe(testName(), () => {
 	it("creates a simple command", () => {
-		expect(inspectError(() => {
+		expect(() => {
 			new Command("command")
-		}, false)).to.not.throw()
+		}).to.not.throw()
 	})
 	it("allows getting opts back", () => {
 		const command = new Command("a")

@@ -1,9 +1,9 @@
+import type { Command, Condition } from "@/classes"
+import type { KnownError } from "@/helpers"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { OnlyRequire } from "./utils"
 
-import type { Command, Condition } from "@/classes"
-import type { KnownError } from "@/helpers"
 
 
 /**
@@ -25,7 +25,6 @@ export type CommandOptions<
 > = {
 	/**
 	 * See {@link Command.execute}
-	 * TODO
 	 */
 	execute: TExec
 	/**

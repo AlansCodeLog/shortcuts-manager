@@ -22,7 +22,7 @@ export class Shortcuts<
 		TShortcut[] =
 		TShortcut[],
 > extends MixinHookablePlugableCollection<ShortcutsHook, TPlugins> {
-	entries: TEntries
+	override entries: TEntries
 	/** See {@link KeysStringifier} */
 	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/**

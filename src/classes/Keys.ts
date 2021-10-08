@@ -9,8 +9,8 @@ import type { Plugin } from "./Plugin"
 
 export class Keys<
 	TPlugins extends
-		Plugin<any>[] =
-		Plugin<any>[],
+		Plugin<any, any>[] =
+		Plugin<any, any>[],
 	TKey extends
 		Key<TPlugins> =
 		Key<TPlugins>,
@@ -21,7 +21,7 @@ export class Keys<
 		RecordFromArray<TRawKeys, "id", TKey> =
 		RecordFromArray<TRawKeys, "id", TKey>,
 > extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
-	entries: TEntries
+	override entries: TEntries
 	stringifier: KeysOptions["stringifier"] = defaultStringifier
 	/**
 	 * Creates a set of keys.
@@ -48,12 +48,8 @@ export class Keys<
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 		this._mixin({
 			hookable: { keys: ["allows", "add"] },
-			plugableCollection: {plugins, key:"id"}
+			plugableCollection: { plugins, key:"id"}
 		})
-		if (plugins) {
-			PlugableCollection._canAddPlugins(plugins)
-			this.plugins = plugins
-		}
 
 		this.entries = {} as TEntries
 

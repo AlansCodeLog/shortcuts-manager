@@ -1,5 +1,6 @@
 import type { Plugin } from "@/classes"
 import type { DeepPartialObj, OrToAnd, PluginInfo } from "@/types"
+import { dedupe } from "@alanscodelog/utils"
 import { Plugable } from "./Plugable"
 
 
@@ -15,7 +16,7 @@ export class PlugableBase<
 		{ plugableBase: { plugins, info, key } }:
 		{
 			plugableBase: {
-				plugins: Plugin<any>[] | undefined,
+				plugins: Plugin<any, any>[] | undefined,
 				info: DeepPartialObj<TInfo> | undefined,
 				key: string | undefined
 			}
@@ -23,6 +24,7 @@ export class PlugableBase<
 	): void {
 		this.key = key
 		if (info && !plugins) super._throwNoPluginsError(info)
+		this.plugins = [] as any as TPlugins
 		if (plugins !== undefined) {
 			this._addPlugins(plugins)
 			this._initPlugins()
@@ -31,7 +33,7 @@ export class PlugableBase<
 	protected _initPlugins(): void {
 		for (const plugin of this.plugins!) {
 			const namespace = plugin.namespace as keyof TInfo
-			const key = this.key
+			const key = this[this.key as keyof this]
 
 			const overrides = plugin.overrides !== undefined && key !== undefined
 				? plugin.overrides[key]
@@ -46,21 +48,13 @@ export class PlugableBase<
 	 * Returns if the info properties of another entry is equal to this one, according to each plugin's equal method.
 	 *
 	 * Note the method can be overwritten, and is therefore not guaranteed to be correct.
-	 *
-	 * Instances compared should have the same plugins, otherwise this will always return false.
 	 */
 	equalsInfo(item: PlugableBase<any, any>): boolean {
-		// both undefined
-		if (this.plugins === item.plugins && this.plugins === undefined) return true
+		const plugins = dedupe([...item.plugins, ...this.plugins])
+		for (const plugin of plugins) {
+			const thisInfo = this.info?.[plugin.namespace as keyof TInfo]
+			const itemInfo = item.info?.[plugin.namespace as keyof typeof item["info"]]
 
-		if (this.plugins!.length !== item.plugins.length) return false
-
-		const check = this.plugins !== item.plugins
-		for (const plugin of item.plugins) {
-			// one plugin is different
-			if (check && !this.plugins!.includes(plugin)) return false
-			const thisInfo = this.info[plugin.namespace as keyof TInfo]
-			const itemInfo = item.info[plugin.namespace as keyof typeof item["info"]]
 			if (!plugin.equals(thisInfo, itemInfo)) return false
 		}
 		return true

@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
-import { inspectError, testName } from "@alanscodelog/utils"
+import { TYPE_ERROR } from "@/types"
+import { catchError, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
-
 
 
 
@@ -19,15 +19,16 @@ const plugin = new Plugin(
 	{ test: "default" },
 	pluginInfoDict,
 )
+const pluginNoOverrides = new Plugin(
+	"name",
+	{ test: "default" },
+)
 
 const conflictingPlugin = new Plugin(
 	"name",
 	{ test: "default" },
 )
 
-// shortcuts won't accept plugins with overrides but we want to test this
-// also typescript should complain if we take away this cast
-type Ignore = any
 
 
 // this is a single key find for testing only
@@ -44,7 +45,7 @@ describe(testName(), () => {
 		it("for keys", () => {
 			const keys = new Keys([
 				{ id: "a" },
-			], [plugin])
+			], {}, [plugin])
 
 			keys.add({ id: "b" })
 
@@ -65,12 +66,13 @@ describe(testName(), () => {
 			const warn = console.warn
 			console.warn = jest.fn()
 			const shortcuts = new Shortcuts([
-				{ keys: [[k.a]]},
-			], [plugin as Ignore]) // doesn't really matter if it has overrides
+				{ keys: [[k.a]] },
+				//@ts-expect-error typescript already warns you cant
+			], [plugin])
 
 			shortcuts.add({ keys: [[k.b]]})
 			// shortcuts can't use the overrides
-			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(3)
+			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 			expect(shortcuts.get(shortcutFilter("b"), false)!.plugins).to.deep.equal([plugin])
 			expect(shortcuts.info(shortcutFilter("b"), false)!.name.test).to.equal("default")
 			console.warn = warn
@@ -78,81 +80,81 @@ describe(testName(), () => {
 	})
 	describe("use plugin's equals function", () => {
 		// eslint-disable-next-line no-shadow
-		const equals = plugin.equals
-		plugin.equals = jest.fn((...args) => equals(...args))
+		const equals = jest.fn(() => () => true)
+		const plugin = new Plugin(false, {}, undefined, {equals: equals as any})
 		beforeEach(() => {
-			(plugin.equals as jest.Mock<any, any>).mockClear()
+			equals.mockClear()
 		})
 		it("for keys", () => {
 			const a1 = new Key("a", {}, {}, [plugin])
 			const a2 = new Key("a", {}, {}, [plugin])
-			a1.equals(a2)
-			expect((plugin.equals as jest.Mock<any, any>).mock.calls.length).to.equal(1)
+			expect(a1.equals(a2)).to.equal(true)
+			expect(equals.mock.calls.length).to.equal(1)
 		})
 		it("for commands", () => {
 			const a1 = new Command("a", {}, {}, [plugin])
 			const a2 = new Command("a", {}, {}, [plugin])
-			a1.equals(a2)
-			expect((plugin.equals as jest.Mock<any, any>).mock.calls.length).to.equal(1)
+			expect(a1.equals(a2)).to.equal(true)
+			expect(equals.mock.calls.length).to.equal(1)
 		})
 		it("for shortcuts", () => {
-			const a1 = new Shortcut([[k.a]], {}, {}, [plugin as Ignore])
-			const a2 = new Shortcut([[k.a]], {}, {}, [plugin as Ignore])
-			a1.equals(a2)
-			expect((plugin.equals as jest.Mock<any, any>).mock.calls.length).to.equal(1)
+			const a1 = new Shortcut([[k.a]], {}, {}, [plugin])
+			const a2 = new Shortcut([[k.a]], {}, {}, [plugin])
+			expect(a1.equals(a2)).to.equal(true)
+			expect(equals.mock.calls.length).to.equal(1)
 		})
 	})
 	describe("throw if conflicting plugins", () => {
 		it("for commands", () => {
-			expect(inspectError(() => {
+			expect(catchError(() => {
 				new Commands([
 					{ name: "a" },
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Commands([
 					{ name: "a" },
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Commands([
 					{ name: "a" },
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for shortcuts", () => {
-			expect(inspectError(() => {
+			expect(catchError(() => {
 				new Shortcuts([
 					{ keys: [[k.a]]},
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Shortcuts([
 					{ keys: [[k.a]]},
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Shortcuts([
 					{ keys: [[k.a]]},
 				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for keys", () => {
-			expect(inspectError(() => {
+			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+				],{}, [conflictingPlugin, conflictingPlugin])
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
-			expect(inspectError(() => {
+				],{}, [conflictingPlugin, conflictingPlugin])
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				], [conflictingPlugin, conflictingPlugin])
-			})).to.throw()
+				],{}, [conflictingPlugin, conflictingPlugin])
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 	})
 	describe("adds namespaced plugin to instances", () => {
@@ -160,7 +162,7 @@ describe(testName(), () => {
 			const keys = new Keys([
 				{ id: "a" },
 				{ id: "b" },
-			], [plugin])
+			], {}, [plugin])
 
 			expect(keys.info("a").name.test).to.equal("TestA")
 			expect(keys.info("b").name.test).to.equal("TestB")
@@ -178,13 +180,13 @@ describe(testName(), () => {
 			const shortcuts = new Shortcuts([
 				{ keys: [[k.a]]},
 				{ keys: [[k.b]]},
-			], [plugin as Ignore])
+			], [pluginNoOverrides])
 
 			expect(shortcuts.info(shortcutFilter("a"), false)!.name.test).to.equal("default")
 			expect(shortcuts.info(shortcutFilter("b"), false)!.name.test).to.equal("default")
 		})
 	})
-	describe("throws if plugins have same namespace or would override property", () => {
+	describe("throws if plugins have same namespace", () => {
 		const plugin1 = new Plugin("A",
 			{ test: "default1" },
 			pluginInfoDict,
@@ -198,43 +200,31 @@ describe(testName(), () => {
 			pluginInfoDict,
 		)
 
-		it("for keys", () => {
-			expect(inspectError(() => {
+		it.only("for keys", () => {
+			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				], [plugin1, plugin2])
-			}))
-			expect(inspectError(() => {
-				new Keys([
-					{ id: "a" },
-				], [plugin1, plugin3])
-			}))
+				], {}, [plugin1, plugin2])
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for commands", () => {
-			expect(inspectError(() => {
+			expect(catchError(() => {
 				new Commands([
 					{ name: "a" },
 					{ name: "b" },
 				], [plugin1, plugin2])
-			}))
-			expect(inspectError(() => {
-				new Commands([
-					{ name: "a" },
-					{ name: "b" },
-				], [plugin1, plugin3])
-			}))
+			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for shortcuts", () => {
-			expect(inspectError(() => {
+			const warn = console.warn
+			// we don't care about this output
+			console.warn = () => {}
+			expect(catchError(() => {
 				new Shortcuts([
 					{ keys: [[k.a]]},
-				], [plugin1 as Ignore, plugin2 as Ignore])
+				], [plugin1 as any, plugin2 as any])
 			}))
-			expect(inspectError(() => {
-				new Shortcuts([
-					{ keys: [[k.a]]},
-				], [plugin1 as Ignore, plugin3 as Ignore])
-			}))
+			console.warn = warn
 		})
 	})
 })

@@ -1,14 +1,14 @@
-import { crop, indent, pretty } from "@utils/utils"
-
 import type { Command, Condition, Key, Plugin, Shortcut } from "@/classes"
 import { KnownError } from "@/helpers"
 import { DeepPartialObj, TYPE_ERROR } from "@/types"
+import { crop, indent, pretty } from "@utils/utils"
+
 
 
 export class Plugable<
-	TPlugins extends Plugin<any>[],
+	TPlugins extends Plugin<any, any>[],
 > {
-	plugins?: TPlugins
+	plugins!: TPlugins
 	key?: string
 	protected _throwNoPluginsError(info: any): void {
 		throw new KnownError(TYPE_ERROR.CLONER_NOT_SPECIFIED, crop`
@@ -16,57 +16,51 @@ export class Plugable<
 		${indent(pretty(info), 1)}
 		`, { info })
 	}
-	protected _addPlugin(plugin: Plugin<any>, check: boolean = true): void {
+	protected _addPlugin(plugin: Plugin<any, any>, check: boolean = true): void {
 		if (check) {
 			const can = Plugable._canAddPlugin(plugin, this.plugins)
 			if (can !== true) throw can
 		}
-		this.plugins = this.plugins! ?? []
 		const added = this.plugins.includes(plugin)
 		if (!added) this.plugins.push(plugin)
 	}
-	protected _addPlugins(plugins: Plugin<any>[]): void {
-		Plugable._canAddPlugins(plugins, { isShortcut: this.key === undefined })
+	protected _addPlugins(plugins: Plugin<any, any>[]): void {
+		const can = Plugable._canAddPlugins(plugins, this)
+		if (can !== true) throw can
 		for (const plugin of plugins) {
 			this._addPlugin(plugin, false)
 		}
 	}
-	protected static _canAddPlugin(plugin: Plugin<any>, checkedPlugins: Plugin<any>[] = []): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
+	protected static _canAddPlugin(plugin: Plugin<any, any>, checkedPlugins: Plugin<any, any>[] = []): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
 		if (checkedPlugins.length === 0) return true
-		const properties: string[] = [plugin.namespace as string]
+		const conflict = checkedPlugins.find(existing => existing.namespace === plugin.namespace)
 
-		let conflict: { property: string, plugin: Plugin<any> } | undefined
-
-		// eslint-disable-next-line no-shadow
-		for (const existing of checkedPlugins) {
-			if (properties.includes(existing.namespace as string)) {
-				conflict = { property: existing.namespace as string, plugin: existing }
-				break
-			}
-		}
 		if (conflict !== undefined) {
 			return new KnownError(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES, crop`
-			Plugin "${plugin.namespace}" would conflict with plugin's namespace.
+			Plugin "${plugin.namespace}" would conflict with an existing plugin's namespace.
 			New:
 			${indent(pretty(plugin), 5)}
 			Existing:
-			${indent(pretty(conflict.plugin), 5)}
+			${indent(pretty(conflict), 5)}
 			`, { plugins: checkedPlugins, plugin, existing: conflict })
 		}
 		return true
 	}
-	protected static _canAddPlugins(plugins: Plugin<any>[], { isShortcut = false }: { isShortcut?: boolean } = {}): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
+
+	protected static _canAddPlugins(plugins: Plugin<any, any>[], instance: any & { key?: string }): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
 		for (let i = 0; i < plugins.length; i++) {
 			const plugin = plugins[i]
-			const can = Plugable._canAddPlugin(plugin, plugins.slice(0, i))
+
+			const can = Plugable._canAddPlugin(plugin, [...instance.plugins, ...plugins.slice(0, i)])
 			if (can !== true) return can
-			if (isShortcut && plugin.overrides) {
+
+			if (instance.key === undefined && plugin.overrides && Object.keys(plugin.overrides).length > 0) {
 				// eslint-disable-next-line no-console
 				console.warn(crop`
-				WARNING: Shortcuts instance will not use plugins with overrides, and you passed a plugin (#${i} in the plugins array, containing a plugin base named "${plugin.namespace}") with overrides.
-				This is because there is no one property we can index shortcuts by.
+					WARNING: This instance (${instance.constructor.name}) was instantiated with a plugin (#${i} in the plugins array, containing a plugin base named "${plugin.namespace}") with overrides, but the instance does not support overrides.
 				`)
 			}
+
 		}
 		return true
 	}
@@ -75,24 +69,27 @@ export class Plugable<
 		TKey extends keyof T,
 		TClass extends new (...args: any[]) => T = new (...args: any[]) => T,
 		TEntry extends T | DeepPartialObj<T["opts"]> = T | DeepPartialObj<T["opts"]>,
-	>(type: TClass, plugins: Plugin<any>[] | undefined, key: TKey, entry: TEntry): T {
+	>(type: TClass, plugins: Plugin<any, any>[] | undefined, key: TKey, entry: TEntry): T {
 		let instance: any
-		const isNotInstance = !(entry instanceof type)
+		const isInstance = (entry instanceof type)
 
 		const arg = entry[key as keyof TEntry]
 
 		// @ts-expect-error - doesn't matter if they don't exist
 		const opts = entry.opts
 
-		if (plugins) {
-			if (isNotInstance) {
-				const entryInfo = (entry as any).info
+		const entryInfo = (entry as any).info
+		if (plugins && plugins.length > 0) {
+			if (isInstance) {
+				instance = entry
+				instance._addPlugins(plugins)
+			} else {
 				instance = new type(arg, opts, entryInfo, plugins)
 			}
 		} else {
-			instance = isNotInstance
-			? new type(arg, opts)
-			: entry
+			instance = isInstance
+			? entry
+			: new type(arg, opts)
 		}
 
 		return instance

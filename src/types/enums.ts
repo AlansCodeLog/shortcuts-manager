@@ -129,12 +129,9 @@ type TYPE_ERROR_Info = {
 		info: any
 	}
 	[TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES]: {
-		plugins: Plugin<any>[]
-		plugin: Plugin<any>
-		existing: {
-			property: string
-			plugin: Plugin<any>
-		}
+		plugins: Plugin<any, any>[]
+		plugin: Plugin<any, any>
+		existing: Plugin<any, any>
 	}
 	[TYPE_ERROR.ILLEGAL_OPERATION]: undefined
 	[TYPE_ERROR.LISTENER_DOES_NOT_EXIST]: {

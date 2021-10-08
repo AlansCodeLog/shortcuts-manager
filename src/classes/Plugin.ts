@@ -1,6 +1,6 @@
+import type { PluginOptions } from "@/types"
 import { isEqual, merge } from "lodash"
 
-import type { PluginOptions } from "@/types"
 
 
 export class Plugin<
@@ -15,7 +15,7 @@ export class Plugin<
 	/** The default values that are assigned to each property if it's undefined. */
 	defaults: TInfo
 	/**
-	 * An object of `{[key]: overrides}` to use when instantiating an base class instance. Where `key` is a key's id or a command's name, (this does not work with shortcuts, contexts, conditions, etc, since they don't have unique keys they cn be keyed by).
+	 * An object of `{[key]: overrides}` to use when instantiating an base class instance. Where `key` is a key's id or a command's name, (this does not work with shortcuts, contexts, conditions, etc, since they don't have unique keys they can be keyed by).
 	 *
 	 * For example:
 	 * ```ts
@@ -64,11 +64,8 @@ export class Plugin<
 		this.namespace = namespace
 
 		this.overrides = overrides!
-		this.#equals = opts?.equals ?? isEqual
-		this.#init = opts?.init ?? this.#defaultInit
-	}
-	#defaultInit(obj: Partial<TInfo>, defaults: TInfo, overrides: Partial<TInfo>): TInfo {
-		return merge({}, defaults, overrides, obj)
+		if (opts?.init) this.#init = opts.init
+		if (opts?.equals) this.#equals = opts.equals
 	}
 	/**
 	 * Inits a plugin on an object or class according to the plugin.
@@ -76,15 +73,17 @@ export class Plugin<
 	 * Unless the plugin was created with a custom `init` method (see {@link PluginOptions.init}), the default method uses lodash's `merge` to merge like `merge({}, defaults, overrides, obj)`.
 	 */
 	init(obj: Partial<TInfo>, defaults: TInfo, overrides: Partial<TInfo>): TInfo {
-		return this.#init(obj, defaults, overrides)
+		if (this.#init) return this.#init(obj, defaults, overrides)
+		return merge({}, defaults, overrides, obj)
 	}
 	/**
 	 * Returns if two info properties are equal according to the plugin.
 	 *
 	 * Unless the plugin was created with a custom `init` method (see {@link PluginOptions.equals}), the default method uses lodash's `isEqual` function.
 	 */
-	equals(obj1: TInfo, obj2: TInfo): boolean {
-		return this.#equals(obj1, obj2)
+	equals(obj1: TInfo | undefined, obj2: TInfo | undefined): boolean {
+		if (this.#equals) return this.#equals(obj1, obj2)
+		return isEqual(obj1, obj2)
 	}
 }
 

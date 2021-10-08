@@ -1,6 +1,7 @@
 import { Shortcut } from "@/classes"
 import { defaultSorter } from "@/classes/KeysSorter"
-import { inspectError, testName } from "@alanscodelog/utils"
+import { ERROR, TYPE_ERROR } from "@/types"
+import { catchError, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 import { k, properOrder } from "./helpers.keys"
 
@@ -14,36 +15,36 @@ describe(testName(), () => {
 	})
 
 	it("should throw if info passed but no plugins", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			// @ts-expect-error we want the wrong overload to error
 			new Shortcut("A", { }, { test: "test" })
-		}, false)).to.throw()
+		}).code).to.equal(TYPE_ERROR.CLONER_NOT_SPECIFIED)
 	})
 	it("should throw if duplicate keys in chords", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.a, k.a, k.a]])
-		}, false)).to.throw()
+		}).code).to.equal(ERROR.CHORD_W_DUPLICATE_KEY)
 	})
 	it("should not throw if duplicate keys in different chords", () => {
-		expect(inspectError(() => {
+		expect(() => {
 			new Shortcut([[k.a], [k.a]])
-		}, false)).to.not.throw()
+		}).to.not.throw()
 	})
 	it("should throw if duplicate mouse buttons", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.modMouse1, k.mouse1]])
-		}, false)).to.throw()
+		}).code).to.equal(ERROR.CHORD_W_DUPLICATE_KEY)
 	})
 	it("should throw if duplicate toggle - even different states", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1, k.toggle1.on!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.CHORD_W_DUPLICATE_KEY)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1, k.toggle1.off!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.CHORD_W_DUPLICATE_KEY)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1.on!, k.toggle1.off!]])
-		}, false)).to.throw()
+		}).code).to.equal(ERROR.CHORD_W_DUPLICATE_KEY)
 	})
 	it("should assign keys properly", () => {
 		const shortcut2 = new Shortcut([[k.a]])
@@ -72,57 +73,60 @@ describe(testName(), () => {
 		expect(shortcutB1.equals(shortcutB4)).to.be.false
 	})
 	it("should guard against impossible toggle shortcut", () => {
-		expect(inspectError(() => {
+
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1.off!], [k.toggle1.off!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1], [k.toggle1.on!], [k.toggle1.on!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1], [k.toggle1.on!], [k.toggle1.on!], [k.toggle1.on!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1], [k.toggle1.on!], [k.a], [k.toggle1.on!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
+		expect(catchError(() => {
 			new Shortcut([[k.toggle1.on!, k.explicitToggle.off!], [k.toggle1, k.explicitToggle.off!], [k.toggle1.on!]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
+		expect(() => {
 			new Shortcut([[k.toggle1.on!], [k.toggle1], [k.toggle1.on!]])
 			new Shortcut([[k.toggle1], [k.toggle1.on!], [k.toggle1.off!], [k.toggle1.on!]])
 			// Still a terrible idea but i guess it could work
 			new Shortcut([[k.toggle1], [k.toggle1.on!], [k.toggle1.off!]])
 			new Shortcut([[k.toggle1], [k.toggle1.off!], [k.toggle1.on!]])
-		}, false)).to.not.throw()
+		}).to.not.throw()
 	})
 	it("should throw if chord only contains modifiers and it's not the last chord", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.modA], [k.modB]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.CHORD_W_ONLY_MODIFIERS)
+		expect(() => {
 			new Shortcut([[k.a], [k.modA]])
 			new Shortcut([[k.a], [k.modA, k.modB]])
 			new Shortcut([[k.a], [k.modA, k.a], [k.modA]])
-		}, false)).to.not.throw()
+		}).to.not.throw()
 	})
 	it("should throw when shortcut contain more than one normal key in a chord", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.a, k.b]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS)
+		expect(catchError(() => {
 			new Shortcut([[k.c], [k.a, k.b]])
-		}, false)).to.throw()
+		}).code).to.equal(ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS)
 	})
 	it("should throw when shortcut contain more than one wheel key in a chord", () => {
-		expect(inspectError(() => {
+		expect(catchError(() => {
 			new Shortcut([[k.wheelDown, k.wheelUp]])
-		}, false)).to.throw()
-		expect(inspectError(() => {
+		}).code).to.equal(ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS)
+		expect(() => {
 			new Shortcut([[k.wheelDown], [k.wheelUp]])
-		}, false)).to.not.throw()
+		}).to.not.throw()
+		expect(() => {
+			new Shortcut([[k.wheelDown], [k.wheelDown]])
+		}).to.not.throw()
 	})
 	it("should sort keys properly", () => {
-
 		const reverseOrder = [...properOrder].reverse()
 		expect(reverseOrder[0]).to.not.equal(properOrder[0])
 

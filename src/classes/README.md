@@ -57,11 +57,11 @@ What it's doing is for each plugin (`TPlugins[number]>`), it "iterates" through 
 Something similar happens for all collections, although it's not important for autocomplete:
 
 ```ts
-TPlugins extends Plugin<any>[] = Plugin<any>[],
+TPlugins extends Plugin<any, any>[] = Plugin<any, any>[],
 TPluginsBase extends TPlugins[number]["base"][] = TPlugins[number]["base"][],
 
 // getting rid of the clutter we can read this like:
-TPlugins = Plugin<any>[],
+TPlugins = Plugin<any, any>[],
 TPluginsBase = TPlugins[number]["base"][],
 ```
 

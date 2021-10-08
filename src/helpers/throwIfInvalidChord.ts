@@ -34,7 +34,8 @@ export function throwIfInvalidChord(
 				return true
 			}
 		}
-		if (isWheelKey(key) && isWheelKey(other)) return true
+		// this is caught by multiple wheel key error
+		if (isWheelKey(key) && isWheelKey(other)) return false
 		return false
 	} })
 	if (repeated.length > 0) {

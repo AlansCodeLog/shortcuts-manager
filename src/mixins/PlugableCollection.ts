@@ -8,24 +8,21 @@ import type { PlugableBase } from "./PlugableBase"
 
 
 export class PlugableCollection<
-	TPlugins extends Plugin<any>[],
+	TPlugins extends Plugin<any, any>[],
 > extends Plugable<TPlugins> {
 	_constructor(
-		{ plugableCollection: { plugins, key, isShortcut } }:
+		{ plugableCollection: { plugins, key } }:
 		{
 			plugableCollection: {
-				plugins: Plugin<any>[] | undefined,
+				plugins: Plugin<any, any>[] | undefined,
 				key: string | undefined,
-				isShortcut?: boolean
 			}
 		}
 	): void {
 		this.key = key
+		this.plugins = [] as any as TPlugins
 		if (plugins !== undefined) {
-			if (plugins) {
-				Plugable._canAddPlugins(plugins, { isShortcut })
-				this.plugins = plugins as TPlugins
-			}
+			this._addPlugins(plugins)
 		}
 	}
 }
@@ -35,7 +32,7 @@ export class PlugableCollection<
  * @internal
  */
 export function internalPlugableCollectionAllowsHook<
-	TPlugins extends Plugin<any>[],
+	TPlugins extends Plugin<any, any>[],
 	THook extends CollectionHookType<any, any, any>
 >(self: PlugableCollection<TPlugins>, value: THook["value"]): true | THook["error"] | Error | never {
 	if (value.plugins !== undefined) {
