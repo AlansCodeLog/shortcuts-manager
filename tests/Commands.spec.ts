@@ -56,7 +56,8 @@ describe(testName(), () => {
 			b.set("name", "c")
 		})).to.not.throw()
 		expect(b.name).to.equal("c")
-		// @ts-expect-error todo create helper for typescript to understand this.
+
+		// @ts-expect-error typescript doesn't understand this without retyping b
 		expect(commands.entries.c).to.equal(b)
 		expect(commands.entries.b).to.not.exist
 	})

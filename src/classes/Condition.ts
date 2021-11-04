@@ -3,6 +3,9 @@ import type { ConditionOptions, DeepPartialObj, Optional, PluginsInfo } from "@/
 import type { Context } from "./Context"
 import type { Plugin } from "./Plugin"
 
+const sEval = Symbol("eval")
+const sEquals = Symbol("equals")
+
 export class Condition<
 	TPlugins extends
 		Plugin<any, any>[] =
@@ -18,8 +21,8 @@ export class Condition<
 	 * The main text representation of the condition. Note that this is NOT a unique identifier for conditions and cannot be used to compare them if you are using boolean expressions for your conditions. See {@link Condition.constructor} for an explanation.
 	 */
 	text!: string
-	#eval: ConditionOptions<TPlugins, TInfo>["eval"]
-	#equals: ConditionOptions<TPlugins, TInfo>["equals"]
+	[sEval]: ConditionOptions<TPlugins, TInfo>["eval"]
+	[sEquals]: ConditionOptions<TPlugins, TInfo>["equals"]
 	/**
 	 * # Condition
 	 * Create a condition.
@@ -81,8 +84,8 @@ export class Condition<
 	) {
 		super()
 		this.text = text
-		if (opts.eval) this.#eval = opts.eval
-		if (opts.equals) this.#equals = opts.equals
+		if (opts.eval) this[sEval] = opts.eval
+		if (opts.equals) this[sEquals] = opts.equals
 		this._mixin({
 			plugableBase: { plugins, info, key: undefined }
 		})
@@ -95,21 +98,23 @@ export class Condition<
 	 * See {@link ConditionOptions.eval} for more details.
 	 */
 	eval(context: Context): boolean {
-		if (this.#eval) return this.#eval(this, context)
+		if (this[sEval]) return this[sEval]!(this, context)
 		return true
 	}
 	/**
 	 * Returns whether the condition passed is equal to this one.
 	 *
-	 * To return true, they must be equal according to the class (see {@link ConditionOptions.equals}), and they must be equal according to their plugins.
+	 * To return true, they must be equal according to the instance the method is called from, and they must be equal according to their plugins.
+	 *
+	 * see {@link ConditionOptions.equals}
 	 */
 	equals(condition: Condition): boolean {
-		if (this.#equals) return this.#equals(this, condition) && this.equalsInfo(condition)
+		if (this[sEquals]) return this[sEquals]!(this, condition) && this.equalsInfo(condition)
 		if (this === condition) return true
 		return this.text === condition.text && this.equalsInfo(condition)
 	}
 	get opts(): ConditionOptions<TPlugins, TInfo> {
-		return { eval: this.#eval, equals: this.#equals }
+		return { eval: this[sEval], equals: this[sEquals] }
 	}
 }
 

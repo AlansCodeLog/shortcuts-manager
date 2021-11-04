@@ -2,14 +2,17 @@ import type { PluginOptions } from "@/types"
 import { isEqual, merge } from "lodash"
 
 
+const sEquals = Symbol("equals")
+const sInit = Symbol("init")
+
 
 export class Plugin<
 	TInfo = any,
 	TOverrides extends Record<string, TInfo> | undefined = undefined,
 	TNamespace extends string | false = string | false,
 > {
-	#equals: PluginOptions<TInfo>["equals"]
-	#init: PluginOptions<TInfo>["init"]
+	[sEquals]: PluginOptions<TInfo>["equals"]
+	[sInit]: PluginOptions<TInfo>["init"]
 	/** The namespace in which the properties are declared on the info property of the instance. */
 	readonly namespace: TNamespace
 	/** The default values that are assigned to each property if it's undefined. */
@@ -64,8 +67,8 @@ export class Plugin<
 		this.namespace = namespace
 
 		this.overrides = overrides!
-		if (opts?.init) this.#init = opts.init
-		if (opts?.equals) this.#equals = opts.equals
+		if (opts?.init) this[sInit] = opts.init
+		if (opts?.equals) this[sEquals] = opts.equals
 	}
 	/**
 	 * Inits a plugin on an object or class according to the plugin.
@@ -73,7 +76,7 @@ export class Plugin<
 	 * Unless the plugin was created with a custom `init` method (see {@link PluginOptions.init}), the default method uses lodash's `merge` to merge like `merge({}, defaults, overrides, obj)`.
 	 */
 	init(obj: Partial<TInfo>, defaults: TInfo, overrides: Partial<TInfo>): TInfo {
-		if (this.#init) return this.#init(obj, defaults, overrides)
+		if (this[sInit]) return this[sInit]!(obj, defaults, overrides)
 		return merge({}, defaults, overrides, obj)
 	}
 	/**
@@ -82,7 +85,7 @@ export class Plugin<
 	 * Unless the plugin was created with a custom `init` method (see {@link PluginOptions.equals}), the default method uses lodash's `isEqual` function.
 	 */
 	equals(obj1: TInfo | undefined, obj2: TInfo | undefined): boolean {
-		if (this.#equals) return this.#equals(obj1, obj2)
+		if (this[sEquals]) return this[sEquals]!(obj1, obj2)
 		return isEqual(obj1, obj2)
 	}
 }

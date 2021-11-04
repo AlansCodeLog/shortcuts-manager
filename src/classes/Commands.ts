@@ -1,6 +1,6 @@
 import { defaultCallback, KnownError } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
-import { CommandsHook, ERROR, ErrorCallback, OnlyRequire, RecordFromArray } from "@/types"
+import { CommandsHook, ERROR, ErrorCallback, RawCommand, RecordFromArray } from "@/types"
 import { crop } from "@alanscodelog/utils"
 import { Command } from "./Command"
 import type { Condition } from "./Condition"
@@ -19,13 +19,13 @@ export class Commands<
 		Command<any, Condition, TPlugins> =
 		Command<any, Condition, TPlugins>,
 	TRawCommands extends
-		OnlyRequire<TCommand, "name">[] =
-		OnlyRequire<TCommand, "name">[],
+		RawCommand[] =
+		RawCommand[],
 	TEntries extends
 		RecordFromArray<TRawCommands, "name", TCommand> =
 		RecordFromArray<TRawCommands, "name", TCommand>,
 > extends MixinHookablePlugableCollection<CommandsHook, TPlugins> {
-	entries: TEntries
+	override entries: TEntries
 	/**
 	 * # Commands
 	 * Creates a set of commands.
@@ -47,7 +47,7 @@ export class Commands<
 	) {
 		super()
 		this._mixin({
-			hookable: { keys: ["allows", "add"] },
+			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"] },
 			plugableCollection: { plugins, key: "name" }
 		})
 		this.entries = {} as TEntries
@@ -56,7 +56,7 @@ export class Commands<
 			this.add(command, defaultCallback)
 		})
 	}
-	protected override _add(entry: OnlyRequire<Command, "name">, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
+	protected override _add(entry: RawCommand | Command, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
 		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
 		instance.addHook("allows", (type, value, old) => {
 			if (type === "name") {
@@ -80,9 +80,6 @@ export class Commands<
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]
-	}
-	info(id: TRawCommands[number]["name"] | string): TCommand["info"] {
-		return this.entries[id as keyof TEntries].info
 	}
 }
 // export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }

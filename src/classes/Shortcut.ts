@@ -34,6 +34,8 @@ export class Shortcut<
 	condition: Condition = new Condition("")
 	/** Whether the shortcut is enabled. Defaults to true. */
 	enabled: boolean = true
+	/** It is sometimes useful for some shortcuts to not equal eachother temporarily. For example, inside allow hooks when swapping, this makes it easier to return the correct answer without making major modifications to the instances. */
+	forceUnequal: boolean = false
 	/**
 	 * # Shortcut
 	 *
@@ -70,7 +72,7 @@ export class Shortcut<
 			hookable: { keys: ["allows", "set"] },
 			plugableBase: { plugins, info, key: undefined }
 		})
-		this.addHook("allows", this._hooks.bind(this))
+		this.addHook("allows", this._hooksAllows.bind(this))
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
 		this.set("command", opts.command)
@@ -83,6 +85,7 @@ export class Shortcut<
 	 * To return true, their keys and command must be equal, their condition must be equal according to this shortcut's condition, and they must be equal according to their plugins.
 	 */
 	equals(shortcut: Shortcut): shortcut is Shortcut<TPlugins, TInfo> {
+		if (this.forceUnequal) return false
 		return (
 			this === shortcut
 			||
@@ -94,12 +97,38 @@ export class Shortcut<
 			)
 		)
 	}
-	equalsKeys(keys: Shortcut["keys"]): keys is Shortcut<TPlugins, TInfo>["keys"] {
-		return this.keys
-			// Since they're pre-sorted this should be quite fast
+	/**
+	 * A wrapper around static {@link Shortcut.equalsKeys} for the instance.
+	 */
+	equalsKeys(keys: Key[][], length?: number) {
+		return Shortcut.equalsKeys(this.keys, keys, length)
+	}
+	/**
+	 * Returns if the given chords are equal.
+	 *
+	 * Can be passed a length, to limit the search to only the first x chords.
+	 *
+	 * ```ts
+	 * Shortcut.equalsKeys([[k.a]], [[k.a]]) // true
+	 * Shortcut.equalsKeys([[k.a], [k.b]], [[k.a]]) // false
+	 * Shortcut.equalsKeys([[k.a], [k.b]], [[k.a]], 1) // true
+	 * Shortcut.equalsKeys([[k.a], [k.b]], [[k.a], [k.b]], 2) // true
+	 * Shortcut.equalsKeys([[k.a], [k.b]], [[k.a], [k.b], [k.c]], 3) // false
+	 * Shortcut.equalsKeys([[k.a], [k.b]], [[k.b]], 1) // false
+	 * ```
+	 *
+	 */
+	static equalsKeys(keys: Key[][], base: Key[][], length?: number): boolean {
+		// Since they're pre-sorted this should be quite fast
+		if (
+			(length == undefined && base.length !== keys.length) ||
+			(length !== undefined && (keys.length < length || base.length < length))
+		) return false
+
+		return keys.slice(0, length ?? keys.length)
 			.find((thisChord, c) => {
-				const otherChord = keys[c]
-				if (otherChord.length !== thisChord.length) return true
+				const otherChord = base[c]
+				if (!otherChord || otherChord.length !== thisChord.length) return true
 				return thisChord.find((thisKey, i) => {
 					const shortcutKey = otherChord[i]
 					if (!shortcutKey) return true
@@ -110,7 +139,22 @@ export class Shortcut<
 	get opts(): ShortcutOptions {
 		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier}
 	}
-	private _hooks<T extends keyof ShortcutHooks>(key: T, value: ShortcutHooks[T]["value"]): true | ShortcutHooks[T]["error"] {
+	protected override _set<TKey extends keyof ShortcutHooks>(
+			key: TKey,
+			value: ShortcutHooks[TKey]["value"],
+	): void {
+		switch (key) {
+			case "keys": {
+				this.keys = (value as ShortcutHooks["keys"]["value"]).map((chord) => {
+					return this.sorter.sort([...chord])
+				})
+			} break;
+			default: {
+				(this as any)[key] = value
+			}
+		}
+	}
+	private _hooksAllows<TKey extends keyof ShortcutHooks>(key: TKey, value: ShortcutHooks[TKey]["value"]): true | ShortcutHooks[TKey]["error"] {
 		switch (key) {
 			case "keys": return this._hookAllowsKeys(value as ShortcutHooks["keys"]["value"])
 			default: return true
@@ -118,12 +162,11 @@ export class Shortcut<
 	}
 	private _hookAllowsKeys(value: ShortcutHooks["keys"]["value"]): true | ShortcutHooks["keys"]["error"] {
 		try {
-			const keys = value
-			this.keys = keys.map((chord, i) => {
-				throwIfInvalidChord({ keys }, chord, i, this.stringifier)
+			value = value.map((chord, i) => {
+				throwIfInvalidChord({ keys: value }, chord, i, this.stringifier)
 				return this.sorter.sort([...chord])
 			})
-			throwIfImpossibleToggles(this.keys, this.stringifier)
+			throwIfImpossibleToggles(value, this.stringifier)
 		} catch (e: unknown) {
 			if (e instanceof KnownError) return e
 			throw e

@@ -4,6 +4,8 @@ import { Key } from "@/classes"
 const a = new Key("a")
 const b = new Key("b")
 const c = new Key("c")
+const d = new Key("d")
+const e = new Key("e")
 const modA = new Key("modA", { is: { modifier: true } })
 const modB = new Key("modB", { is: { modifier: true } })
 const mouse1 = new Key("1", {
@@ -85,6 +87,8 @@ export const k = {
 	a,
 	b,
 	c,
+	d,
+	e,
 	mouse1,
 	mouse2,
 	wheelDown,

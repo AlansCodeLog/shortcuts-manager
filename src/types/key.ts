@@ -3,7 +3,6 @@ import type { KnownError } from "@/helpers"
 import type { DeepPartial } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
-import type { OnlyRequire } from "./utils"
 
 
 
@@ -26,17 +25,17 @@ export type RawKey = Pick<Key, "id"> & {
 /**
  * The toggle version of a key.
  */
-export type ToggleProxy<T extends Key = Key> = T & {
+export type ToggleKey<T extends Key = Key> = T & {
 	on: never
 	off: never
 	root: T
 }
 
-export type AnyKey = Key | ToggleProxy<any>
+export type AnyKey = Key | ToggleKey<any>
 
 export type KeyOptions = {
 	/**
-	 * The label to use for the key when stringifying it. If no label is specified the id is used.
+	 * The label to use for the key when stringifying it. If no label is specified, it's left blank.
 	 *
 	 * It can also be a function. You could, for example, use the experimental {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap/get KeyboardLayoutMap.get()} or cache the user's keys as they press them.
 	 */
@@ -46,7 +45,7 @@ export type KeyOptions = {
 	 *
 	 * This option is available to match the other classes, but is not strictly needed. The default implementation only looks at the label which can already be a function.
 	 */
-	stringify?: ((key: Key) => string)
+	stringifier: KeysStringifier
 	/**
 	 * Variants are a list of fallback codes that will also trigger a key.
 	 *
@@ -58,11 +57,12 @@ export type KeyOptions = {
 	 *
 	 * They can also be use to treat any set of keys as the exact same keys. This can be useful for allowing users to remap keys only within the application.
 	 *
-	 * For example, to use CapsLock as an extra modifier (e.g. `Ctrl(variants: ["ControlLeft", "ControlRight", "Capslock"])`). You could even "remap" it to multiple modifiers, just add "Capslock" to the variants list of those modifiers (e.g. Ctrl, Alt, Shift). This would cause all those keys to be considered pressed when Capslock is pressed.
+	 * For example, to use CapsLock as an extra Control key (e.g. `Ctrl(variants: ["ControlLeft", "ControlRight", "Capslock"])`). You could even "remap" it to multiple modifiers, just add "Capslock" to the variants list of those modifiers (e.g. Ctrl, Alt, Shift). This would cause all those keys to be considered pressed when Capslock is pressed.
 	 *
-	 * Also unlike keys, whose `id` is readonly, variants are not, they can be added and removed as needed.
+	 * Also unlike `id`, which is readonly, variants are not, they can be added and removed as needed.
+	 *
 	 */
-	variants: string[] | false
+	variants: string[] | undefined
 	is: {
 		/**
 		 * Whether the key should behave like a modifier.
@@ -71,7 +71,7 @@ export type KeyOptions = {
 		 */
 		modifier: boolean
 		/**
-		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState can be used to get it's true state) or `"emulated"` (state starts off false). In either case, we cannot know the initial state without a keypress.
+		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState will always be used to get it's true state) or `"emulated"` (state starts off false and is toggle with every keydown registered).
 		 *
 		 * Setting `toggle: true` is like passing `toggle:"native"`:
 		 *
@@ -81,9 +81,9 @@ export type KeyOptions = {
 		 * let off = new Shortcut([keys.ScrollLock.off], commands.toggle_off_x)
 		 * ```
 		 *
-		 * The way this works is the class creates two new keys, with the corresponding suffix (`On`/`Off`) added to the id, then takes care of correctly assigning things to create the relevant properties (`"on", "off"` on the base key and `"root"` on the toggles).
+		 * The way this works is the class creates two new keys,with the corresponding suffix (`On`/`Off`) added to the id, then takes care of correctly assigning things to create the relevant properties (`"on", "off"` on the base key and `"root"` on the toggles).
 		 *
-		 * These new classes don't do much of anything. Their main purpose is prevent the references to the instance from equaling each other and allow the on/off keys to provide proper access to the base key and vice versa (so from the layout we don't have to handle 3 different keys).
+		 * These new instances don't do much of anything. Their main purpose is prevent the references to the instance from equaling each other, allowing their states to be set separately, and allowing the on/off keys to provide proper access to the base key and vice versa (so from the layout we don't have to handle 3 different keys).
 		 *
 		 * So given some key:
 		 * ```ts
@@ -102,9 +102,40 @@ export type KeyOptions = {
 		 * key.off.id // aOff
 		 * ```
 		 *
-		 * opts.label is NOT modified. You can pass a function for `label` or `stringify` to customize the suffix on the toggles. See Other Notes below for how you might tell they key apart.
+		 * opts.label is NOT modified. You can pass a function for `label` to customize the suffix on the toggles. See Other Notes below for how you might tell they key apart.
 		 *
 		 * Note that while `on` and `off` are enumerable properties, `root` is not, since it contains a recursive structure (`key.on.root.on....`).
+		 *
+		 * ### State
+		 *
+		 * With either type of toggle key, we cannot know the initial state without a keypress. The {@link Manager} sets it the first time a key matches, but for native keys you can do this even earlier. Note that event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.
+		 *
+		 * When the {@link Manager} handles a key's pressed state, for toggles, the root key indicates whether the user is actually pressing the key or not just like any other key, and the toggle instances indicate the state.
+		 *
+		 * Note that state is changed on *keydown* since this is how toggle keys normally work:
+		 *
+		 * ```ts
+		 * // user presses and holds key
+		 * key.pressed = true
+		 * key.on.pressed = true
+		 * key.off.pressed = false
+		 *
+		 * // user releases key
+		 * key.pressed = false
+		 * key.on.pressed = true
+		 * key.off.pressed = false
+		 *
+		 * // user presses and holds key again
+		 * key.pressed = true
+		 * key.on.pressed = false
+		 * key.off.pressed = true
+		 *
+		 * // user releases key
+		 * key.pressed = false
+		 * key.on.pressed = false
+		 * key.off.pressed = true
+		 *
+		 * ```
 		 *
 		 * ### Other Notes
 		 *
@@ -116,9 +147,9 @@ export type KeyOptions = {
 		 * root1 === root2 // or root1.equals(root2)
 		 * ```
 		 *
-		 * Sometimes you might be passed a key and you might want to check which toggle state it is. You can do this like so:
+		 * Sometimes you might be passed a key and you might want to check which toggle state it is. There are helpers provided for this ({@link isToggleKey}, {@link isToggleOnKey}, {@link isToggleOffKey}, {@link isToggleRootKey}), or you can do:
 		 * ```ts
-		 * if (key.opts.toggle) { // check it's a toggle key first
+		 * if (key.is.toggle) { // check it's a toggle key first
 		 * 	if (key.root === undefined) //it's the root key
 		 * 	else if (key.root.on === key) //it's the on key
 		 * 	else if (key.root.off === key) // it's the off key
@@ -150,11 +181,14 @@ export type KeysSorterOptions = {
 
 
 export type KeyHooks = {
-	"label": BaseHookType<string, never>
+	"label": BaseHookType<Key, string, never>
+	"pressed": BaseHookType<Key, boolean, never>
+	"variants": BaseHookType<Key, string[], ERROR.INVALID_VARIANT>
 }
 
 export type KeysHook = CollectionHookType<
-	OnlyRequire<Key, "id">,
+	RawKey | Key,
 	Record<string, Key>,
-	KnownError<ERROR.DUPLICATE_KEY>
+	KnownError<ERROR.DUPLICATE_KEY>,
+	never
 >

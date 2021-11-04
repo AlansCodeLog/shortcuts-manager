@@ -1,6 +1,6 @@
 import type { Command, Condition, Key, Plugin, Shortcut } from "@/classes"
 import { KnownError } from "@/helpers"
-import { DeepPartialObj, TYPE_ERROR } from "@/types"
+import { RawCommand, RawKey, RawShortcut, TYPE_ERROR } from "@/types"
 import { crop, indent, pretty } from "@utils/utils"
 
 
@@ -33,7 +33,7 @@ export class Plugable<
 	}
 	protected static _canAddPlugin(plugin: Plugin<any, any>, checkedPlugins: Plugin<any, any>[] = []): true | KnownError<TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES> {
 		if (checkedPlugins.length === 0) return true
-		const conflict = checkedPlugins.find(existing => existing.namespace === plugin.namespace)
+		const conflict = checkedPlugins.find(existing => existing !== plugin && existing.namespace === plugin.namespace)
 
 		if (conflict !== undefined) {
 			return new KnownError(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES, crop`
@@ -68,14 +68,13 @@ export class Plugable<
 		T extends Condition | Command | Shortcut | Key,
 		TKey extends keyof T,
 		TClass extends new (...args: any[]) => T = new (...args: any[]) => T,
-		TEntry extends T | DeepPartialObj<T["opts"]> = T | DeepPartialObj<T["opts"]>,
+		TEntry extends T | RawCommand | RawKey | RawShortcut = T | RawCommand | RawKey | RawShortcut,
 	>(type: TClass, plugins: Plugin<any, any>[] | undefined, key: TKey, entry: TEntry): T {
 		let instance: any
 		const isInstance = (entry instanceof type)
 
 		const arg = entry[key as keyof TEntry]
 
-		// @ts-expect-error - doesn't matter if they don't exist
 		const opts = entry.opts
 
 		const entryInfo = (entry as any).info

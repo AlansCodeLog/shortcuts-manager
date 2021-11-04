@@ -1,0 +1,81 @@
+<!--
+	Not really a test, just little helper to quickly check which keys fire which events since not all keys fire on all events.
+ -->
+<body>
+	<strong> Log</strong>
+	<table id="log">
+		<tr>
+			<td>type</td>
+			<td>keyCode</td>
+			<td>code</td>
+			<td>layout.get</td>
+			<td>modifiers</td>
+		</tr>
+	</table>
+</body>
+
+<script type="application/javascript">
+const table = document.querySelector("#log")
+
+function log(message) {
+	const row = document.createElement("tr")
+	for (let part of message) {
+		const col = document.createElement("td")
+		col.innerText = part
+		row.appendChild(col)
+	}
+	table.insertBefore(row, table.children[1])
+	const scrolling = document.body.scrollHeight > document.body.clientHeight;
+	if (scrolling) {
+		table.removeChild(table.children[table.children.length - 1])
+	}
+	console.log(message)
+}
+
+const keyboard = navigator.keyboard;
+console.log(keyboard)
+let layout
+keyboard.getLayoutMap().then(l => {
+	console.log(l)
+  layout = l
+})
+
+function getModifiers(e) {
+	return `${e.ctrlKey ? "(ctrlKey)" : ""} ${e.shiftKey ? "(shiftKey)" : ""} ${e.altKey ? "(altKey)" : ""} ${e.metaKey ? "(metakey)" : ""}`
+}
+
+function getChar(code) {
+	if (layout) {
+		return layout.get(code)
+	} else {
+		return "unsupported"
+	}
+}
+window.addEventListener("keydown", (e) => {
+	const message = [`keydown`,`${e.key}`,`${e.code}`, getChar(e.code),getModifiers(e)]
+	// otherwise we won't get the keyup event
+	if (e.key == "Tab") e.preventDefault()
+	log(message)
+})
+window.addEventListener("keyup", (e) => {
+	const message = [`keyup`,`${e.key}`,`${e.code}`, getChar(e.code), getModifiers(e)]
+	log(message)
+})
+window.addEventListener("keypress", (e) => {
+	const message = [`keypress`,`${e.key}`,`${e.code}`, getChar(e.code),getModifiers(e)]
+	log(message)
+})
+window.addEventListener("mousedown", (e) => {
+	const message = [`mousedown`, `${e.button}`, "", "", "", getModifiers(e)]
+	log(message)
+})
+window.addEventListener("mouseup", (e) => {
+	const message = [`mouseup`, `${e.button}`, "", "", "", getModifiers(e)]
+	log(message)
+})
+window.addEventListener("wheel", (e) => {
+	const dir = e.deltaY < 0 ? "up" : "down"
+	const message = [`wheel`, `${dir}`, "", "", "",getModifiers(e)]
+	log(message)
+})
+</script>

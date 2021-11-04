@@ -1,7 +1,8 @@
+import type { Key } from "@/classes"
+import { isMouseKey } from "."
 import { isToggleKey } from "./isToggleKey"
 import { isWheelKey } from "./isWheelKey"
 
-import type { Key } from "@/classes"
 
 
 /**
@@ -9,7 +10,7 @@ import type { Key } from "@/classes"
  */
 export function isNormalKey(key: Key): boolean {
 	return !isWheelKey(key)
-		&& !isWheelKey(key)
+		&& !isMouseKey(key)
 		&& !key.is.modifier
 		&& !isToggleKey(key)
 }

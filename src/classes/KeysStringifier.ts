@@ -1,6 +1,11 @@
 import { unreachable } from "@utils/utils"
 import { Key } from "./Key"
 
+const sKey= Symbol ("key")
+const sKeys = Symbol ("keys")
+const sShortcut = Symbol ("shortcut")
+const sChord = Symbol ("chord")
+
 type KeysStringifierOptions = {
 	key?:(key: string) => string
 	keys?:(key: string[]) => string
@@ -29,15 +34,15 @@ type KeysStringifierOptions = {
  * Ideally a single stringifier should be created and shared amongst all instances.
  */
 export class KeysStringifier {
-	#key: KeysStringifierOptions["key"]
-	#keys: KeysStringifierOptions["keys"]
-	#shortcut: KeysStringifierOptions["chain"]
-	#chord: KeysStringifierOptions["chord"]
+	[sKey]: KeysStringifierOptions["key"]
+	[sKeys]: KeysStringifierOptions["keys"]
+	[sShortcut]: KeysStringifierOptions["chain"]
+	[sChord]: KeysStringifierOptions["chord"]
 	constructor(opts: KeysStringifierOptions = {}) {
-		if (opts.key) this.#key = opts.key
-		if (opts.keys) this.#keys = opts.keys
-		if (opts.chord) this.#chord = opts.chord
-		if (opts.chain) this.#shortcut = opts.chain
+		if (opts.key) this[sKey] = opts.key
+		if (opts.keys) this[sKeys] = opts.keys
+		if (opts.chord) this[sChord] = opts.chord
+		if (opts.chain) this[sShortcut] = opts.chain
 	}
 	stringify(keyChordOrShorcut: Key | Key[] | Key[][]): string {
 		if (keyChordOrShorcut instanceof Key) return this.stringifyKey(keyChordOrShorcut)
@@ -49,22 +54,22 @@ export class KeysStringifier {
 		unreachable()
 	}
 	stringifyKey(key: Key): string {
-		if (this.#key) return this.#key(key.toString())
-		return key.toString()
+		if (this[sKey]) return this[sKey]!(key.toString())
+		return key.label
 	}
 	stringifyChord(keys: Key[]): string {
 		const stringified = keys.map(key => this.stringifyKey(key))
-		if (this.#chord) return this.#chord(stringified)
+		if (this[sChord]) return this[sChord]!(stringified)
 		return stringified.join("+")
 	}
 	stringifyChain(shortcut: Key[][]): string {
 		const stringified = shortcut.map(chord => this.stringifyChord(chord))
-		if (this.#shortcut) return this.#shortcut(stringified)
+		if (this[sShortcut]) return this[sShortcut]!(stringified)
 		return stringified.join(" ")
 	}
 	stringifyKeys(chord: Key[]): string {
 		const stringified = chord.map(key => this.stringifyKey(key))
-		if (this.#keys) return this.#keys(stringified)
+		if (this[sKeys]) return this[sKeys]!(stringified)
 		return stringified.join(", ")
 	}
 }

@@ -6,7 +6,7 @@ import { Hookable } from "./Hookable"
 
 export class HookableBase<
 	THooks extends
-		Record<string, BaseHookType<any, any>>,
+		Record<string, BaseHookType<any, any, any>>,
 	TAllowsListener extends
 		BaseHook<"allows", THooks> =
 		BaseHook<"allows", THooks>,
@@ -15,6 +15,27 @@ export class HookableBase<
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsListener, set: TSetListener }> {
 	declare _constructor: Hookable<{ allows: TAllowsListener, set: TSetListener }>["_constructor"]
+	protected _set<
+		TKey extends
+			keyof THooks =
+			keyof THooks,
+	>(
+			key: TKey,
+			value: THooks[TKey]["value"],
+			_cb: (error: THooks[TKey]["error"] | Error | never) => void = defaultCallback,
+	): void {
+		(this as any)[key] = value
+	}
+	protected _allows<
+		TKey extends
+			keyof THooks =
+			keyof THooks,
+	>(
+		_key: TKey,
+		_value: THooks[TKey]["value"],
+	): true | THooks[TKey]["error"] | Error {
+		return true
+	}
 	/**
 	 * Tells you whether a property is allowed to be set.
 	 *
@@ -39,9 +60,10 @@ export class HookableBase<
 	): true | THooks[TKey]["error"] | Error | never {
 		const self = this as any
 		for (const listener of this.listeners.allows) {
-			const response = listener(key, value, self[key])
+			const response = listener(key, value, self[key], self)
 			if (response !== true) return response
 		}
+		if (self._allows) return self._allows(key, value)
 		return true
 	}
 	/**
@@ -66,12 +88,16 @@ export class HookableBase<
 	): void {
 		if (check) {
 			const e = this.allows<TKey>(key, value)
-
-			if (e instanceof Error) cb(e)
+			if (e instanceof Error) {
+				cb(e)
+				return
+			}
 		}
 		const self = this as any
+		const oldValue = self[key]
+		self._set(key, value)
 		for (const listener of this.listeners.set) {
-			listener(key, value, self[key], cb)
+			listener(key, value, oldValue, self)
 		}
 	}
 }

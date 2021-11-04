@@ -8,7 +8,7 @@ export class Hookable<
 	THooks extends Record<string, any>,
 	TTypes extends keyof THooks = keyof THooks,
 > {
-	listeners!: {[K in keyof THooks]: THooks[K][] }
+	listeners!: { [K in keyof THooks]: THooks[K][] }
 	protected _constructor({hookable:{ keys }}:{hookable:{ keys: TTypes[]}}): void {
 		this.listeners = {} as any
 		for (const key of keys) this.listeners[key] = [] as any
@@ -20,9 +20,9 @@ export class Hookable<
 	 *
 	 * ```ts
 	 * const allowsHook = ... // keep a reference if you want to remove it later
-	 * keys.addHook("allows", allowsHook)
+	 * shortcut.addHook("allows", allowsHook)
 	 *
-	 * if (keys.allows(...)) // your hook will fire
+	 * if (shortcut.allows(...)) // your hook will fire
 	 * ```
 	 *
 	 * Note that typescript can only understand the types of the errors of the builtin listeners. Therefore if you're adding listeners afterwards, you will need to pass the possible errors the listener can return as the first type parameter if you want them typed correctly:
@@ -30,7 +30,7 @@ export class Hookable<
 	 * class MyError extends Error {
 	 *  	property: boolean
 	 * }
-	 * let allowed = keys.allows<MyError>(...)
+	 * let allowed = shortcut.allows<MyError>(...)
 	 * ```
 	 */
 	addHook<
@@ -40,7 +40,12 @@ export class Hookable<
 		TListener extends
 			THooks[TType] =
 			THooks[TType],
-	>(type: TType, listener: TListener): void {
+		>(type: TType, listener: TListener): void {
+
+		if (typeof listener !== "function") {
+			console.log(listener);
+			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Listener is not a function.", undefined)
+		}
 		this.listeners[type].push(listener as any)
 	}
 	/**
@@ -50,8 +55,8 @@ export class Hookable<
 	 *
 	 * ```ts
 	 * const allowsHook = ... // keep a reference to the listener
-	 * keys.addHook("allows", allowsHook)
-	 * keys.removeHook("allows", allowsHook)
+	 * keys.addHook("allowsAdd", allowsHook)
+	 * keys.removeHook("allowsAdd", allowsHook)
 	 * ```
 	 */
 	removeHook<
@@ -62,6 +67,9 @@ export class Hookable<
 			THooks[TType] =
 			THooks[TType],
 	>(type: TType, listener: TListener): void {
+		if (typeof listener !== "function") {
+			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Listener is not a function.", undefined)
+		}
 		const index = this.listeners[type].indexOf(listener)
 		if (index === -1) {
 			const prettyListeners = indent(pretty(this.listeners[type]), 4)

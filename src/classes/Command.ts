@@ -4,7 +4,7 @@ import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
 
-
+const defaultExec = () => { }
 
 export class Command<
 	TExec extends
@@ -29,14 +29,16 @@ export class Command<
 	/** Unique string to identify the command by. */
 	name: TName
 	/** The function to execute when a shortcut triggers it's command. */
-	execute: TExec = undefined as TExec
+	execute: TExec = defaultExec as TExec
 	/** Commands may have an additional condition that must be met, apart from the shortcut's that triggered it. */
 	condition: TCondition = new Condition("") as TCondition
 	/** A description of what the command does. */
-	description: TOpts["description"] = ""
+	description: string = ""
 	/**
 	 * # Command
 	 * Creates a command.
+	 *
+	 * It can throw. See {@link ERROR} for why.
 	 *
 	 * @template TExec  Captures the type of the execute function.
 	 * @template TCondition  Captures the type of the condition.
@@ -51,7 +53,7 @@ export class Command<
 	 */
 	constructor(
 		name: TName,
-		opts?: TOpts,
+		opts?: Partial<TOpts>,
 	)
 	constructor(
 		name: TName,
@@ -67,15 +69,13 @@ export class Command<
 	) {
 		super()
 		this.name = name
-		if (opts.execute) this.execute = opts.execute
-		if (opts.description) this.description = opts.description
+		if (opts.execute) this.execute = opts.execute as TExec
+		if (opts.description) this.description = opts.description as string
+		if (opts.condition) this.condition = opts.condition as TCondition
 		this._mixin({
 			hookable: { keys: ["allows", "set"] },
 			plugableBase: { plugins, info, key: "name" }
 		})
-	}
-	get executable(): boolean {
-		return this.execute !== undefined
 	}
 	/**
 	 * Returns whether the command passed is equal to this one.

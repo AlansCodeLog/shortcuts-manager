@@ -2,9 +2,14 @@ import type { Command, Condition } from "@/classes"
 import type { KnownError } from "@/helpers"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
-import type { OnlyRequire } from "./utils"
 
 
+/**
+ * Same as [[ShortcutOptions]] except you're allowed to only pass the keys property.
+ */
+export type RawCommand = Pick<Command, "name"> & {
+	opts?: Partial<CommandOptions>
+}
 
 /**
  * Can be passed to Command/Commands classes to customize what the string property returns for errors, etc.
@@ -20,7 +25,7 @@ export type CommandParserOptions = {
 }
 
 export type CommandOptions<
-	TExec extends ((...args: any) => any) | undefined = ((...args: any) => any) | undefined,
+	TExec extends ((...args: any) => any) | undefined = ((...args: any) => any),
 	TCondition extends Condition = Condition,
 > = {
 	/**
@@ -34,18 +39,19 @@ export type CommandOptions<
 	 */
 	condition: TCondition
 	/** See {@link Command.description} */
-	description?: string
+	description: string
 }
 
 
 export type CommandHooks = {
-	"name": BaseHookType<string, never>
-	"execute": BaseHookType<(...args: any) => void, never>
-	"condition": BaseHookType<Condition, never>
+	"name": BaseHookType<Command, string, never>
+	"execute": BaseHookType<Command, (...args: any) => void, never>
+	"condition": BaseHookType<Command, Condition, never>
 }
 
 export type CommandsHook = CollectionHookType<
-	OnlyRequire<Command, "name">,
+	RawCommand | Command,
 	Record<string, Command>,
-	KnownError<ERROR.DUPLICATE_COMMAND>
+	KnownError<ERROR.DUPLICATE_COMMAND>,
+	never
 >

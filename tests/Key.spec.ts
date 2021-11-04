@@ -1,6 +1,6 @@
-import { Key } from "@/classes"
+import { Key, KeysStringifier } from "@/classes"
 import { isToggleOffKey, isToggleOnKey } from "@/helpers"
-import { TYPE_ERROR } from "@/types"
+import { ERROR, TYPE_ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
@@ -39,7 +39,7 @@ describe(testName(), () => {
 		expect(on.id).to.equal("aOn")
 		expect(on.label).to.equal("a (On)")
 		expect(off.label).to.equal("a (Off)")
-		expect(on.toString()).to.equal("a (On)")
+		expect(on.stringifier!.stringify(on)).to.equal("a (On)")
 		expect(key === on).to.be.false
 		expect(key.on === on).to.be.true
 		expect(key.equals(on)).to.be.false
@@ -103,10 +103,26 @@ describe(testName(), () => {
 		expect(key.on!.id).to.equal("aOn")
 		expect(key.off!.id).to.equal("aOff")
 	})
+	it("toggles should have suffixes", () => {
+		const key = new Key("a", { is: { toggle: true } })
+		key.on!.set("pressed", true)
+		expect(key.on!.pressed).to.equal(true)
+		expect(key.off!.pressed).to.equal(false)
+		expect(key.pressed).to.equal(false)
+	})
 	it("toString works", () => {
 		const key1 = new Key("a")
-		const key2 = new Key("a", { stringify: (_key) => "Bla" })
-		expect(`${key1}`).to.equal("a")
-		expect(`${key2}`).to.equal("Bla")
+		const key2 = new Key("a", {stringifier: new KeysStringifier({key: (_key) => "Bla"})})
+		expect(key1.stringifier?.stringify(key1)).to.equal("a")
+		expect(key2.stringifier?.stringify(key2)).to.equal("Bla")
+	})
+	it("gaurds against invalid variant", () => {
+		expect(catchError(() => {
+			new Key("a", {variants: ["a"]})
+		}).code).to.equal(ERROR.INVALID_VARIANT)
+		expect(catchError(() => {
+			const key = new Key("a", { variants: ["b"] })
+			key.set("variants", ["a"])
+		}).code).to.equal(ERROR.INVALID_VARIANT)
 	})
 })

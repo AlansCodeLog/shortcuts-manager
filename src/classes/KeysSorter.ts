@@ -2,7 +2,8 @@ import { keyOrder } from "@/helpers"
 import { KeysSorterOptions, KEY_SORT_POS } from "@/types"
 import type { Key } from "./Key"
 
-
+const sSort = Symbol("sort")
+const sDefaultSort = Symbol("defaultSort")
 /**
  * Creates a keys sorter for shortcut chords.
  *
@@ -25,9 +26,9 @@ import type { Key } from "./Key"
  * Or you can pass a completely custom sort function if you really want to (in which case the order option will remain unused unless you use it).
  */
 export class KeysSorter {
-	order: KeysSorterOptions["order"] = KEY_SORT_POS
-	#sort: KeysSorterOptions["sort"]
-	#defaultSort(a: Key, b: Key, order: KeysSorterOptions["order"]): number {
+	order: KeysSorterOptions["order"] = KEY_SORT_POS;
+	[sSort]: KeysSorterOptions["sort"]
+	[sDefaultSort](a: Key, b: Key, order: KeysSorterOptions["order"]): number {
 		// -1 = a b
 		if (keyOrder(a, order) < keyOrder(b, order)) return -1
 		// 1 = b a
@@ -36,13 +37,13 @@ export class KeysSorter {
 	}
 	constructor(opts: Partial<KeysSorterOptions> = {}) {
 		if (opts.order) this.order = opts.order
-		if (opts.sort) this.#sort = opts.sort
+		if (opts.sort) this[sSort]! = opts.sort
 	}
 	sort(keys: Key[]): Key[] {
-		if (this.#sort) {
-			return keys.sort((a, b) => this.#sort!(a, b, this.order))
+		if (this[sSort]) {
+			return keys.sort((a, b) => this[sSort]!(a, b, this.order))
 		}
-		return keys.sort((a, b) => this.#defaultSort!(a, b, this.order))
+		return keys.sort((a, b) => this[sDefaultSort]!(a, b, this.order))
 	}
 }
 

@@ -8,7 +8,7 @@ import { Plugable } from "./Plugable";
 import { PlugableCollection } from "./PlugableCollection";
 
 export class MixinHookablePlugableCollection<
-	THook extends CollectionHookType<any, any, any>,
+	THook extends CollectionHookType<any, any, any, any>,
 	TPlugins extends Plugin<any, undefined>[],
 > { }
 export interface MixinHookablePlugableCollection<THook, TPlugins> extends

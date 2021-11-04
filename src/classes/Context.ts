@@ -4,6 +4,8 @@ import type { ContextOptions, RecursiveRecord } from "@/types/context"
 import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
+const sEquals = Symbol("equals")
+
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
 	const keys1 = Object.keys(obj)
 	const keys2 = Object.keys(other)
@@ -30,7 +32,7 @@ export class Context<
 > extends MixinPlugableBase<TPlugins, TInfo>{
 	/** Where the context object is stored. */
 	value: TValue
-	#equals: ContextOptions<TValue>["equals"]
+	[sEquals]: ContextOptions<TValue>["equals"]
 	/**
 	 * # Context
 	 *
@@ -52,13 +54,13 @@ export class Context<
 	 */
 	constructor(
 		context: TValue,
-		opts: ContextOptions<TValue>,
+		opts: ContextOptions<TValue> = {},
 		info?: TInfo,
 		plugins?: TPlugins
 	) {
 		super()
 		this.value = context
-		if (opts.equals) this.#equals = opts.equals
+		if (opts.equals) this[sEquals] = opts.equals
 		this._mixin({
 			plugableBase: { plugins, info, key: undefined }
 		})
@@ -68,8 +70,8 @@ export class Context<
 	 *
 	 * To return true, their values must be equal according to the class (see {@link ContextOptions.equals}), and they must be equal according to their plugins.
 	 */
-	equals(context: Context<TValue, any, any>): context is Context<TValue, TPlugins, TInfo> {
-		if (this.#equals) return this.#equals(this, context) && this.equalsInfo(context)
+	equals(context: Context<any, any, any>): context is Context<TValue, TPlugins, TInfo> {
+		if (this[sEquals]) return this[sEquals]!(this, context) && this.equalsInfo(context)
 		return fastIsEqual(this.value, context.value) && this.equalsInfo(context)
 	}
 	/** A wrapper around the parameter's eval function if you prefer to write `context.eval(condition)` instead of `condition.eval(context)` */
@@ -77,7 +79,7 @@ export class Context<
 		return condition.eval(this)
 	}
 	get opts() {
-		return { equals: this.#equals }
+		return { equals: this[sEquals] }
 	}
 }
 

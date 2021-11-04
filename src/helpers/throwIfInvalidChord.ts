@@ -22,6 +22,7 @@ export function throwIfInvalidChord(
 	const shortcut = self.keys
 	const prettyChord = stringifier.stringifyChord(chord)
 	const prettyShortut = stringifier.stringifyChain(shortcut)
+
 	const repeated = findDuplicates(chord, {
 		equals: (key, other) => {
 		if (key === other || key.id === other.id) {
@@ -48,6 +49,7 @@ export function throwIfInvalidChord(
 			Shortcut chords cannot contain duplicate keys. This includes more than one of the same toggle, regardless of the state.
 		`, { shortcut: self, chord, i, keys: repeated })
 	}
+
 	const onlyModifiers = chord.filter(key => key.is.modifier)
 	const containsOnlyModifiers = onlyModifiers.length === chord.length
 	if (i < shortcut.length - 1 && containsOnlyModifiers) {
@@ -57,6 +59,7 @@ export function throwIfInvalidChord(
 			A chord can only consist of only modifiers if it's the last chord in a shortcut.
 		`, { shortcut: self, chord, i, keys: onlyModifiers })
 	}
+
 	const normalKeys = chord.filter(isNormalKey)
 	const prettyNormalKeys = stringifier.stringifyKeys(normalKeys)
 	if (normalKeys.length > 1) {
@@ -66,6 +69,7 @@ export function throwIfInvalidChord(
 			Chords can only contain one.
 		`, { shortcut: self, chord, i, keys: normalKeys })
 	}
+
 	/* It might actually be possible to allow this, similar to how emulated toggle keys are handled but it would be a pain for such an odd use case (even I don't have such weird shortcuts). */
 	const wheelKeys = chord.filter(key => isWheelKey(key))
 	const prettyWheelKeys = stringifier.stringifyKeys(wheelKeys)

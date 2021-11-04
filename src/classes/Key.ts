@@ -1,10 +1,13 @@
 import { KnownError } from "@/helpers"
 import { MixinHookablePlugableBase } from "@/mixins"
-import { DeepPartialObj, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleProxy, TYPE_ERROR } from "@/types"
+import { DeepPartialObj, ERROR, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
+import type { KeysStringifier } from "."
+import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
-
-
+const sId = Symbol("id")
+const sKeyCreateToggle = Symbol("keyCreateToggle")
+const sLabel = Symbol("label")
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
@@ -19,37 +22,40 @@ export class Key<
 		string =
 		string,
 > extends MixinHookablePlugableBase<KeyHooks,TPlugins, TInfo> implements Omit<KeyOptions, "toString">  {
-	readonly #id: TId
+	readonly [sId]: TId
+	readonly [sLabel]: KeyOptions["label"]
+	/**
+	 * Wether the key is currently being *held* down.
+	 */
+	pressed: boolean = false
 	/** See {@link KeyOptions.is} */
-	readonly is: KeyOptions["is"]
+	is: KeyOptions["is"]
 	/**
 	 * If the key is a toggle key, pass this when defining shortcuts if you want them to trigger when the key is toggled on. Otherwise if you just pass the key it will trigger on every change of state.
 	 *
 	 * See {@link KeyOptions.is.toggle} for how this works.
 	 */
-	declare on?: ToggleProxy<Key>
+	declare on?: ToggleKey<Key>
 	/** See {@link Key.on} except this triggers when the key is toggled off. */
-	declare off?: ToggleProxy<Key>
+	declare off?: ToggleKey<Key>
 	/** This property is only available on toggle states (e.g. key.on / key.off). */
-	declare root: Key & { on: ToggleProxy<Key>, off: ToggleProxy<Key> }
+	declare root: Key & { on: ToggleKey<Key>, off: ToggleKey<Key> }
 	/** See {@link KeyOptions.variants} */
-	readonly variants: KeyOptions["variants"]
-
-	#label: KeyOptions["label"]
-	#stringify: KeyOptions["stringify"]
+	variants: KeyOptions["variants"]
+	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
 	 * # Key
 	 * Creates a key.
 	 *
 	 * It can throw. See {@link ERROR} for why.
 	 *
-	 * Note: You cannot add more plugins or change the structure of info after creating an instance.
+	 * Options cannot be changed once set (because a toggle key might have be created, which can't be uncreated). It's recommended you just create a new key if you happen to expose changing key options to users. You can then attempt to change all shortcuts to the new key (note you will have to find the toggles as well if they were created) and report back any errors to users (e.g. changing from/to a modifier can render shortcut chords invalid).
 	 *
 	 * @template TPlugins **@internal** See {@link PlugableBase}
 	 * @template TInfo **@internal** See {@link PlugableBase}
 	 * @template TId **@internal** See {@link ./README.md Collection Entries}
 	 * @param id See {@link Key.id}
-	 * @param opts Set options for the shortcut.
+	 * @param opts Set {@link KeyOptions}. Options cannot be changed once set, {@link Key}.
 	 * @param info See {@link Key.info}
 	 * @param plugins See {@link Key.plugins}
 	 */
@@ -70,24 +76,30 @@ export class Key<
 		plugins?: TPlugins
 	) {
 		super()
-		this.#id = id
-		this.#label = opts.label ?? id
-		// these should function like real properties, enumerable and visible to JSON.stringify
+		if (opts.variants) {
+			this.variants = opts.variants
+			if (this.variants.includes(id)) {
+				throw new KnownError(ERROR.INVALID_VARIANT, `Attempted to create a key ${this.stringifier.stringify(this)} with the following variants: [${this.variants.join(", ")}], but one of the variants is the key id itself.`, { variants:this.variants, id })
+			}
+		}
+		this[sId] = id
+		this[sLabel] = opts.label ?? id
+		// should function like a real property, enumerable and visible to JSON.stringify
 		Object.defineProperties(this, {
 			id: {
-				get: function(): string { return this.#id },
+				get: function(): string { return this[sId] },
 				set: function(_: string):void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
 				enumerable: true,
 			},
+			// need this because label might be a function
 			label: {
-				get: function (): string { return typeof this.#label === "function" ? this.#label(this) : this.#label },
-				set: function (_: string): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The label property of a key cannot be changed once set.", undefined) },
+				get: function (): string { return typeof this[sLabel] === "function" ? this[sLabel](this) : this[sLabel] },
+				set: function (val: string): void { this[sLabel] = val},
 				enumerable: true
 			}
 		});
-		this.variants = opts.variants ?? false
 
-		this.#stringify = opts.stringify
+		if (opts.stringifier) this.stringifier = opts.stringifier as KeysStringifier
 		this.is = {
 			toggle: false,
 			modifier: opts.is?.modifier ?? false,
@@ -100,24 +112,31 @@ export class Key<
 			/* eslint-disable prefer-rest-params */
 			if (arguments[4] !== BYPASS_TOGGLE_CREATION) {
 				// arguments might be shorter and we need to be sure the bypass is the fourth argument
-				this.#keyCreateToggle([arguments[1], arguments[2], arguments[3]])
+				this[sKeyCreateToggle]([arguments[1], arguments[2], arguments[3]])
 			}
 			/* eslint-enable @typescript-eslint/no-unused-vars */
 			/* eslint-enable prefer-rest-params */
 		}
 
 		Object.freeze(this.is)
-		Object.freeze(this.variants)
 		this._mixin({
 			hookable: { keys: ["allows", "set"] },
 			plugableBase: { plugins, info, key: "id"}
 		})
 	}
+	protected override _allows(key: string, value: any): true | KnownError<ERROR.INVALID_VARIANT> {
+		if (key === "variants") {
+			if (value.includes(this.id)) {
+				return new KnownError(ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id })
+			}
+		}
+		return true
+	}
 	/**
 	 * Adds on/off toggle states to the instance.
 	 * See {@link KeyOptions.is.toggle} for how this works.
 	 */
-	#keyCreateToggle(args: any[]): void {
+	[sKeyCreateToggle](args: any[]): void {
 		Object.defineProperty(this, "on", { configurable: false, enumerable: true, value: new Key(`${this.id}On`, ...args, BYPASS_TOGGLE_CREATION) })
 		Object.defineProperty(this.on, "root", { configurable: false, enumerable: false, value: this })
 		Object.defineProperty(this, "off", { configurable: false, enumerable: true, value: new Key(`${this.id}Off`, ...args, BYPASS_TOGGLE_CREATION) })
@@ -141,8 +160,10 @@ export class Key<
 	 * The preferred human readable version of a key.
 	 *
 	 * See {@link KeyOptions.label}
+	 *
+	 * This is a getter so label can be a function and this will return it's value. It's type is string, but you can safely set a function to it.
 	 */
-	declare label: string
+	declare label: string // function is hidden, though it can still be set via the property
 	/**
 	 * Returns whether the key passed is equal to this one.
 	 *
@@ -158,12 +179,8 @@ export class Key<
 			)
 		)
 	}
-	override toString(): string {
-		if (this.#stringify) return this.#stringify(this)
-		return typeof this.opts.label === "function" ? this.opts.label(this) : this.opts.label
-	}
 	get opts(): KeyOptions {
-		return { is:this.is, variants: this.variants, stringify: this.#stringify, label: this.#label }
+		return { is: this.is, variants: this.variants, stringifier: this.stringifier, label: this.label }
 	}
 }
 

@@ -1,25 +1,31 @@
 
-export type BaseHookType<TValue, TError, TOld = TValue> = {
+export type BaseHookType<TInstance, TValue, TError, TOld = TValue> = {
 	value: TValue
 	error: TError
 	old: TOld
+	self: TInstance
 }
 
-export type CollectionHookType<TValue, TValues, TError> = {
+export type CollectionHookType<TValue, TValues, TAddError = Error | never, TRemoveError = Error | never> = {
 	value: TValue
 	values: TValues
-	error: TError
+	addError: TAddError
+	removeError: TRemoveError
+	error: TAddError | TRemoveError
 }
 
 export type BaseHook<
 	TType extends "allows" | "set",
-	THooks extends Record<string, BaseHookType<any, any>>,
+	THooks extends Record<string, BaseHookType<any, any, any>>,
 	TKey extends
 		keyof THooks =
 		keyof THooks,
 	TValue extends
 		THooks[TKey]["value"] =
 		THooks[TKey]["value"],
+	TSelf extends
+		THooks[TKey]["self"] =
+		THooks[TKey]["self"],
 	TOld extends
 		THooks[TKey]["old"] =
 		THooks[TKey]["old"],
@@ -32,6 +38,7 @@ export type BaseHook<
 		key: TKey,
 		value: TValue,
 		old: TOld,
+		self: TSelf,
 	) => true | TError
 )
 // set
@@ -40,38 +47,47 @@ export type BaseHook<
 		key: TKey,
 		value: TValue,
 		old: TOld,
-		cb: (e: TError) => void,
+		self: TSelf,
 	) => void
 )
 
 export type CollectionHook<
-	TType extends "allows" | "add",
-	THook extends CollectionHookType<any, any, any>,
+	TType extends "add" | "remove" | "allowsAdd" | "allowsRemove",
+	THook extends CollectionHookType<any, any, any, any>,
 	TValue extends
 		THook["value"] =
 		THook["value"],
 	TValues extends
 		THook["values"] =
 		THook["values"],
-	TError extends
-		Error | never =
-		Error | never,
-> = TType extends "allows"
+> =
+TType extends "allowsAdd"
 ? (
 	(
 		entry: TValue,
 		entries: TValues
-	) => true | TError
+	) => true | THook["addError"]
 )
-// add
+: TType extends "allowsRemove"
+? (
+	(
+		entry: TValue,
+		entries: TValues
+	) => true | THook["removeError"]
+)
+: TType extends "add"
+? (
+	(
+		entry: TValue,
+		entries: TValues,
+	) => void
+)
 : (
 	(
 		entry: TValue,
 		entries: TValues,
-		cb: (e: TError) => void,
 	) => void
 )
-
 
 // export abstract class HookableCollectionImplementation<THook extends CollectionHookType<any, any, any>> {
 // 	protected abstract _add (_value: THook["value"], _cb: ErrorCallback<any>): void;

@@ -1,5 +1,4 @@
 import { Command, Condition } from "@/classes"
-import type { CommandOptions } from "@/types"
 import { testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
@@ -17,7 +16,7 @@ describe(testName(), () => {
 	})
 	it("sets options", () => {
 		const execute = (arg: string): string => arg
-		const opts: Omit<CommandOptions, "parser"> = {
+		const opts = {
 			description: "command description",
 			execute,
 			condition: new Condition("allowed"),
@@ -27,13 +26,7 @@ describe(testName(), () => {
 		expect(command.description).to.equal(opts.description)
 		expect(command.condition).to.equal(opts.condition)
 		expect(command.execute("test")).to.equal("test")
-		expect(command.executable).to.equal(true)
 		expect(command.condition).to.equal(opts.condition)
-		// expect(command.string).to.equal(crop`
-		// 	command
-		// 	Condition: allowed
-		// 	Description: command description
-		// `)
 	})
 	describe("checks equality from", () => {
 		it("name", () => {
@@ -85,13 +78,5 @@ describe(testName(), () => {
 				expect(command1.equals(command2)).to.equal(false)
 			}
 		})
-	})
-	it("stringifies correctly", () => {
-		const a = new Command("a")
-		// expect(a.string).to.equal("a")
-		// a.description = "Some Description"
-		// expect(a.string).to.include("Description: Some Description")
-		// a.condition = new Condition("some_condition")
-		// expect(a.string).to.include("Condition: some_condition")
 	})
 })

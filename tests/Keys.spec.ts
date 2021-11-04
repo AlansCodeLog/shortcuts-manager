@@ -45,10 +45,9 @@ describe(testName(), () => {
 				expect(key).to.not.equal(undefined)
 				return key.id === "a"
 			})
-			expect(keys.info("a")).to.deep.equal(keyA.info)
 			expect(keys.get("a")).to.equal(keyA)
-			expect(keys.exists(filter)).to.equal(true)
-			expect(keys.filter(filter)[0].id).to.equal("a")
+			expect(keys.query(filter, false)).to.equal(keyA)
+			expect(keys.query(filter, true)![0]).to.equal(keyA)
 		})
 	})
 })

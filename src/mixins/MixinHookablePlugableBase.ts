@@ -9,7 +9,7 @@ import { PlugableBase } from "./PlugableBase";
 
 
 export class MixinHookablePlugableBase<
-	THooks extends Record<string, BaseHookType<any, any>>,
+	THooks extends Record<string, BaseHookType<any, any, any>>,
 	TPlugins extends Plugin<any, undefined>[],
 	TInfo extends PluginsInfo<TPlugins>
 > { }

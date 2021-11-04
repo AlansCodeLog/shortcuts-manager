@@ -22,11 +22,20 @@ export enum ERROR {
 	IMPOSSIBLE_TOGGLE_SEQUENCE = "IMPOSSIBLE_TOGGLE_SEQUENCE",
 	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
 	CONFLICTING_ENTRY_PLUGINS = "CONFLICTING_ENTRY_PLUGINS",
+	MISSING = "MISSING", // removing
 
 	// === duplicate "bases"
 	DUPLICATE_KEY = "DUPLICATE_KEY",
 	DUPLICATE_COMMAND = "DUPLICATE_COMMAND",
 	DUPLICATE_SHORTCUT = "DUPLICATE_SHORTCUT",
+
+	// === other
+	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
+	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
+	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
+	INCORRECT_TOGGLE_TYPE = "INCORRECT_TOGGLE_TYPE",
+	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
+
 }
 
 /** Errors that will throw since they should be caught at production. */
@@ -108,6 +117,10 @@ type ERROR_Info = {
 		entry: Key | Shortcut | Command
 		collection: Keys | Shortcuts | Commands
 	}
+	[ERROR.MISSING]: {
+		entry: Key | Shortcut | Command
+		collection: Keys | Shortcuts | Commands
+	}
 
 	// === duplicate "bases"
 	[ERROR.DUPLICATE_KEY]: {
@@ -121,6 +134,30 @@ type ERROR_Info = {
 	[ERROR.DUPLICATE_COMMAND]: {
 		existing: Command
 		self: Commands
+	}
+
+	// === other
+	[ERROR.INVALID_SWAP_CHORDS]:
+	{
+		chord: Key[][]
+	} |
+	{
+		chordsA: Key[][]
+		chordsB: Key[][]
+	}
+	[ERROR.MULTIPLE_MATCHING_SHORTCUTS]: {
+		shortcuts: Shortcut[]
+	}
+	[ERROR.INCORRECT_TOGGLE_STATE]: {
+		key:Key
+	}
+	[ERROR.INCORRECT_TOGGLE_TYPE]: {
+		key: Key,
+		event: MouseEvent | WheelEvent
+	}
+	[ERROR.INVALID_VARIANT]: {
+		variants: string[]
+		id: string
 	}
 }
 

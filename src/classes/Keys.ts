@@ -1,10 +1,9 @@
 import { defaultCallback } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
-import type { ERROR, ErrorCallback, KeysHook, KeysOptions, OnlyRequire, RecordFromArray } from "@/types"
+import type { ERROR, ErrorCallback, KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 import { Key } from "./Key"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
-
 
 
 export class Keys<
@@ -15,17 +14,19 @@ export class Keys<
 		Key<TPlugins> =
 		Key<TPlugins>,
 	TRawKeys extends
-		OnlyRequire<TKey, "id">[] =
-		OnlyRequire<TKey, "id">[],
+		RawKey[] =
+		RawKey[],
 	TEntries extends
 		RecordFromArray<TRawKeys, "id", TKey> =
 		RecordFromArray<TRawKeys, "id", TKey>,
-> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
+	> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
 	override entries: TEntries
-	stringifier: KeysOptions["stringifier"] = defaultStringifier
+	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
 	 * Creates a set of keys.
-	 * In the case plugins are passed, forces the keys to conform to those, adds missing properties, etc.
+	 * In the case plugins forces the keys to conform to those, adds missing properties, etc. Same thing with the stringifier option.
+	 *
+	 * Key sets don't allow variants to also be keys. See {@link KeyOptions.variants}
 	 *
 	 * Note:
 	 * - This will mutate the keys passed to it.
@@ -47,7 +48,7 @@ export class Keys<
 		super()
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 		this._mixin({
-			hookable: { keys: ["allows", "add"] },
+			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"] },
 			plugableCollection: { plugins, key:"id"}
 		})
 
@@ -57,27 +58,28 @@ export class Keys<
 			this.add(key)
 		})
 	}
-	protected override _add(entry: OnlyRequire<Key, "id">, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
+	protected override _add(entry: RawKey | Key, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
+		if (this.stringifier) {
+			if (entry instanceof Key) {
+				entry.stringifier = this.stringifier
+			} else {
+				//@ts-ignore
+				entry.opts = { ...(entry.opts ?? {}), stringifier: this.stringifier }
+			}
+		}
 		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
 		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id, cb)
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {
 		return this.entries[id as keyof TEntries]
 	}
-	/** Returns whether some key matches a custom filter. */
-	exists(filter: (existing: Key) => boolean): boolean {
-		return this.find(filter) !== undefined
-	}
-	/** Find a key with a custom filter. */
-	find(filter: (existing: Key) => boolean): Key {
-		return Object.values(this.entries).find(existing => filter(existing as Key)) as Key
-	}
-	/** Filter keys with a custom filter. */
-	filter(filter: (existing: Key) => boolean): Key[] {
-		return Object.values(this.entries).filter(existing => filter(existing as Key)) as Key[]
-	}
-	info(id: TRawKeys[number]["id"] | string): TKey["info"] {
-		return this.entries[id as keyof TEntries].info
+	/** Query the class. Just a simple wrapper around array find/filter. */
+	query(filter: Parameters<Array<TKey>["filter"]>["0"], all?: true): TKey[] | undefined
+	query(filter: Parameters<Array<TKey>["find"]>["0"], all?: false): TKey | undefined
+	query(filter: Parameters<Array<TKey>["filter"] | Array<TKey>["find"]>["0"], all: boolean = true): TKey | TKey[] | undefined {
+		return all
+			? Object.values(this.entries).filter(filter as any) as TKey[]
+			: Object.values(this.entries).find(filter as any) as TKey
 	}
 }
 // export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }

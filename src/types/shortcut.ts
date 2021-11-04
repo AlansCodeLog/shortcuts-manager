@@ -10,7 +10,9 @@ import type { OnlyRequire, Optional } from "./utils"
 /**
  * Same as [[ShortcutOptions]] except you're allowed to only pass the keys property.
  */
-export type RawShortcut = Pick<Shortcut, "keys"> & {
+export type RawShortcut =
+Omit<OnlyRequire<Shortcut, "keys">, "opts">&
+{
 	opts?: Partial<ShortcutOptions>
 }
 
@@ -23,20 +25,18 @@ export type ShortcutOptions = {
 	 * If the shortcut is created without a condition, it is assigned a blank condition. If you are using plugins on your conditions you should pass a blank condition made with your plugins.
 	 */
 	condition: Optional<Condition>
-	/** See {@link KeysSorter} */
-	sorter: KeysSorter
 	/** See {@link Shortcut.enabled} */
 	enabled: boolean
-	/**
-	 * See {@link KeysStringifier}
-	*/
+	/** See {@link KeysSorter} */
+	sorter: KeysSorter
+	/** See {@link KeysStringifier} */
 	stringifier: KeysStringifier
 }
 
 export type ShortcutsOptions = {
-	/**
-	 * See {@link KeysStringifier}
-	*/
+	/** See {@link KeysSorter} */
+	sorter: KeysSorter
+	/** See {@link KeysStringifier} */
 	stringifier: KeysStringifier
 }
 
@@ -48,14 +48,15 @@ export type KeysErrors =
 	| ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE
 
 export type ShortcutHooks = {
-	"active": BaseHookType<boolean, never>
-	"keys": BaseHookType<Key[][], KnownError<KeysErrors>>
-	"command": BaseHookType<Command | undefined, never>
-	"condition": BaseHookType<Condition, never>
+	"active": BaseHookType<Shortcut, boolean, never>
+	"keys": BaseHookType<Shortcut, Key[][], KnownError<KeysErrors>>
+	"command": BaseHookType<Shortcut, Command | undefined, never>
+	"condition": BaseHookType<Shortcut, Condition, never>
 }
 
 export type ShortcutsHook = CollectionHookType<
-	OnlyRequire<Shortcut, "keys">,
+	RawShortcut | Shortcut,
 	Shortcut[],
-	KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS>
+	KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS>,
+	KnownError<ERROR.MISSING>
 >

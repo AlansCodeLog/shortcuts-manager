@@ -8,29 +8,50 @@ import { Hookable } from "./Hookable"
 
 
 export class HookableCollection<
-	THook extends CollectionHookType<any, any, any>,
-	TAllowsListener extends
-		CollectionHook<"allows", THook> =
-		CollectionHook<"allows", THook>,
+	THook extends CollectionHookType<any, any, any, any>,
 	TAddListener extends
 		CollectionHook<"add", THook> =
 		CollectionHook<"add", THook>,
+	TRemoveListener extends
+		CollectionHook<"remove", THook> =
+		CollectionHook<"remove", THook>,
+	TAllowsAddListener extends
+		CollectionHook<"allowsAdd", THook> =
+		CollectionHook<"allowsAdd", THook>,
+	TAllowsRemoveListener extends
+		CollectionHook<"allowsRemove", THook> =
+		CollectionHook<"allowsRemove", THook>,
 	TEntries extends THook["values"] = THook["values"],
-> extends Hookable<{ allows: TAllowsListener, add: TAddListener }> {
-	declare _constructor: Hookable<{ allows: TAllowsListener, add: TAddListener }>["_constructor"]
+	TListeners extends {
+		add: TAddListener,
+		remove: TRemoveListener,
+		allowsAdd: TAllowsAddListener,
+		allowsRemove: TAllowsRemoveListener
+	} =
+	{
+		add: TAddListener,
+		remove: TRemoveListener,
+		allowsAdd: TAllowsAddListener,
+		allowsRemove: TAllowsRemoveListener
+	}
+	> extends Hookable<TListeners> {
+	declare _constructor: Hookable<TListeners>["_constructor"]
 	entries!: TEntries
-	protected _add(_value: THook["value"], _cb: (error: THook["error"] | Error) => void): void {
+	protected _add(_value: THook["value"], _cb: (error: THook["addError"] | Error) => void): void {
 		unreachable("Should be implemented by extending class.")
 	}
-	protected _allows(_value: THook["value"]): true | THook["error"] | Error | never {
+	protected _remove(_value: THook["value"], _cb: (error: THook["removeError"] | Error) => void): void {
+		unreachable("Should be implemented by extending class.")
+	}
+	protected _allows(_type: "add" | "remove", _value: THook["value"]): true | THook["error"] | Error | never {
 		return true
 	}
 	/**
-	 * Tells you whether an entry is allowed to be added.
+	 * Tells you whether an entry is allowed to be added/removed.
 	 *
 	 * Can return true or the error that would throw:
 	 * ```ts
-	 * const allowed = shortcut.allows("keys", [[key.a]])
+	 * const allowed = shortcut.allows("add", "keys", [[key.a]])
 	 * // Careful to check against true
 	 * if (allowed === true) {...} else { const error = allowed }
 	 * // Alternatively
@@ -38,14 +59,15 @@ export class HookableCollection<
 	 * ```
 	 */
 	allows(
+		type: "add" | "remove" ,
 		value: THook["value"],
 	): true | THook["error"] | Error | never {
 		const self = (this as any)
-		for (const listener of this.listeners.allows) {
-			const response = listener(value, self.entries)
+		for (const listener of this.listeners[("allows" + type.charAt(0).toUpperCase() + type.slice(1)) as keyof TListeners]) {
+			const response = (listener as any)(type, value, self.entries)
 			if (response !== true) return response
 		}
-		if (self._allows) return self._allows(value)
+		if (self._allows) return self._allows(type, value)
 		return true
 	}
 	/**
@@ -87,19 +109,23 @@ export class HookableCollection<
 	 */
 	add(
 		value: THook["value"],
-		cb: (error: THook["error"] | Error) => void = defaultCallback,
+		cb: (error: THook["addError"] | Error) => void = defaultCallback,
 		check: boolean = true,
 	): void {
 		if (check) {
-			const e = this.allows(value)
-			if (e instanceof Error) cb(e)
+			const e = this.allows("add", value)
+			if (e instanceof Error) {
+				cb(e)
+				return
+			}
 		}
 		const self = (this as any)
+		self._add(value, cb)
+
 		for (const listener of this.listeners.add) {
-			listener(value, this.entries, cb as (e: Error) => void)
+			listener(value, this.entries)
 		}
 
-		self._add(value, cb)
 	}
 	protected static _addToDict<
 		T extends Command | Key | Shortcut, // needed else we get an error on the callback type
@@ -114,7 +140,7 @@ export class HookableCollection<
 		/** When entries are stored in a record this will give us the key the entries are keyed by. */
 		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
 		/** Is the user's error callback passed down to us. */
-		cb: ErrorCallbackSubtype<T>,
+		cb: ErrorCallbackSubtype<T> = defaultCallback as ErrorCallbackSubtype<T>,
 	): void {
 		const key = typeof indexer === "function"
 			? indexer(entry) as keyof TEntries
@@ -123,9 +149,7 @@ export class HookableCollection<
 		let existing: any | undefined
 
 		if (Array.isArray(entries)) {
-			existing = (entries as any[]).find(item => {
-				entry.equals(item)
-			})
+			existing = (entries as any[]).find(item =>  entry.equals(item))
 		} else {
 			existing = (entries as any)[key as string]
 		}
@@ -138,7 +162,7 @@ export class HookableCollection<
 			${indent(pretty(existing), 3)}
 			New ${type}:
 			${indent(pretty(entry), 3)}
-		`
+			`
 
 			const error =
 				existing instanceof Key
@@ -154,12 +178,84 @@ export class HookableCollection<
 				// the following cast works but is wrong for use for the function argument
 
 				; (cb as ErrorCallback<ERROR.DUPLICATE_KEY | ERROR.DUPLICATE_COMMAND | ERROR.DUPLICATE_SHORTCUT>)(error)
-		}
+			}
 
 		if (Array.isArray(entries)) {
-			(entries).push(entry)
+			entries.push(entry)
 		} else {
-			(entries as any)[key as string] = entry
+			entries[key as string] = entry
+		}
+	}
+	/**
+	 * ---
+	 * Removes an entry.
+	 */
+	remove(
+		value: THook["value"],
+		cb: (error: THook["removeError"] | Error) => void = defaultCallback,
+		check: boolean = true,
+	): void {
+		if (check) {
+			const e = this.allows("remove", value)
+			if (e instanceof Error) {
+				cb(e)
+				return
+			}
+		}
+		const self = (this as any)
+		self._remove(value, cb)
+
+		for (const listener of this.listeners.remove) {
+			listener(value, this.entries)
+		}
+
+	}
+	protected static _removeFromDict<
+		T extends Command | Key | Shortcut, // needed else we get an error on the callback type
+		TSelf extends Commands | Keys | Shortcuts = Commands | Keys | Shortcuts,
+		TEntries extends
+		Record<string, T> | T[] =
+		Record<string, T> | T[],
+	>(
+			self: TSelf,
+			entries: TEntries,
+			entry: T,
+			/** When entries are stored in a record this will give us the key the entries are keyed by. */
+			indexer: Optional<keyof TEntries | ((entry: T) => string)>,
+			/** Is the user's error callback passed down to us. */
+			cb: ErrorCallback<ERROR.MISSING>,
+	): void {
+		const key = typeof indexer === "function"
+			? indexer(entry) as keyof TEntries
+			: indexer
+
+		let index: number | string
+
+		if (Array.isArray(entries)) {
+			index = (entries as any[]).findIndex(item => entry.equals(item))
+
+		} else {
+			index = key as string
+		}
+
+		if (index !== undefined) {
+			if (Array.isArray(entries)) {
+				entries.splice(index as number, 1)
+			} else {
+				entries[key as string] = undefined as any
+			}
+		} else {
+			const type = entry.constructor.name
+			const text = crop`
+			Entry ${type} ${index/* .string */} does not exist in this collection.
+
+			Entry:
+			${indent(pretty(entry), 3)}
+			`
+
+			const error = new KnownError(ERROR.MISSING, text, { entry: (index as any), collection: self as Shortcuts })
+
+			; cb(error)
 		}
 	}
 }
