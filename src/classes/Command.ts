@@ -4,7 +4,7 @@ import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
 
-const defaultExec = () => { }
+const defaultExec = () => true
 
 export class Command<
 	TExec extends
@@ -28,9 +28,13 @@ export class Command<
 > extends MixinHookablePlugableBase<CommandHooks, TPlugins, TInfo> implements CommandOptions {
 	/** Unique string to identify the command by. */
 	name: TName
-	/** The function to execute when a shortcut triggers it's command. */
-	execute: TExec = defaultExec as TExec
-	/** Commands may have an additional condition that must be met, apart from the shortcut's that triggered it. */
+	/**
+	 * See {@link CommandOptions.execute}
+	 */
+	execute: TExec = defaultExec as any as TExec
+	/**
+	 * See {@link CommandOptions.condition}
+	 */
 	condition: TCondition = new Condition("") as TCondition
 	/** A description of what the command does. */
 	description: string = ""
@@ -40,8 +44,8 @@ export class Command<
 	 *
 	 * It can throw. See {@link ERROR} for why.
 	 *
-	 * @template TExec  Captures the type of the execute function.
-	 * @template TCondition  Captures the type of the condition.
+	 * @template TExec  Captures the type of the execute function. See {@link Command.execute}
+	 * @template TCondition  Captures the type of the condition. See {@link Command.condition}
 	 * @template TPlugins **@internal** See {@link Plugable}
 	 * @template TInfo **@internal** See {@link Plugable}
 	 * @template TName **@internal** See {@link ./README.md Collection Entries}

@@ -36,6 +36,7 @@ export class Shortcut<
 	enabled: boolean = true
 	/** It is sometimes useful for some shortcuts to not equal eachother temporarily. For example, inside allow hooks when swapping, this makes it easier to return the correct answer without making major modifications to the instances. */
 	forceUnequal: boolean = false
+
 	/**
 	 * # Shortcut
 	 *

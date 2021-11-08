@@ -1,6 +1,8 @@
 import type { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+import type { Manager } from "@/classes/Manager"
 import type { KnownError } from "@/helpers"
 import type { BaseHook } from "./hooks"
+import type { AnyInputEvent } from "./manager"
 
 
 
@@ -35,6 +37,7 @@ export enum ERROR {
 	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
 	INCORRECT_TOGGLE_TYPE = "INCORRECT_TOGGLE_TYPE",
 	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
+	NO_MATCHING_SHORTCUT = "NO_MATCHING_SHORTCUT",
 
 }
 
@@ -57,6 +60,8 @@ export enum TYPE_ERROR {
  * {@link INTERNAL_ERROR_Info}
  */
 export type ErrorCallback<T extends ERROR | TYPE_ERROR> = (error: KnownError<T>) => void
+
+export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e: AnyInputEvent) => void
 
 /**
  * Defines the properties attached to each error.
@@ -158,6 +163,9 @@ type ERROR_Info = {
 	[ERROR.INVALID_VARIANT]: {
 		variants: string[]
 		id: string
+	}
+	[ERROR.NO_MATCHING_SHORTCUT]: {
+		chain: Key[][]
 	}
 }
 

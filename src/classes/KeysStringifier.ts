@@ -7,7 +7,7 @@ const sShortcut = Symbol ("shortcut")
 const sChord = Symbol ("chord")
 
 type KeysStringifierOptions = {
-	key?:(key: string) => string
+	key?:(key: Key) => string
 	keys?:(key: string[]) => string
 	chord?:(key: string[]) => string
 	chain?:(key: string[]) => string
@@ -20,7 +20,7 @@ type KeysStringifierOptions = {
  *
  * That method called then calls the other in a chain (e.g. if you pass a shortcut, it will call `stringifyChain` which will call `stringifyChord` and so on.)
  *
- * This is why the methods you can specify only take in string/string[]. `key` also takes a string because `stringifyKey` will always call a key's `toString` method.
+ * This is why most of the methods you can specify only take in `string[]`. `key` is the only exception.
  *
  * The default methods combines keys inside chords with `+` and the chords of shortcut chains with a space ` `.
  * ```
@@ -54,7 +54,7 @@ export class KeysStringifier {
 		unreachable()
 	}
 	stringifyKey(key: Key): string {
-		if (this[sKey]) return this[sKey]!(key.toString())
+		if (this[sKey]) return this[sKey]!(key)
 		return key.label
 	}
 	stringifyChord(keys: Key[]): string {

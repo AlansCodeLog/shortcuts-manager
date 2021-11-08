@@ -1,4 +1,4 @@
-import { defaultCallback } from "@/helpers"
+import { defaultCallback, isToggleKey } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
 import type { ERROR, ErrorCallback, KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 import { Key } from "./Key"
@@ -24,9 +24,10 @@ export class Keys<
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
 	 * Creates a set of keys.
+	 *
 	 * In the case plugins forces the keys to conform to those, adds missing properties, etc. Same thing with the stringifier option.
 	 *
-	 * Key sets don't allow variants to also be keys. See {@link KeyOptions.variants}
+	 *	All versions of toggle keys are automatically also added to the set.
 	 *
 	 * Note:
 	 * - This will mutate the keys passed to it.
@@ -69,12 +70,16 @@ export class Keys<
 		}
 		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
 		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id, cb)
+		if (isToggleKey(instance)) {
+			HookableCollection._addToDict<Key>(this, this.entries, instance.on!, t => t.id, cb)
+			HookableCollection._addToDict<Key>(this, this.entries, instance.off!, t => t.id, cb)
+		}
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {
 		return this.entries[id as keyof TEntries]
 	}
 	/** Query the class. Just a simple wrapper around array find/filter. */
-	query(filter: Parameters<Array<TKey>["filter"]>["0"], all?: true): TKey[] | undefined
+	query(filter: Parameters<Array<TKey>["filter"]>["0"], all?: true): TKey[]
 	query(filter: Parameters<Array<TKey>["find"]>["0"], all?: false): TKey | undefined
 	query(filter: Parameters<Array<TKey>["filter"] | Array<TKey>["find"]>["0"], all: boolean = true): TKey | TKey[] | undefined {
 		return all

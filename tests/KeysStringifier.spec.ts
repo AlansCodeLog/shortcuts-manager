@@ -24,7 +24,7 @@ describe(testName(), () => {
 		]
 
 		const stringifier = new KeysStringifier({
-			key(key) {return `"${key}"`},
+			key(key) {return `"${key.label}"`},
 			keys(keys) {return keys.join("!")},
 			chord(chord) {return chord.join("~")},
 			chain(chain) {return chain.join("=")}

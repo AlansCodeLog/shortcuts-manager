@@ -1,10 +1,12 @@
 import { Command, Condition } from "@/classes"
+import type { CommandOptions } from "@/types"
 import { testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
 
 
 describe(testName(), () => {
+	const execute = (..._args: Parameters<CommandOptions["execute"]>): void => {}
 	it("creates a simple command", () => {
 		expect(() => {
 			new Command("command")
@@ -15,7 +17,6 @@ describe(testName(), () => {
 		expect(Object.keys(command.opts).length).to.be.greaterThan(0)
 	})
 	it("sets options", () => {
-		const execute = (arg: string): string => arg
 		const opts = {
 			description: "command description",
 			execute,
@@ -25,7 +26,7 @@ describe(testName(), () => {
 		expect(command.name).to.equal("command")
 		expect(command.description).to.equal(opts.description)
 		expect(command.condition).to.equal(opts.condition)
-		expect(command.execute("test")).to.equal("test")
+		expect(command.execute(true, command)).to.equal(undefined)
 		expect(command.condition).to.equal(opts.condition)
 	})
 	describe("checks equality from", () => {
@@ -43,14 +44,13 @@ describe(testName(), () => {
 		})
 		it("execute instance", () => {
 			{
-				const execute = (arg: string) => arg
 				const command1 = new Command("command", { execute })
 				const command2 = new Command("command", { execute })
 				expect(command1.equals(command2)).to.equal(true)
 			}
 			{
-				const command1 = new Command("command", { execute: (arg: string) => arg })
-				const command2 = new Command("command", { execute: (arg: string) => arg })
+				const command1 = new Command("command", { execute: () => {} })
+				const command2 = new Command("command", { execute: () => {} })
 				expect(command1.equals(command2)).to.equal(false)
 			}
 		})

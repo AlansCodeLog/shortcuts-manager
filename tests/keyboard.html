@@ -43,7 +43,6 @@ keyboard.getLayoutMap().then(l => {
 function getModifiers(e) {
 	return `${e.ctrlKey ? "(ctrlKey)" : ""} ${e.shiftKey ? "(shiftKey)" : ""} ${e.altKey ? "(altKey)" : ""} ${e.metaKey ? "(metakey)" : ""}`
 }
-
 function getChar(code) {
 	if (layout) {
 		return layout.get(code)
