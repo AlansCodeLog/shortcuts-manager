@@ -41,9 +41,7 @@ export type KeyOptions = {
 	 */
 	label: string | ((key: Key) => string)
 	/**
-	 * Is called in `toString` (without overriding it) instead of the default implementation.
-	 *
-	 * This option is available to match the other classes, but is not strictly needed. The default implementation only looks at the label which can already be a function.
+	 * {@link KeysStringifier}
 	 */
 	stringifier: KeysStringifier
 	/**

@@ -110,7 +110,7 @@ describe(testName(), () => {
 		expect(key.off!.pressed).to.equal(false)
 		expect(key.pressed).to.equal(false)
 	})
-	it("toString works", () => {
+	it("stringify works", () => {
 		const key1 = new Key("a")
 		const key2 = new Key("a", {stringifier: new KeysStringifier({key: (_key) => "Bla"})})
 		expect(key1.stringifier?.stringify(key1)).to.equal("a")

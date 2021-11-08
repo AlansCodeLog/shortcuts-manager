@@ -22,7 +22,7 @@ type KeysStringifierOptions = {
  *
  * This is why most of the methods you can specify only take in `string[]`. `key` is the only exception.
  *
- * The default methods combines keys inside chords with `+` and the chords of shortcut chains with a space ` `.
+ * The default method uses a key's label and combines keys inside chords with `+` and the chords of shortcut chains with a space ` `.
  * ```
  * Key+Key Key+Key+Key
  * ^Chord^ ^Chord    ^

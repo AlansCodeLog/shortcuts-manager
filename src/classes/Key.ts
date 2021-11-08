@@ -21,7 +21,7 @@ export class Key<
 	TId extends
 		string =
 		string,
-> extends MixinHookablePlugableBase<KeyHooks,TPlugins, TInfo> implements Omit<KeyOptions, "toString">  {
+> extends MixinHookablePlugableBase<KeyHooks,TPlugins, TInfo> implements KeyOptions  {
 	readonly [sId]: TId
 	readonly [sLabel]: KeyOptions["label"]
 	/**
