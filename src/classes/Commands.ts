@@ -1,6 +1,6 @@
-import { defaultCallback, KnownError } from "@/helpers"
+import { KnownError } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
-import { CommandsHook, ERROR, ErrorCallback, RawCommand, RecordFromArray } from "@/types"
+import { CommandsHook, ERROR, RawCommand, RecordFromArray } from "@/types"
 import { crop } from "@alanscodelog/utils"
 import { Command } from "./Command"
 import type { Condition } from "./Condition"
@@ -53,10 +53,10 @@ export class Commands<
 		this.entries = {} as TEntries
 
 		commands.forEach(command => {
-			this.add(command, defaultCallback)
+			this.add(command)
 		})
 	}
-	protected override _add(entry: RawCommand | Command, cb: ErrorCallback<ERROR.DUPLICATE_COMMAND> = defaultCallback): void {
+	protected override _add(entry: RawCommand | Command): void {
 		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
 		instance.addHook("allows", (type, value, old) => {
 			if (type === "name") {
@@ -76,7 +76,7 @@ export class Commands<
 				this.entries[value as keyof TEntries] = existing
 			}
 		})
-		HookableCollection._addToDict<Command>(this, this.entries, instance, t => t.name, cb)
+		HookableCollection._addToDict<Command>(this, this.entries, instance, t => t.name)
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]

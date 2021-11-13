@@ -1,6 +1,6 @@
-import { defaultCallback, isToggleKey } from "@/helpers"
+import { isToggleKey } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
-import type { ERROR, ErrorCallback, KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
+import type { KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 import { Key } from "./Key"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
@@ -59,7 +59,7 @@ export class Keys<
 			this.add(key)
 		})
 	}
-	protected override _add(entry: RawKey | Key, cb: ErrorCallback<ERROR.DUPLICATE_KEY> = defaultCallback): void {
+	protected override _add(entry: RawKey | Key): void {
 		if (this.stringifier) {
 			if (entry instanceof Key) {
 				entry.stringifier = this.stringifier
@@ -69,10 +69,10 @@ export class Keys<
 			}
 		}
 		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
-		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id, cb)
+		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id)
 		if (isToggleKey(instance)) {
-			HookableCollection._addToDict<Key>(this, this.entries, instance.on!, t => t.id, cb)
-			HookableCollection._addToDict<Key>(this, this.entries, instance.off!, t => t.id, cb)
+			HookableCollection._addToDict<Key>(this, this.entries, instance.on!, t => t.id)
+			HookableCollection._addToDict<Key>(this, this.entries, instance.off!, t => t.id)
 		}
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {

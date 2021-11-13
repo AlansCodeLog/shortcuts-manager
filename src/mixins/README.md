@@ -15,3 +15,35 @@ Initially, only simple declaration merging on each class was used (see commented
 So instead now mixins are premixed into `Mixin*` classes and the main classes all extend from those.
 
 See //TODO my [mixin]() helper and [Mixin]() type for details on how this all works and some of the limitations and rules one must follow.
+
+
+TODO
+
+	 * ```ts
+	 * const keys = new Keys(new Key("a"))
+	 * const dict = keys.dict
+	 * const b = new Key("b")
+	 * if (keys.allows() === true) {
+	 * 	keys.add(b, false)
+	 * }
+	 * dict.a // good (gets autosuggested)
+	 * dict.b // error
+	 * (dict as ExpandRecord<typeof dict, "b">).b // good (gets autosuggested)
+	 * // or
+	 * const expanded = (dict as ExpandRecord<typeof dict, "b">)
+	 * // now can be used repeatedly
+	 * expanded.b //good
+	 * ```
+	 *
+	 * Or if you don't mind that it will no longer error out if you try to access a non-existent key you can do this:
+	 * ```ts
+	 * const keys = new Keys(new Key("a"))
+	 * // by default ExpandRecord will make the type accept any string key
+	 * const dict = keys.dict as ExpandRecord<typeof keys.dict>
+	 * if (keys.allows() === true) {
+	 * 	keys.add(b, false)
+	 * }
+	 * dict.a // good (gets autosuggested)
+	 * dict.b // good (does not get autosuggested)
+	 * dict.c // good (does not get autosuggested) // error in production
+	 * ```

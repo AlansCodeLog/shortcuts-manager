@@ -1,4 +1,3 @@
-import { defaultCallback } from "@/helpers"
 import type { BaseHook, BaseHookType } from "@/types"
 import { Hookable } from "./Hookable"
 
@@ -22,7 +21,6 @@ export class HookableBase<
 	>(
 			key: TKey,
 			value: THooks[TKey]["value"],
-			_cb: (error: THooks[TKey]["error"] | Error | never) => void = defaultCallback,
 	): void {
 		(this as any)[key] = value
 	}
@@ -70,10 +68,9 @@ export class HookableBase<
 	 * ---
 	 * Sets any settable properties and triggers any hooks on them.
 	 *
-	 * @param cb A callback in case the entry is not allowed to be added. A default callback is provided that will just throw the error.
-	 * @param {true} check If true, check if the property is allowed to be set (if it's not, the function will throw).
+	 * @param {true} check If `true`, will check if the property is allowed to be set first and throw an error if it isn't.
 	 *
-	 * If you already checked whether an entry can be added with {@link HookableCollection.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
+	 * If you already checked whether an entry can be added with {@link HookableBase.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
 	 */
 	set<
 		TKey extends
@@ -82,15 +79,12 @@ export class HookableBase<
 	>(
 		key: TKey,
 		value: THooks[TKey]["value"],
-		cb: (error: THooks[TKey]["error"] | Error | never) => void = defaultCallback,
-		/** Check if the property is allowed to be set (if it's not, the function will throw). */
 		check: boolean = true,
 	): void {
 		if (check) {
 			const e = this.allows<TKey>(key, value)
 			if (e instanceof Error) {
-				cb(e)
-				return
+				throw e
 			}
 		}
 		const self = this as any

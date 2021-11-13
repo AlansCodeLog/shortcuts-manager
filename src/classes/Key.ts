@@ -1,9 +1,12 @@
+import { defaultStringifier } from "./KeysStringifier"
+import type { Plugin } from "./Plugin"
+
 import { KnownError } from "@/helpers"
 import { MixinHookablePlugableBase } from "@/mixins"
 import { DeepPartialObj, ERROR, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
+
 import type { KeysStringifier } from "."
-import { defaultStringifier } from "./KeysStringifier"
-import type { Plugin } from "./Plugin"
+
 
 const sId = Symbol("id")
 const sKeyCreateToggle = Symbol("keyCreateToggle")
@@ -21,7 +24,7 @@ export class Key<
 	TId extends
 		string =
 		string,
-> extends MixinHookablePlugableBase<KeyHooks,TPlugins, TInfo> implements KeyOptions  {
+> extends MixinHookablePlugableBase<KeyHooks, TPlugins, TInfo> implements KeyOptions {
 	readonly [sId]: TId
 	readonly [sLabel]: KeyOptions["label"]
 	/**
@@ -79,7 +82,7 @@ export class Key<
 		if (opts.variants) {
 			this.variants = opts.variants
 			if (this.variants.includes(id)) {
-				throw new KnownError(ERROR.INVALID_VARIANT, `Attempted to create a key ${this.stringifier.stringify(this)} with the following variants: [${this.variants.join(", ")}], but one of the variants is the key id itself.`, { variants:this.variants, id })
+				throw new KnownError(ERROR.INVALID_VARIANT, `Attempted to create a key ${this.stringifier.stringify(this)} with the following variants: [${this.variants.join(", ")}], but one of the variants is the key id itself.`, { variants: this.variants, id })
 			}
 		}
 		this[sId] = id
@@ -87,17 +90,17 @@ export class Key<
 		// should function like a real property, enumerable and visible to JSON.stringify
 		Object.defineProperties(this, {
 			id: {
-				get: function(): string { return this[sId] },
-				set: function(_: string):void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
+				get(): string { return this[sId] },
+				set(_: string): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
 				enumerable: true,
 			},
 			// need this because label might be a function
 			label: {
-				get: function (): string { return typeof this[sLabel] === "function" ? this[sLabel](this) : this[sLabel] },
-				set: function (val: string): void { this[sLabel] = val},
-				enumerable: true
-			}
-		});
+				get(): string { return typeof this[sLabel] === "function" ? this[sLabel](this) : this[sLabel] },
+				set(val: string): void { this[sLabel] = val},
+				enumerable: true,
+			},
+		})
 
 		if (opts.stringifier) this.stringifier = opts.stringifier as KeysStringifier
 		this.is = {
@@ -120,8 +123,8 @@ export class Key<
 
 		Object.freeze(this.is)
 		this._mixin({
-			hookable: { keys: ["allows", "set"] },
-			plugableBase: { plugins, info, key: "id"}
+			hookable: { keys: ["allows", "set"]},
+			plugableBase: { plugins, info, key: "id" },
 		})
 	}
 	protected override _allows(key: string, value: any): true | KnownError<ERROR.INVALID_VARIANT> {

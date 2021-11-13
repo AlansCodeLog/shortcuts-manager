@@ -45,8 +45,8 @@ export class Manager {
 	 * 	new Commands([...]),
 	 * 	new Shortcuts([...]),
 	 * 	new Context({...}),
-	 * 	// specify a callback for errors, must return a boolean, see cb property for why
-	 * 	(e) => true,
+	 * 	// specify a callback for manager errors
+	 * 	(error, manager) => { manager.clear() },
 	 * 	{
 	 * 		// you can pass a custom sorter/stringifier and this will set it for all instances
 	 * 		sorter,

@@ -1,7 +1,10 @@
+import { catchError, testName } from "@alanscodelog/utils"
+
+import { expect } from "./chai"
+
 import { Key, Keys } from "@/classes"
 import { ERROR } from "@/types"
-import { catchError, testName } from "@alanscodelog/utils"
-import { expect } from "./chai"
+
 
 describe(testName(), () => {
 	it("should add keys", () => {
@@ -32,6 +35,14 @@ describe(testName(), () => {
 			])
 			keys.add(new Key("a"))
 		}).code).to.equal(ERROR.DUPLICATE_KEY)
+	})
+	it("should not throw on duplicate keys with different ideas", () => {
+		expect(() => {
+			new Keys([
+				new Key("a1", { variants: ["a"]}),
+				new Key("a2", { variants: ["a"]}),
+			])
+		}).to.not.throw()
 	})
 	describe("methods", () => {
 		const keyA = new Key("a")

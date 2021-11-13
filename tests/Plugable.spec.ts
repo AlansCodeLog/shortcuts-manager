@@ -1,11 +1,12 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Command, Commands, Condition, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
-import { TYPE_ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
+import { Command, Commands, Condition, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+import { TYPE_ERROR } from "@/types"
 
 
 const pluginInfoDict = {
@@ -28,7 +29,6 @@ const conflictingPlugin = new Plugin(
 	"name",
 	{ test: "default" },
 )
-
 
 
 // this is a single key find for testing only
@@ -66,22 +66,23 @@ describe(testName(), () => {
 			const warn = console.warn
 			console.warn = jest.fn()
 			const shortcuts = new Shortcuts([
-				{ keys: [[k.a]] },
-				//@ts-expect-error typescript already warns you cant
+				{ keys: [[k.a]]},
+				// @ts-expect-error typescript already warns you cant
 			], [plugin])
 
 			shortcuts.add({ keys: [[k.b]]})
 			// shortcuts can't use the overrides
 			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 			expect(shortcuts.query(shortcutFilter("b"), false)!.plugins).to.deep.equal([plugin])
-			expect(shortcuts.query(shortcutFilter("b"), false)!.info!.name.test).to.equal("default")
+			expect(shortcuts.query(shortcutFilter("b"), false)!.info.name.test).to.equal("default")
 			console.warn = warn
 		})
 	})
 	describe("use plugin's equals function", () => {
 		// eslint-disable-next-line no-shadow
 		const equals = jest.fn(() => () => true)
-		const plugin = new Plugin(false, {}, undefined, {equals: equals as any})
+		// eslint-disable-next-line no-shadow
+		const plugin = new Plugin(false, {}, undefined, { equals: equals as any })
 		beforeEach(() => {
 			equals.mockClear()
 		})
@@ -149,18 +150,45 @@ describe(testName(), () => {
 			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				],{}, [conflictingPlugin, conflictingPlugin])
+				], {}, [conflictingPlugin, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				],{}, [conflictingPlugin, conflictingPlugin])
+				], {}, [conflictingPlugin, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				],{}, [conflictingPlugin, conflictingPlugin])
+				], {}, [conflictingPlugin, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+		})
+	})
+	describe("plugin info parameter is type checked", () => {
+		// eslint-disable-next-line no-shadow
+		const equals = jest.fn(() => () => true)
+		const pluginUnnamed = new Plugin(false, { test: "test" }, undefined, { equals: equals as any })
+		const pluginNamed = new Plugin("named", { test: "test" }, undefined, { equals: equals as any })
+		it("for keys", () => {
+			// @ts-expect-error error for number instead of string
+			const a1 = new Key("a", {}, { test: 1 }, [pluginUnnamed])
+			const a2 = new Key("a", {}, { test: "1" }, [pluginUnnamed])
+			// @ts-expect-error error for number instead of string
+			const a3 = new Key("a", {}, { test: 1 }, [pluginNamed])
+		})
+		it("for commands", () => {
+			// @ts-expect-error error for number instead of string
+			const a1 = new Command("a", {}, { test: 1 }, [pluginUnnamed])
+			const a2 = new Command("a", {}, { test: "1" }, [pluginUnnamed])
+			// @ts-expect-error error for number instead of string
+			const a3 = new Command("a", {}, { test: 1 }, [pluginNamed])
+		})
+		it("for shortcuts", () => {
+			// @ts-expect-error error for number instead of string
+			const a1 = new Shortcut([[]], {}, { test: 1 }, [pluginUnnamed])
+			const a2 = new Shortcut([[]], {}, { test: "1" }, [pluginUnnamed])
+			// @ts-expect-error error for number instead of string
+			const a3 = new Shortcut([[]], {}, { test: 1 }, [pluginNamed])
 		})
 	})
 	describe("adds namespaced plugin to instances", () => {

@@ -1,10 +1,10 @@
-import type { Key, KeysStringifier } from "@/classes"
-import type { KnownError } from "@/helpers"
 import type { DeepPartial } from "@alanscodelog/utils"
+
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-
+import type { Key, KeysStringifier } from "@/classes"
+import type { KnownError } from "@/helpers"
 
 
 // import type{ KnownError } from "@/helpers"
@@ -47,11 +47,32 @@ export type KeyOptions = {
 	/**
 	 * Variants are a list of fallback codes that will also trigger a key.
 	 *
-	 * For example, without variants, there's no way to have a shortcut like `[[Ctrl, A]]` where Ctrl represents either Ctrl key and can be triggered by either. One could create two shortcuts for both keys, but only one key would be considered triggered at a time on the layout.
+	 * For example, without variants, there's no way to have a shortcut like `[[Ctrl, A]]` where Ctrl can be either of the right/lefts Ctrl keys. One could create two shortcuts for both keys, but only one key would be considered triggered at a time on the layout.
 	 *
-	 * Variants can solve this by allowing us to create a key that's only labeled as Ctrl. The `id` should be set to an invalid key code (we still need an id for plugins, etc), preferably one that indicates what's happening (e.g. `VirtualControl`). The variants should be set to `["ControlLeft", "ControlRight"]`.
+	 * Variants can solve this by allowing us to create a key that's only labeled as `Ctrl`. The `id` can be set to an invalid key code like (we still need an id for plugins, etc), preferably one that indicates what's happening (e.g. `VirtualCtrl`). The variants can be set to `["ControlLeft", "ControlRight"]`. Now you can have shortcuts like `[[VirtualCtrl, A]]` and either control key will trigger them.
 	 *
-	 * If you still need the keys to be labeled or styled different, you can register multiple keys with the same variants (e.g. `CtrlL(variants: ["ControlLeft", "ControlRight"])` and `CtrlR(variants: ["ControlLeft", "ControlRight"])`).
+	 * ```ts
+	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl", variants: ["ControlLeft", "ControlRight"] })
+	 * ```
+	 *
+	 * If you still need the keys to be labeled or styled different, you can register multiple keys with different invalid ids but the same variants.
+	 *
+	 * ```ts
+	 * // different labels for the layout
+	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl Left", variants: ["ControlLeft", "ControlRight"] })
+	 * const virtualCtrl2 = new Key("VirtualCtrl2" {label: "Ctrl Right", variants: ["ControlLeft", "ControlRight"] })
+	 *
+	 * // same labels, different styles
+	 * const virtualCtrl = new Key("VirtualCtrl"
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"] },
+	 * 	{ layout: {size: "1.5"} }, [layoutPlugin]
+	 * )
+	 * const virtualCtrl2 = new Key("VirtualCtrl2"
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"] },
+	 * 	{ layout: {size: "2"} }, [layoutPlugin]
+	 * )
+	 *
+	 * ```
 	 *
 	 * They can also be use to treat any set of keys as the exact same keys. This can be useful for allowing users to remap keys only within the application.
 	 *

@@ -9,11 +9,8 @@ import type { AnyInputEvent } from "./manager"
 /**
  * All possible errors.
  *
- * Normally they are not thrown and are instead passed to error callbacks, but there is one instance they might be thrown, when instantiating an instance.
+ * Normally thrown errors can be avoided by checking if an instance allows setting/adding something, but there is one instance they might still be thrown, when instantiating an instance. And we can't allow callbacks to be passed for errors in constructors since the instance still gets constructed unless an error is thrown.
  *
- * We can't allow callbacks to be passed for errors in constructors since the instance still gets constructed unless an error is thrown.
- *
- * See {@link ErrorCallback} for more info on the callbacks and how to type them.
  */
 export enum ERROR {
 	// === shortcut init related problems
@@ -49,17 +46,6 @@ export enum TYPE_ERROR {
 	LISTENER_DOES_NOT_EXIST = "LISTENER_DOES_NOT_EXIST",
 }
 
-
-/**
- * Creates the type of error callback function for a specific error.
- *
- * You can see what properties each error contains by looking at each [insert error type]_Info type:
- *
- * {@link ERROR_Info}
- * {@link TYPE_ERROR_Info}
- * {@link INTERNAL_ERROR_Info}
- */
-export type ErrorCallback<T extends ERROR | TYPE_ERROR> = (error: KnownError<T>) => void
 
 export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e: AnyInputEvent) => void
 

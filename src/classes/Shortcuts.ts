@@ -1,6 +1,6 @@
-import { defaultCallback, KnownError } from "@/helpers"
+import { KnownError } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
-import { ERROR, ErrorCallback, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
+import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
 import { crop, indent, pretty } from "@alanscodelog/utils"
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
@@ -64,7 +64,7 @@ export class Shortcuts<
 			this.add(shortcut)
 		})
 	}
-	protected override _add(entry: RawShortcut | TShortcut, cb: ErrorCallback<ERROR.DUPLICATE_SHORTCUT> = defaultCallback): void {
+	protected override _add(entry: RawShortcut | TShortcut): void {
 		if (this.stringifier) {
 			if (entry instanceof Shortcut) {
 				entry.stringifier = this.stringifier
@@ -82,12 +82,8 @@ export class Shortcuts<
 			}
 		}
 		const instance = Plugable.create<Shortcut, "keys">(Shortcut, this.plugins, "keys", entry)
-		try {
-			HookableCollection._addToDict<Shortcut>(this, this.entries, instance, undefined)
-			instance.addHook("allows", this._boundAllowsHook)
-		} catch (e) {
-			cb(e as any)
-		}
+		HookableCollection._addToDict<Shortcut>(this, this.entries, instance, undefined)
+		instance.addHook("allows", this._boundAllowsHook)
 	}
 	protected _allowsHook(key: string, value: any, _old: any, instance: Shortcut): true | KnownError<ERROR.DUPLICATE_SHORTCUT> {
 		const proxy = Proxy.revocable(instance, {
@@ -114,9 +110,9 @@ export class Shortcuts<
 		return true
 	}
 
-	protected override _remove(shortcut: Shortcut, cb: ErrorCallback<ERROR.MISSING> = defaultCallback): void {
+	protected override _remove(shortcut: Shortcut): void {
 		shortcut.removeHook("allows", this._boundAllowsHook)
-		HookableCollection._removeFromDict<Shortcut>(this, this.entries, shortcut, undefined, cb)
+		HookableCollection._removeFromDict<Shortcut>(this, this.entries, shortcut, undefined)
 	}
 	/**
 	 * Query the class for some shortcut/s. Just a simple wrapper around array find/filter
@@ -187,17 +183,16 @@ export class Shortcuts<
 	 */
 	swapChords(
 		chordsA: Key[][], chordsB: Key[][],
-		cb: (error: Error | never) => void = defaultCallback,
 		{ check = true }: { check?: boolean } = {},
 		filter?: (shortcut: Shortcut) => boolean
 	): void {
 
 		const e = this._assertCorrectSwapParameters(chordsA, chordsB)
-		if (e instanceof Error) { cb(e); return }
+		if (e instanceof Error) { throw e }
 
 		if (check) {
 			const e = this.canSwapChords(chordsA, chordsB, filter)
-			if (e instanceof Error) { cb(e); return }
+			if (e instanceof Error) { throw e }
 		}
 
 		let shortcutsA = this.query((shortcut) => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
