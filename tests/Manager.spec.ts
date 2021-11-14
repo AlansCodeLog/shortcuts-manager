@@ -1,8 +1,12 @@
-import { Commands, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcuts } from "@/classes"
-import { Manager } from "@/classes/Manager"
 import { testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
+
+import { Commands, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcuts } from "@/classes"
+import { Emulator } from "@/classes/Emulator"
+import { Manager } from "@/classes/Manager"
+
 
 describe(testName(), () => {
 	it("should override options of keys/commands/shortcuts", () => {
@@ -15,11 +19,11 @@ describe(testName(), () => {
 			new Commands([]),
 			new Shortcuts([], {
 				stringifier: new KeysStringifier(/* ignored */),
-				sorter: new KeysSorter(/* ignored */)
+				sorter: new KeysSorter(/* ignored */),
 			}),
 			new Context({}),
 			() => true,
-			{sorter, stringifier}
+			{ sorter, stringifier }
 		)
 		expect(manager.keys.stringifier).to.equal(stringifier)
 		expect(manager.shortcuts.stringifier).to.equal(stringifier)
@@ -33,17 +37,21 @@ describe(testName(), () => {
 					k.b,
 					k.c,
 					k.d,
-					new Key("Capslock", {is: {toggle: true}}),
-					new Key("Control", { is: { modifier: true }, variants: ["ControlLeft", "ControlRight"]})
+					new Key("Capslock", { is: { toggle: true } }),
+					new Key("Control", { is: { modifier: true }, variants: ["ControlLeft", "ControlRight"]}),
 				]),
 				new Commands([]),
-				new Shortcuts([], {
-					stringifier: new KeysStringifier(/* ignored */),
-					sorter: new KeysSorter(/* ignored */)
-				}),
+				new Shortcuts([]),
 				new Context({}),
 				() => true,
 			)
+			const emulator = new Emulator()
+
+			manager.attach(emulator)
+
+			emulator.fire("KeyA")
+
+			expect(manager.chain)
 		})
 	})
 })

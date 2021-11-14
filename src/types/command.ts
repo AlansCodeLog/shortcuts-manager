@@ -1,9 +1,10 @@
-import type { Command, Condition, Shortcut } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { AnyInputEvent } from "./manager"
+
+import type { Command, Condition, Shortcut } from "@/classes"
+import type { Manager } from "@/classes/Manager"
+import type { KnownError } from "@/helpers"
 
 
 /**
@@ -63,6 +64,7 @@ export type CommandHooks = {
 }
 
 export type CommandsHook = CollectionHookType<
+	Command,
 	RawCommand | Command,
 	Record<string, Command>,
 	KnownError<ERROR.DUPLICATE_COMMAND>,

@@ -1,15 +1,15 @@
-import { KnownError } from "@/helpers";
-import { TYPE_ERROR } from "@/types";
-import { crop, indent, pretty } from "@utils/utils";
+import { crop, indent, pretty } from "@utils/utils"
 
+import { KnownError } from "@/helpers"
+import { TYPE_ERROR } from "@/types"
 
 
 export class Hookable<
 	THooks extends Record<string, any>,
 	TTypes extends keyof THooks = keyof THooks,
 > {
-	listeners!: { [K in keyof THooks]: THooks[K][] }
-	protected _constructor({hookable:{ keys }}:{hookable:{ keys: TTypes[]}}): void {
+	listeners!: {[K in keyof THooks]: THooks[K][] }
+	protected _constructor({ hookable: { keys } }: { hookable: { keys: TTypes[] } }): void {
 		this.listeners = {} as any
 		for (const key of keys) this.listeners[key] = [] as any
 	}
@@ -40,10 +40,8 @@ export class Hookable<
 		TListener extends
 			THooks[TType] =
 			THooks[TType],
-		>(type: TType, listener: TListener): void {
-
+	>(type: TType, listener: TListener): void {
 		if (typeof listener !== "function") {
-			console.log(listener);
 			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Listener is not a function.", undefined)
 		}
 		this.listeners[type].push(listener as any)

@@ -1,10 +1,12 @@
+import { crop, indent, pretty, unreachable } from "@utils/utils"
+
+import { Hookable } from "./Hookable"
+
 import type { Commands, Keys } from "@/classes"
 import { Command, Key, Shortcut } from "@/classes"
 import type { Shortcuts } from "@/classes/Shortcuts"
 import { KnownError } from "@/helpers"
 import { CollectionHook, CollectionHookType, ERROR, Optional } from "@/types"
-import { crop, indent, pretty, unreachable } from "@utils/utils"
-import { Hookable } from "./Hookable"
 
 
 export class HookableCollection<
@@ -23,27 +25,27 @@ export class HookableCollection<
 		CollectionHook<"allowsRemove", THook>,
 	TEntries extends THook["values"] = THook["values"],
 	TListeners extends {
-		add: TAddListener,
-		remove: TRemoveListener,
-		allowsAdd: TAllowsAddListener,
+		add: TAddListener
+		remove: TRemoveListener
+		allowsAdd: TAllowsAddListener
 		allowsRemove: TAllowsRemoveListener
 	} =
 	{
-		add: TAddListener,
-		remove: TRemoveListener,
-		allowsAdd: TAllowsAddListener,
+		add: TAddListener
+		remove: TRemoveListener
+		allowsAdd: TAllowsAddListener
 		allowsRemove: TAllowsRemoveListener
-	}
-	> extends Hookable<TListeners> {
+	},
+> extends Hookable<TListeners> {
 	declare _constructor: Hookable<TListeners>["_constructor"]
 	entries!: TEntries
-	protected _add(_value: THook["value"]): void {
+	protected _add(_value: THook["allowValue"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
-	protected _remove(_value: THook["value"]): void {
+	protected _remove(_value: THook["allowValue"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
-	protected _allows(_type: "add" | "remove", _value: THook["value"]): true | THook["error"] | Error | never {
+	protected _allows(_type: "add" | "remove", _value: THook["allowValue"]): true | THook["error"] | Error | never {
 		return true
 	}
 	/**
@@ -59,11 +61,11 @@ export class HookableCollection<
 	 * ```
 	 */
 	allows(
-		type: "add" | "remove" ,
-		value: THook["value"],
+		type: "add" | "remove",
+		value: THook["allowValue"],
 	): true | THook["error"] | Error | never {
 		const self = (this as any)
-		for (const listener of this.listeners[("allows" + type.charAt(0).toUpperCase() + type.slice(1)) as keyof TListeners]) {
+		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
 			const response = (listener as any)(type, value, self.entries)
 			if (response !== true) return response
 		}
@@ -99,7 +101,7 @@ export class HookableCollection<
 	 * If you already checked whether an entry can be added with {@link HookableCollection.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
 	 */
 	add(
-		value: THook["value"],
+		value: THook["allowValue"],
 		check: boolean = true,
 	): void {
 		if (check) {
@@ -114,7 +116,6 @@ export class HookableCollection<
 		for (const listener of this.listeners.add) {
 			listener(value, this.entries)
 		}
-
 	}
 	protected static _addToDict<
 		T extends Command | Key | Shortcut,
@@ -136,7 +137,7 @@ export class HookableCollection<
 		let existing: any | undefined
 
 		if (Array.isArray(entries)) {
-			existing = (entries as any[]).find(item =>  entry.equals(item))
+			existing = (entries as any[]).find(item => entry.equals(item))
 		} else {
 			existing = (entries as any)[key as string]
 		}
@@ -162,8 +163,8 @@ export class HookableCollection<
 				? new KnownError(ERROR.DUPLICATE_SHORTCUT, text, { existing: (existing as any), self: self as Shortcuts })
 				: unreachable()
 
-				throw error
-			}
+			throw error
+		}
 
 		if (Array.isArray(entries)) {
 			entries.push(entry)
@@ -176,7 +177,7 @@ export class HookableCollection<
 	 * Removes an entry.
 	 */
 	remove(
-		value: THook["value"],
+		value: THook["allowValue"],
 		check: boolean = true,
 	): void {
 		if (check) {
@@ -191,7 +192,6 @@ export class HookableCollection<
 		for (const listener of this.listeners.remove) {
 			listener(value, this.entries)
 		}
-
 	}
 	protected static _removeFromDict<
 		T extends Command | Key | Shortcut,
@@ -200,11 +200,11 @@ export class HookableCollection<
 		Record<string, T> | T[] =
 		Record<string, T> | T[],
 	>(
-			self: TSelf,
-			entries: TEntries,
-			entry: T,
-			/** When entries are stored in a record this will give us the key the entries are keyed by. */
-			indexer: Optional<keyof TEntries | ((entry: T) => string)>,
+		self: TSelf,
+		entries: TEntries,
+		entry: T,
+		/** When entries are stored in a record this will give us the key the entries are keyed by. */
+		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
 	): void {
 		const key = typeof indexer === "function"
 			? indexer(entry) as keyof TEntries
@@ -214,7 +214,6 @@ export class HookableCollection<
 
 		if (Array.isArray(entries)) {
 			index = (entries as any[]).findIndex(item => entry.equals(item))
-
 		} else {
 			index = key as string
 		}

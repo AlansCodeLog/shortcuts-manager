@@ -1,17 +1,17 @@
-import type { Command, Condition, Key, KeysSorter, Shortcut } from "@/classes"
-import type { KeysStringifier } from "@/classes/KeysStringifier"
-import type { KnownError } from "@/helpers"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { OnlyRequire, Optional } from "./utils"
 
+import type { Command, Condition, Key, KeysSorter, Shortcut } from "@/classes"
+import type { KeysStringifier } from "@/classes/KeysStringifier"
+import type { KnownError } from "@/helpers"
 
 
 /**
  * Same as [[ShortcutOptions]] except you're allowed to only pass the keys property.
  */
 export type RawShortcut =
-Omit<OnlyRequire<Shortcut, "keys">, "opts">&
+Omit<OnlyRequire<Shortcut, "keys">, "opts"> &
 {
 	opts?: Partial<ShortcutOptions>
 }
@@ -55,6 +55,7 @@ export type ShortcutHooks = {
 }
 
 export type ShortcutsHook = CollectionHookType<
+	Shortcut,
 	RawShortcut | Shortcut,
 	Shortcut[],
 	KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS>,

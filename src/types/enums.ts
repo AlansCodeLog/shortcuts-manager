@@ -1,9 +1,9 @@
-import type { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
 import type { BaseHook } from "./hooks"
 import type { AnyInputEvent } from "./manager"
 
+import type { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+import type { Manager } from "@/classes/Manager"
+import type { KnownError } from "@/helpers"
 
 
 /**
@@ -70,6 +70,7 @@ export type ErrorInfo<T extends ERROR | TYPE_ERROR> =
 
 // note all these error types could be kept in the same type, but then we'd have to make all the keys unique and we can't because internal errors should use the same key
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type ERROR_Info = {
 	// === shortcut init related problems
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
@@ -87,7 +88,7 @@ type ERROR_Info = {
 	[ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS]: {
 		chord: Key[]
 		i: number
-			shortcut: { keys: Key[][] } | Shortcut
+		shortcut: { keys: Key[][] } | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_DUPLICATE_KEY]: {
@@ -140,10 +141,10 @@ type ERROR_Info = {
 		shortcuts: Shortcut[]
 	}
 	[ERROR.INCORRECT_TOGGLE_STATE]: {
-		key:Key
+		key: Key
 	}
 	[ERROR.INCORRECT_TOGGLE_TYPE]: {
-		key: Key,
+		key: Key
 		event: MouseEvent | WheelEvent
 	}
 	[ERROR.INVALID_VARIANT]: {
@@ -155,6 +156,7 @@ type ERROR_Info = {
 	}
 }
 
+// eslint-disable-next-line @typescript-eslint/naming-convention
 type TYPE_ERROR_Info = {
 	[TYPE_ERROR.CLONER_NOT_SPECIFIED]: {
 		info: any
@@ -190,17 +192,17 @@ export enum KEY_SORT_POS {
 	mod,
 	modmouse,
 	// modmousewheel = error
-	modwheel,
-	modtoggle,
-	modtogglemouse,
-	modtogglewheel,
+	modwheel, // weird...
+	modtoggle, // weird...
+	modtogglemouse, // weird...
+	modtogglewheel, // weird...
 	// modtogglemousewheel = error
 	normal,
 	mouse,
 	wheel,
 	toggle,
 	togglemouse,
-	togglewheel,
+	togglewheel, // weird...
 	// modtogglemousewheel = error
 }
 /* eslint-enable @typescript-eslint/prefer-enum-initializers */

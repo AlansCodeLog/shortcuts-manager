@@ -1,9 +1,10 @@
-import { isToggleKey } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
-import type { KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 import { Key } from "./Key"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
+
+import { isToggleKey } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
+import type { KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 
 
 export class Keys<
@@ -19,7 +20,7 @@ export class Keys<
 	TEntries extends
 		RecordFromArray<TRawKeys, "id", TKey> =
 		RecordFromArray<TRawKeys, "id", TKey>,
-	> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
+> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
 	override entries: TEntries
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
@@ -49,8 +50,8 @@ export class Keys<
 		super()
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"] },
-			plugableCollection: { plugins, key:"id"}
+			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
+			plugableCollection: { plugins, key: "id" },
 		})
 
 		this.entries = {} as TEntries
@@ -64,7 +65,6 @@ export class Keys<
 			if (entry instanceof Key) {
 				entry.stringifier = this.stringifier
 			} else {
-				//@ts-ignore
 				entry.opts = { ...(entry.opts ?? {}), stringifier: this.stringifier }
 			}
 		}
@@ -79,12 +79,12 @@ export class Keys<
 		return this.entries[id as keyof TEntries]
 	}
 	/** Query the class. Just a simple wrapper around array find/filter. */
-	query(filter: Parameters<Array<TKey>["filter"]>["0"], all?: true): TKey[]
-	query(filter: Parameters<Array<TKey>["find"]>["0"], all?: false): TKey | undefined
-	query(filter: Parameters<Array<TKey>["filter"] | Array<TKey>["find"]>["0"], all: boolean = true): TKey | TKey[] | undefined {
+	query(filter: Parameters<TKey[]["filter"]>["0"], all?: true): TKey[]
+	query(filter: Parameters<TKey[]["find"]>["0"], all?: false): TKey | undefined
+	query(filter: Parameters<TKey[]["filter"] | TKey[]["find"]>["0"], all: boolean = true): TKey | TKey[] | undefined {
 		return all
-			? Object.values(this.entries).filter(filter as any) as TKey[]
-			: Object.values(this.entries).find(filter as any) as TKey
+			? Object.values(this.entries).filter(filter as any)
+			: Object.values(this.entries).find(filter as any)!
 	}
 }
 // export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }

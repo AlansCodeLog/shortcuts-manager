@@ -1,14 +1,17 @@
-import { isModifierKey, KnownError } from "@/helpers";
-import { defaultManagerCallback } from "@/helpers/defaultManagerCallback";
-import { ERROR, ManagerErrorCallback } from "@/types";
-import type { AnyInputEvent } from "@/types/manager";
-import { crop, indent } from "@alanscodelog/utils";
-import { Context, Key, KeysSorter, KeysStringifier, Shortcut } from ".";
-import type { Commands } from "./Commands";
-import type { Keys } from "./Keys";
-import { defaultSorter } from "./KeysSorter";
-import { defaultStringifier } from "./KeysStringifier";
-import type { Shortcuts } from "./Shortcuts";
+import { crop, indent } from "@alanscodelog/utils"
+
+import type { Commands } from "./Commands"
+import type { Keys } from "./Keys"
+import { defaultSorter } from "./KeysSorter"
+import { defaultStringifier } from "./KeysStringifier"
+import type { Shortcuts } from "./Shortcuts"
+
+import { isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
+import { defaultManagerCallback } from "@/helpers/defaultManagerCallback"
+import { ERROR, ManagerErrorCallback, ToggleRootKey } from "@/types"
+import type { AnyInputEvent } from "@/types/manager"
+
+import { Context, Key, KeysSorter, KeysStringifier, Shortcut } from "."
 
 
 export class Manager {
@@ -18,6 +21,7 @@ export class Manager {
 	shortcuts: Shortcuts
 	stringifier: KeysStringifier
 	sorter: KeysSorter
+	nativeToggleKeys: ToggleRootKey[]
 	/**
 	 * The current chain of chords.
 	 */
@@ -93,8 +97,8 @@ export class Manager {
 			stringifier,
 			sorter,
 		}: {
-			stringifier?: KeysStringifier,
-			sorter?: KeysSorter,
+			stringifier?: KeysStringifier
+			sorter?: KeysSorter
 		} = {},
 	) {
 		if (cb) this.cb = cb
@@ -107,6 +111,21 @@ export class Manager {
 
 		this.keys = keys
 		this.keys.stringifier = this.stringifier
+		this.nativeToggleKeys = this.keys.query(key => key.is.toggle === "native" && isToggleRootKey(key), true) as ToggleRootKey[]
+		this.keys.addHook("add", entry => {
+			if (entry.is.toggle === "native"
+				&& isToggleRootKey(entry)
+				&& !this.nativeToggleKeys.includes(entry as ToggleRootKey)
+			) {
+				this.nativeToggleKeys.push(entry as ToggleRootKey)
+			}
+		})
+		this.keys.addHook("remove", entry => {
+			const i = this.nativeToggleKeys.indexOf(entry as ToggleRootKey)
+			if (i > 0) {
+				this.nativeToggleKeys.splice(i)
+			}
+		})
 
 		this.commands = commands
 
@@ -125,12 +144,12 @@ export class Manager {
 	 * It is *not* cleared by {@link Manager.clearChain}.
 	 */
 	pressedKeys(): Key[] {
-		return this.keys.query((key) => key.pressed, true)
+		return this.keys.query(key => key.pressed, true)
 	}
 	/**
 	 * Attach the manager to an element so it can listen to the needed event listeners.
 	 */
-	attach(el: HTMLElement) {
+	attach(el: { addEventListener: HTMLElement["addEventListener"] }): void {
 		el.addEventListener("keydown", this._keydown)
 		el.addEventListener("keyup", this._keyup)
 		el.addEventListener("wheel", this._wheel)
@@ -140,7 +159,7 @@ export class Manager {
 	/**
 	 * Detach the manager from an element and remove all it's event listeners.
 	 */
-	detach(el: HTMLElement) {
+	detach(el: { removeEventListener: HTMLElement["removeEventListener"] }): void {
 		el.removeEventListener("keydown", this._keydown)
 		el.removeEventListener("keyup", this._keyup)
 		el.removeEventListener("wheel", this._wheel)
@@ -149,14 +168,17 @@ export class Manager {
 	}
 	/**
 	 * Return whether the current chord chain state partially matches a shortcut which can be triggered.
+	 *
+	 * Returns false if awaiting keyup.
 	 */
 	inChain(): boolean {
+		if (this._awaitingKeyup) return false
 		const shortcuts = this.shortcuts.query(shortcut =>
 			shortcut.enabled &&
 			shortcut.command &&
 			shortcut.equalsKeys(this.chain, this.chain.length) &&
 			shortcut.condition.eval(this.context) &&
-			shortcut.command === undefined || shortcut.command!.condition.eval(this.context)
+			(shortcut.command === undefined || shortcut.command.condition.eval(this.context))
 		)
 		if (!shortcuts) return false
 		return shortcuts.length > 0
@@ -164,7 +186,7 @@ export class Manager {
 	/**
 	 * Clears the chain using {@link Manager.setChain}. See it for details.
 	 */
-	clearChain() {
+	clearChain(): void {
 		this.setChain([[]])
 	}
 	/**
@@ -174,7 +196,7 @@ export class Manager {
 	 *
 	 * This prevents us from getting into potentially invalid states or triggering shortcuts when we shouldn't.
 	 */
-	setChain(keys: Key[][]) {
+	setChain(keys: Key[][]): void {
 		// @ts-expect-error is only publicly readonly
 		this.chain = keys
 		if (this.pressedKeys.length > 0) {
@@ -188,7 +210,7 @@ export class Manager {
 			shortcut.command &&
 			shortcut.equalsKeys(this.chain) &&
 			shortcut.condition.eval(this.context) &&
-			shortcut.command === undefined || shortcut.command!.condition.eval(this.context)
+			(shortcut.command === undefined || shortcut.command.condition.eval(this.context))
 		)
 		if (!shortcuts) return false
 		if (shortcuts.length > 1) {
@@ -199,13 +221,13 @@ export class Manager {
 			return shortcuts[0]
 		}
 	}
-	protected _addToChain(keys: Key[], e: AnyInputEvent) {
+	protected _addToChain(keys: Key[], e: AnyInputEvent): void {
 		// the chain was just cleared
 		// the user could have released only part of the keys then pressed others
 		// we should ignore all keypresses until they are all released
 		if (this._awaitingKeyup) return
 		const lastChord = this.chain[this.chain.length - 1]
-		for (let key of keys) {
+		for (const key of keys) {
 			if (!lastChord.includes(key) && !this._awaitingKeyup) {
 				lastChord.push(key)
 				this.sorter.sort(lastChord)
@@ -217,25 +239,24 @@ export class Manager {
 		if (this._untrigger) {
 			this._untrigger.command!.execute(false, this._untrigger.command!, this._untrigger, this, e)
 		}
-		let res = this._canTrigger()
+		const res = this._canTrigger()
 		if (res instanceof Error) {
 			this.cb(res, this, e)
 		} else if (res instanceof Shortcut) {
 			this._untrigger = res
 			res.command!.execute(true, res.command!, res, this, e)
-		} else {
+		}
+		if (this.chain.length > 1 && this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
 			if (this.inChain()) {
 				this.chain.push([])
 				this._awaitingKeyup = true
-			}
-			// no command matches the chain
-			if (this.chain.length > 1 && this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
+			} else if (!res) {
 				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
 				this.cb(error, this, e)
 			}
 		}
 	}
-	protected _removeFromChain(keys: Key[], e: AnyInputEvent) {
+	protected _removeFromChain(keys: Key[], e: AnyInputEvent): void {
 		if (this._untrigger) {
 			this._untrigger.command!.execute(false, this._untrigger.command!, this._untrigger, this, e)
 		}
@@ -245,97 +266,99 @@ export class Manager {
 				this._awaitingKeyup = false
 			}
 		} else {
-			for (let key of keys) {
+			for (const key of keys) {
 				const i = lastChord.indexOf(key)
-				if (i > 0 && !this._awaitingKeyup) {
+				if (i > 0) {
 					lastChord.splice(i, 1)
 					this._checkTrigger(e)
 				}
 			}
 		}
 	}
-	protected _setNativeToggleState(key: Key, e: AnyInputEvent) {
-		if (e instanceof KeyboardEvent) {
-			// this does not guarantee the key code is valid
-			// it just returns false even for made up keys
-			if (e.getModifierState(key.id)) {
-				key.on!.set("pressed", true)
-				key.off!.set("pressed", false)
-			} else {
-				key.on!.set("pressed", false)
-				key.off!.set("pressed", true)
-			}
-		} else {
-			throw new KnownError(ERROR.INCORRECT_TOGGLE_TYPE, `Key ${key.stringifier.stringify(key)} is a native toggle key but the event fired for it was not a KeyboardEvent so it is not a valid native toggle key.`, { key, event: e })
-		}
-	}
-
-	protected _setToggleState(key: Key, value: boolean) {
+	protected _setEmulatedToggleState(key: Key, value: boolean): void {
 		key.on!.set("pressed", value)
 		key.off!.set("pressed", !value)
 	}
-
-	protected _setKeyState(keys: Key[], state = true, e: AnyInputEvent) {
-		for (let key of keys) {
+	protected _setKeyState(keys: Key[], state: boolean): void {
+		for (const key of keys) {
 			key.set("pressed", state)
 			// toggles are considered active on keydown
-			if (key.is.toggle && state == true) {
+			if (key.is.toggle === "emulated" && state) {
 				// state was never set
 				if (key.on!.pressed && key.off!.pressed) {
 					throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key)} is a toggle key whose on and off versions are both pressed, which is not a valid state.`, { key })
 				}
 				if (!key.on!.pressed && !key.off!.pressed) {
-					if (key.is.toggle === "native") {
-						this._setNativeToggleState(key, e)
-					} else {
-						this._setToggleState(key, true)
-					}
+					this._setEmulatedToggleState(key, true)
 				} else if (key.on!.pressed) {
-					if (key.is.toggle === "native") {
-						this._setNativeToggleState(key, e)
-					} else {
-						this._setToggleState(key, false)
-					}
+					this._setEmulatedToggleState(key, false)
 				} else if (key.off!.pressed) {
-					if (key.is.toggle === "native") {
-						this._setNativeToggleState(key, e)
-					} else {
-						this._setToggleState(key, true)
-					}
+					this._setEmulatedToggleState(key, true)
 				}
 			}
 		}
 	}
-	protected _keydown(e: KeyboardEvent) {
+	/**
+	 * Should be checked after we attempt to process the event and set key states.
+	 * This should cause it to only actually change the state if it was changed off-focus.
+	 *
+	 * Technically not neccesary with wheel/mouse events, but ordered similarly for consistency.
+	 *
+	 */
+	protected _checkNativeToggleKeys(e: AnyInputEvent): void {
+		for (const key of this.nativeToggleKeys) {
+			if (key.on.pressed && key.off.pressed) {
+				throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key as Key)} is a toggle key whose on and off versions are both pressed, which is not a valid state.`, { key: key as Key })
+			}
+			// this does not guarantee the key code is valid
+			// it just returns false even for made up keys
+			if (e.getModifierState(key.id)) {
+				if (!key.on.pressed) {
+					key.on.set("pressed", true)
+					key.off.set("pressed", false)
+				}
+			} else {
+				if (key.on.pressed) {
+					key.on.set("pressed", false)
+					key.off.set("pressed", true)
+				}
+			}
+		}
+	}
+	protected _keydown(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)) && !key.pressed)!
-		this._setKeyState(keys, true, e)
+		this._setKeyState(keys, true)
+		this._checkNativeToggleKeys(e)
 		this._addToChain(keys, e)
 	}
-	protected _keyup(e: KeyboardEvent) {
+	protected _keyup(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)) && key.pressed)!
-		this._setKeyState(keys, false, e)
+		this._setKeyState(keys, false)
+		this._checkNativeToggleKeys(e)
 		this._removeFromChain(keys, e)
 	}
-	protected _wheel(e: WheelEvent) {
+	protected _wheel(e: WheelEvent): void {
 		const dir = e.deltaY < 0 ? "Up" : "Down"
 		const code = `Wheel${dir}`
 		const keys = this.keys.query(key => (key.id === code || key.variants?.includes(code)) && !key.pressed)!
-		this._setKeyState(keys, true, e)
+		this._setKeyState(keys, true)
+		this._checkNativeToggleKeys(e)
 		this._addToChain(keys, e)
-		this._setKeyState(keys, false, e)
+		this._setKeyState(keys, false)
 		this._removeFromChain(keys, e)
 	}
-	protected _mousedown(e: MouseEvent) {
+	protected _mousedown(e: MouseEvent): void {
 		const button = e.button as any as string
-		const keys =  this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
+		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
+		this._setKeyState(keys, true)
+		this._checkNativeToggleKeys(e)
 		this._addToChain(keys, e)
-		this._setKeyState(keys, true, e)
-
 	}
-	protected _mouseup(e: MouseEvent) {
+	protected _mouseup(e: MouseEvent): void {
 		const button = e.button as any as string
-		const keys =  this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
+		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
+		this._setKeyState(keys, false)
+		this._checkNativeToggleKeys(e)
 		this._removeFromChain(keys, e)
-		this._setKeyState(keys, false, e)
 	}
 }

@@ -1,10 +1,12 @@
-import type { DeepPartial } from "@alanscodelog/utils"
+import type { DeepPartial, MakeRequired } from "@alanscodelog/utils"
 
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, KeysStringifier } from "@/classes"
+import type { Key, KeysStringifier, Plugin } from "@/classes"
 import type { KnownError } from "@/helpers"
+
+import type { PluginsInfo } from "."
 
 
 // import type{ KnownError } from "@/helpers"
@@ -30,6 +32,18 @@ export type ToggleKey<T extends Key = Key> = T & {
 	off: never
 	root: T
 }
+
+export type ToggleRootKey<
+	TPlugins extends
+		Plugin<any, any>[] =
+		Plugin<any, any>[],
+	TInfo extends
+		PluginsInfo<TPlugins> =
+		PluginsInfo<TPlugins>,
+	TId extends
+		string =
+		string>
+= MakeRequired<Key<TPlugins, TInfo, TId>, "on" | "off">
 
 export type AnyKey = Key | ToggleKey<any>
 
@@ -84,13 +98,18 @@ export type KeyOptions = {
 	variants: string[] | undefined
 	is: {
 		/**
-		 * Whether the key should behave like a modifier.
+		 * Whether the key is a modifier. A modifier can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"`.
 		 *
-		 * It's not necessary to know whether it functions as a modifier. We can tell from the id.
+		 * For both, this determines in the manager when a chord is considered to have been pressed (when it contains a non-modifer key). See {@link Manager}.
+		 *
+		 * **Note:**
+		 * - event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.
+		 * - If the state changes without a keypress (i.e. when the element is not in focus), a keypress is **NOT** emulated, and the chain is not modified.
+		 *
 		 */
 		modifier: boolean
 		/**
-		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState will always be used to get it's true state) or `"emulated"` (state starts off false and is toggle with every keydown registered).
+		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"` (state starts off false and is toggle with every keydown registered).
 		 *
 		 * Setting `toggle: true` is like passing `toggle:"native"`:
 		 *
@@ -127,7 +146,7 @@ export type KeyOptions = {
 		 *
 		 * ### State
 		 *
-		 * With either type of toggle key, we cannot know the initial state without a keypress. The {@link Manager} sets it the first time a key matches, but for native keys you can do this even earlier. Note that event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.
+		 * With either type of toggle key, we cannot know the initial state without a keypress. The {@link Manager} sets it the first time a key matches, but for native keys you can do this even earlier. **Note that event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.**
 		 *
 		 * When the {@link Manager} handles a key's pressed state, for toggles, the root key indicates whether the user is actually pressing the key or not just like any other key, and the toggle instances indicate the state.
 		 *
@@ -206,7 +225,8 @@ export type KeyHooks = {
 }
 
 export type KeysHook = CollectionHookType<
-	RawKey | Key,
+	Key,
+	Key | RawKey,
 	Record<string, Key>,
 	KnownError<ERROR.DUPLICATE_KEY>,
 	never

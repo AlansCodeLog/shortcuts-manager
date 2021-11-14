@@ -91,7 +91,7 @@ export class Key<
 		Object.defineProperties(this, {
 			id: {
 				get(): string { return this[sId] },
-				set(_: string): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
+				set(): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
 				enumerable: true,
 			},
 			// need this because label might be a function
