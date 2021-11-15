@@ -39,12 +39,15 @@ export class HookableCollection<
 > extends Hookable<TListeners> {
 	declare _constructor: Hookable<TListeners>["_constructor"]
 	entries!: TEntries
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	protected _add(_value: THook["allowValue"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	protected _remove(_value: THook["allowValue"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	protected _allows(_type: "add" | "remove", _value: THook["allowValue"]): true | THook["error"] | Error | never {
 		return true
 	}

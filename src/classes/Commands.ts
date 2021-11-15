@@ -1,12 +1,12 @@
-import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
-import { CommandsHook, ERROR, RawCommand, RecordFromArray } from "@/types"
 import { crop } from "@alanscodelog/utils"
+
 import { Command } from "./Command"
 import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
-
+import { KnownError } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { CommandsHook, ERROR, RawCommand, RecordFromArray } from "@/types"
 
 
 export class Commands<
@@ -47,8 +47,8 @@ export class Commands<
 	) {
 		super()
 		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"] },
-			plugableCollection: { plugins, key: "name" }
+			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
+			plugableCollection: { plugins, key: "name" },
 		})
 		this.entries = {} as TEntries
 
@@ -80,6 +80,14 @@ export class Commands<
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]
+	}
+	/** Query the class. Just a simple wrapper around array find/filter. */
+	query(filter: Parameters<TCommand[]["filter"]>["0"], all?: true): TCommand[]
+	query(filter: Parameters<TCommand[]["find"]>["0"], all?: false): TCommand | undefined
+	query(filter: Parameters<TCommand[]["filter"] | TCommand[]["find"]>["0"], all: boolean = true): TCommand | TCommand[] | undefined {
+		return all
+			? Object.values(this.entries).filter(filter as any)
+			: Object.values(this.entries).find(filter as any)!
 	}
 }
 // export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }

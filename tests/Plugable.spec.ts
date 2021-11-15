@@ -79,9 +79,8 @@ describe(testName(), () => {
 		})
 	})
 	describe("use plugin's equals function", () => {
-		// eslint-disable-next-line no-shadow
 		const equals = jest.fn(() => () => true)
-		// eslint-disable-next-line no-shadow
+		// eslint-disable-next-line @typescript-eslint/no-shadow
 		const plugin = new Plugin(false, {}, undefined, { equals: equals as any })
 		beforeEach(() => {
 			equals.mockClear()

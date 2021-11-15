@@ -105,7 +105,12 @@ export class Key<
 		if (opts.stringifier) this.stringifier = opts.stringifier as KeysStringifier
 		this.is = {
 			toggle: false,
-			modifier: opts.is?.modifier ?? false,
+			modifier: false,
+		}
+		if (opts.is?.modifier === true) {
+			this.is.modifier = "native"
+		} else if (opts.is?.modifier) {
+			this.is.modifier = opts.is.modifier
 		}
 		if (opts.is?.toggle) {
 			this.is.toggle = opts.is.toggle === true

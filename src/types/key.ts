@@ -17,9 +17,10 @@ import type { PluginsInfo } from "."
 export type RawKey = Pick<Key, "id"> & {
 	opts?: DeepPartial<Omit<KeyOptions, "is">>
 	& {
-		is?: DeepPartial<Omit<KeyOptions["is"], "toggle">>
+		is?: DeepPartial<Omit<KeyOptions["is"], "toggle" | "modifier">>
 		& {
 			toggle?: DeepPartial<KeyOptions["is"]["toggle"]> | true
+			modifier?: DeepPartial<KeyOptions["is"]["modifier"]> | true
 		}
 	}
 }
@@ -102,12 +103,11 @@ export type KeyOptions = {
 		 *
 		 * For both, this determines in the manager when a chord is considered to have been pressed (when it contains a non-modifer key). See {@link Manager}.
 		 *
-		 * **Note:**
+		 * ### Notes
 		 * - event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.
-		 * - If the state changes without a keypress (i.e. when the element is not in focus), a keypress is **NOT** emulated, and the chain is not modified.
-		 *
+		 * 	 - If the modifier is native and the state is seen to change without a key press (i.e. when the element is not in focus), a key release is emulated.
 		 */
-		modifier: boolean
+		modifier: false | "emulated" | "native"
 		/**
 		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"` (state starts off false and is toggle with every keydown registered).
 		 *
@@ -150,7 +150,7 @@ export type KeyOptions = {
 		 *
 		 * When the {@link Manager} handles a key's pressed state, for toggles, the root key indicates whether the user is actually pressing the key or not just like any other key, and the toggle instances indicate the state.
 		 *
-		 * Note that state is changed on *keydown* since this is how toggle keys normally work:
+		 * Note that state is changed for the keys as follows:
 		 *
 		 * ```ts
 		 * // user presses and holds key
@@ -175,7 +175,7 @@ export type KeyOptions = {
 		 *
 		 * ```
 		 *
-		 * ### Other Notes
+		 * ### Other
 		 *
 		 * Sometimes you might want to compare only the roots of two toggles keys (that might be the root, on, or off). You can do this like so:
 		 *
@@ -193,6 +193,8 @@ export type KeyOptions = {
 		 * 	else if (key.root.off === key) // it's the off key
 		 * } else {} // it's not a toggle key
 		 * ```
+		 * ### Notes
+		 * - If the toggle is native and the state is seen to change without a key press (i.e. when the element is not in focus), a key release is **NOT** emulated.
 		 */
 		toggle: "native" | "emulated" | false
 	}

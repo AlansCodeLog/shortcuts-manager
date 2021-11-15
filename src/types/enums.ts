@@ -32,10 +32,10 @@ export enum ERROR {
 	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
 	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
 	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
-	INCORRECT_TOGGLE_TYPE = "INCORRECT_TOGGLE_TYPE",
 	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
 	NO_MATCHING_SHORTCUT = "NO_MATCHING_SHORTCUT",
-
+	UNKNOWN_KEYS = "UNKNOWN_KEYS",
+	UNKNOWN_COMMANDS = "UNKNOWN_COMMANDS",
 }
 
 /** Errors that will throw since they should be caught at production. */
@@ -47,7 +47,7 @@ export enum TYPE_ERROR {
 }
 
 
-export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e: AnyInputEvent) => void
+export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e?: AnyInputEvent) => void
 
 /**
  * Defines the properties attached to each error.
@@ -143,16 +143,18 @@ type ERROR_Info = {
 	[ERROR.INCORRECT_TOGGLE_STATE]: {
 		key: Key
 	}
-	[ERROR.INCORRECT_TOGGLE_TYPE]: {
-		key: Key
-		event: MouseEvent | WheelEvent
-	}
 	[ERROR.INVALID_VARIANT]: {
 		variants: string[]
 		id: string
 	}
 	[ERROR.NO_MATCHING_SHORTCUT]: {
 		chain: Key[][]
+	}
+	[ERROR.UNKNOWN_KEYS]: {
+		entries: [Shortcut, Key[]][]
+	}
+	[ERROR.UNKNOWN_COMMANDS]: {
+		entries: [Shortcut, Command][]
 	}
 }
 

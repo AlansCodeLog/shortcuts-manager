@@ -51,14 +51,19 @@ export class Emulator {
 	 * emulator.fire("KeyA-")
 	 * // press Ctrl+A
 	 * emulator.fire("Ctrl+ KeyA Ctrl-")
-	 * // emulate a modifier state change off focus
+	 *
+	 * // to truly simulate pressing native modifiers, pass all modifiers pressed as an array
+	 * emulator.fire("Ctrl+ KeyA Ctrl-", ["ControlLeft"])
+	 *
+	 * // emulate a modifier state change out of focus
 	 * // e.g. user focuses out, holds control+A, and focuses back
 	 * // only KeyA would fire
 	 *	emulator.fire("KeyA+", ["ControlLeft"])
 	 * // they release both in focus
 	 * emulater.fire("KeyA- Ctrl-")
-	 * // or release them again offscreen
-	 *	emulator.fire("", [""])
+	 *
+	 * // to simulate them releasing out of focus again you will have to add a delay since no events would fire
+	 * delay(1000)
 	 *
 	 * ```
 	 *
@@ -77,35 +82,27 @@ export class Emulator {
 		if (!this.initiated) {
 			throw new Error("Emulator not initiated.")
 		}
-		const keys = str.split(/(\s+)/).filter(part => part !== "")
+		const keys = str.split(/(\s+)/).filter(part => part.trim() !== "")
 		for (const key of keys) {
 			if (mouseButtons.includes(key)) {
 				this.press("mouse", key, modifiers)
 				this.release("mouse", key, modifiers)
-				continue
-			}
-			if (mouseButtonsDown.includes(key)) {
+			} else if (mouseButtonsDown.includes(key)) {
 				this.press("mouse", key[1], modifiers)
-				continue
-			}
-			if (mouseButtonsUp.includes(key)) {
+			} else if (mouseButtonsUp.includes(key)) {
 				this.release("mouse", key[1], modifiers)
-				continue
-			}
-			if (wheelKeys.includes(key)) {
+			} else if (wheelKeys.includes(key)) {
 				this.press("wheel", key, modifiers)
-				continue
-			}
-			if (key.endsWith("+")) {
+			} else if (key.endsWith("+")) {
 				this.press("key", key.slice(0, key.length - 1), modifiers)
-				continue
-			}
-			if (key.endsWith("-")) {
+			} else if (key.endsWith("-")) {
 				this.release("key", key.slice(0, key.length - 1), modifiers)
-				continue
+			} else {
+				console.log({ key })
+
+				this.press("key", key, modifiers)
+				this.release("key", key, modifiers)
 			}
-			this.press("key", key, modifiers)
-			this.release("key", key, modifiers)
 		}
 	}
 	press(type: "mouse" | "wheel" | "key", key: string, modifiers: string[] = []): void {
@@ -120,7 +117,7 @@ export class Emulator {
 			} break
 			case "key": {
 				const event = new EmulatedEvent("keydown", { code: key }, modifiers)
-				this.listeners.mousedown!(event)
+				this.listeners.keydown!(event)
 			} break
 		}
 	}
@@ -128,11 +125,11 @@ export class Emulator {
 		switch (type) {
 			case "mouse": {
 				const event = new EmulatedEvent("mousedown", { button: parseInt(key, 10) }, modifiers)
-				this.listeners.mousedown!(event)
+				this.listeners.mouseup!(event)
 			} break
 			case "key": {
 				const event = new EmulatedEvent("keydown", { code: key }, modifiers)
-				this.listeners.mousedown!(event)
+				this.listeners.keyup!(event)
 			} break
 		}
 	}

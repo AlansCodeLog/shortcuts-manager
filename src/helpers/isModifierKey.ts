@@ -1,8 +1,8 @@
 import type { Key } from "@/classes"
 
 /**
- * Returns whether a key is a toggle key (this returns true for `root`, `on`, and `off`).
+ * Returns whether a key is a modifier key (emulated or native).
  */
 export function isModifierKey(key: Key): boolean {
-	return key.is.modifier === true
+	return key.is.modifier !== false
 }

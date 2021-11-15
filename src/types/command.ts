@@ -36,7 +36,7 @@ export type CommandOptions<
 	/**
 	 * The function to execute when a shortcut triggers it's command. It is executed both on keydown and keyup (of the first released key) so be sure to check the isKeydown parameter so you don't trigger commands twice.
 	 *
-	 * The command itself is passed to it, and if it is managed by a manager it is also passed the shortcut, the manager itself, and the event of the last key that triggered it.
+	 * The command itself is passed to it, and if it is managed by a manager it is also passed the shortcut, the manager itself, and the event of the last key that triggered it. Note the event might not exist when the manager needs to emulate a key release. See {@link Manager.autoReleaseDelay}
 	 *
 	 * You should do e.preventDefault if you need it or haven't done so from the manager's filters.
 	 *

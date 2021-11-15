@@ -1,12 +1,14 @@
-import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
-import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
 import { crop, indent, pretty } from "@alanscodelog/utils"
+
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 import { Shortcut } from "./Shortcut"
+
+import { KnownError } from "@/helpers"
+import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
 
 
 export class Shortcuts<
@@ -24,7 +26,7 @@ export class Shortcuts<
 		TShortcut[],
 > extends MixinHookablePlugableCollection<ShortcutsHook, TPlugins> {
 	override entries: TEntries
-	private _boundAllowsHook: any
+	private readonly _boundAllowsHook: any
 	/** See {@link KeysStringifier} */
 	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	sorter: ShortcutOptions["sorter"] = defaultSorter
@@ -55,8 +57,8 @@ export class Shortcuts<
 		if (opts.stringifier) this.stringifier = opts.stringifier
 		if (opts.sorter) this.sorter = opts.sorter
 		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"] },
-			plugableCollection: { plugins, key: ""}
+			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
+			plugableCollection: { plugins, key: "" },
 		})
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
@@ -69,15 +71,13 @@ export class Shortcuts<
 			if (entry instanceof Shortcut) {
 				entry.stringifier = this.stringifier
 			} else {
-				//@ts-ignore
-				entry.opts = {...(entry.opts ?? {}), stringifier: this.stringifier}
+				entry.opts = { ...(entry.opts ?? {}), stringifier: this.stringifier }
 			}
 		}
 		if (this.sorter) {
 			if (entry instanceof Shortcut) {
 				entry.sorter = this.sorter
 			} else {
-				//@ts-ignore
 				entry.opts = { ...(entry.opts ?? {}), sorter: this.sorter }
 			}
 		}
@@ -87,12 +87,12 @@ export class Shortcuts<
 	}
 	protected _allowsHook(key: string, value: any, _old: any, instance: Shortcut): true | KnownError<ERROR.DUPLICATE_SHORTCUT> {
 		const proxy = Proxy.revocable(instance, {
-			get: function (target, prop, receiver) {
+			get(target: any, prop: any, receiver: any) {
 				if (prop === key) { return value }
 				return Reflect.get(target, prop, receiver)
-			}
+			},
 		}) as any
-		const existing = this.query((existing) => existing.equals(proxy.proxy) && existing !== instance, false)
+		const existing = this.query(entry => entry.equals(proxy.proxy) && entry !== instance, false)
 		proxy.revoke()
 		if (existing !== undefined) {
 			return new KnownError(ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${value}.
@@ -121,9 +121,9 @@ export class Shortcuts<
 	 *
 	 * @param all If set to true, uses filter and returns all matching entries. Otherwise uses find and only returns the first match.
 	 */
-	query(filter: Parameters<Array<TShortcut>["filter"]>["0"], all?: true): TShortcut[] | undefined
-	query(filter: Parameters<Array<TShortcut>["find"]>["0"], all?: false): TShortcut | undefined
-	query(filter: Parameters<Array<TShortcut>["filter"] | Array<TShortcut>["find"]>["0"], all: boolean = true): TShortcut| TShortcut[] | undefined {
+	query(filter: Parameters<TShortcut[]["filter"]>["0"], all?: true): TShortcut[]
+	query(filter: Parameters<TShortcut[]["find"]>["0"], all?: false): TShortcut | undefined
+	query(filter: Parameters<TShortcut[]["filter"] | TShortcut[]["find"]>["0"], all: boolean = true): TShortcut | TShortcut[] | undefined {
 		return all ? this.entries.filter(filter) : this.entries.find(filter)
 	}
 	/**
@@ -186,17 +186,17 @@ export class Shortcuts<
 		{ check = true }: { check?: boolean } = {},
 		filter?: (shortcut: Shortcut) => boolean
 	): void {
-
 		const e = this._assertCorrectSwapParameters(chordsA, chordsB)
 		if (e instanceof Error) { throw e }
 
 		if (check) {
+			// eslint-disable-next-line @typescript-eslint/no-shadow
 			const e = this.canSwapChords(chordsA, chordsB, filter)
 			if (e instanceof Error) { throw e }
 		}
 
-		let shortcutsA = this.query((shortcut) => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
-		let shortcutsB = this.query((shortcut) => shortcut.equalsKeys(chordsB, chordsB.length)) ?? []
+		let shortcutsA = this.query(shortcut => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
+		let shortcutsB = this.query(shortcut => shortcut.equalsKeys(chordsB, chordsB.length)) ?? []
 
 		if (filter) {
 			shortcutsA = shortcutsA.filter(filter)
@@ -204,12 +204,12 @@ export class Shortcuts<
 		}
 
 		this._setForceUnequal(shortcutsA, true)
-		for (let shortcutB of shortcutsB) {
+		for (const shortcutB of shortcutsB) {
 			shortcutB.set("keys", [...chordsA, ...shortcutB.keys.slice(chordsA.length, shortcutB.keys.length)])
 		}
 		this._setForceUnequal(shortcutsA, false)
 		this._setForceUnequal(shortcutsB, true)
-		for (let shortcutA of shortcutsA) {
+		for (const shortcutA of shortcutsA) {
 			shortcutA.set("keys", [...chordsB, ...shortcutA.keys.slice(chordsB.length, shortcutA.keys.length)])
 		}
 		this._setForceUnequal(shortcutsB, false)
@@ -230,7 +230,7 @@ export class Shortcuts<
 			Chords:
 			${indent(pretty(chordsA.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
 			${indent(pretty(chordsB.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
-			`, {chordsA, chordsB})
+			`, { chordsA, chordsB })
 		}
 		return true
 	}
@@ -240,14 +240,12 @@ export class Shortcuts<
 			found = chord
 		}
 		if (found) {
-			console.log(found);
-
-			return new KnownError(ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${pretty(chord.map(keys => keys.map(key => this.stringifier.stringify(key))), {oneline: true})} contains an empty chord.`, {chord})
+			return new KnownError(ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${pretty(chord.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true })} contains an empty chord.`, { chord })
 		}
 		return true
 	}
-	private _setForceUnequal(shortcuts: Shortcut[], value: boolean) {
-		for (let shortcut of shortcuts) {
+	private _setForceUnequal(shortcuts: Shortcut[], value: boolean): void {
+		for (const shortcut of shortcuts) {
 			shortcut.forceUnequal = value
 		}
 	}
@@ -262,14 +260,13 @@ export class Shortcuts<
 		chordsA: Key[][], chordsB: Key[][],
 		filter?: (shortcut: Shortcut) => boolean
 	): true | Error | KnownError<ERROR.INVALID_SWAP_CHORDS | ERROR.DUPLICATE_SHORTCUT> {
-
 		const e = this._assertCorrectSwapParameters(chordsA, chordsB)
 		if (e instanceof Error) {
 			return e
 		}
 
-		let shortcutsA = this.query((shortcut) => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
-		let shortcutsB = this.query((shortcut) => shortcut.equalsKeys(chordsB, chordsB.length)) ?? []
+		let shortcutsA = this.query(shortcut => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
+		let shortcutsB = this.query(shortcut => shortcut.equalsKeys(chordsB, chordsB.length)) ?? []
 		if (filter) {
 			shortcutsA = shortcutsA.filter(filter)
 			shortcutsB = shortcutsB.filter(filter)
@@ -277,11 +274,11 @@ export class Shortcuts<
 
 		let can: true | Error = true
 
-		for (let shortcutA of shortcutsA) {
+		for (const shortcutA of shortcutsA) {
 			shortcutA.forceUnequal = true
 		}
 
-		for (let shortcutB of shortcutsB) {
+		for (const shortcutB of shortcutsB) {
 			const allowed = shortcutB.allows("keys", [...chordsA.filter(chord => chord.length > 0), ...shortcutB.keys.slice(chordsA.length, shortcutB.keys.length)])
 			if (allowed instanceof Error) {
 				can = allowed
@@ -289,17 +286,17 @@ export class Shortcuts<
 			}
 		}
 
-		for (let shortcutA of shortcutsA) {
+		for (const shortcutA of shortcutsA) {
 			shortcutA.forceUnequal = false
 		}
 
 		if (can === true) {
-			for (let shortcutB of shortcutsB) {
+			for (const shortcutB of shortcutsB) {
 				shortcutB.forceUnequal = true
 			}
 
 
-			for (let shortcutA of shortcutsA) {
+			for (const shortcutA of shortcutsA) {
 				const allowed = shortcutA.allows("keys", [...chordsB.filter(chord => chord.length > 0), ...shortcutA.keys.slice(chordsB.length, shortcutA.keys.length)])
 				if (allowed instanceof Error) {
 					can = allowed
@@ -307,7 +304,7 @@ export class Shortcuts<
 				}
 			}
 
-			for (let shortcutB of shortcutsB) {
+			for (const shortcutB of shortcutsB) {
 				shortcutB.forceUnequal = false
 			}
 		}

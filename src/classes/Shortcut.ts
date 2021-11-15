@@ -1,8 +1,3 @@
-import { KnownError } from "@/helpers"
-import { throwIfImpossibleToggles } from "@/helpers/throwIfImpossibleToggles"
-import { throwIfInvalidChord } from "@/helpers/throwIfInvalidChord"
-import { MixinHookablePlugableBase } from "@/mixins"
-import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 import type { Command } from "./Command"
 import { Condition } from "./Condition"
 import type { Key } from "./Key"
@@ -10,7 +5,13 @@ import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
+import { KnownError } from "@/helpers"
+import { throwIfImpossibleToggles } from "@/helpers/throwIfImpossibleToggles"
+import { throwIfInvalidChord } from "@/helpers/throwIfInvalidChord"
+import { MixinHookablePlugableBase } from "@/mixins"
+import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 
+import type { Context } from "."
 
 
 export class Shortcut<
@@ -70,8 +71,8 @@ export class Shortcut<
 		super()
 		if (opts.stringifier) this.stringifier = opts.stringifier
 		this._mixin({
-			hookable: { keys: ["allows", "set"] },
-			plugableBase: { plugins, info, key: undefined }
+			hookable: { keys: ["allows", "set"]},
+			plugableBase: { plugins, info, key: undefined },
 		})
 		this.addHook("allows", this._hooksAllows.bind(this))
 		if (opts.enabled) this.enabled = opts.enabled
@@ -101,7 +102,7 @@ export class Shortcut<
 	/**
 	 * A wrapper around static {@link Shortcut.equalsKeys} for the instance.
 	 */
-	equalsKeys(keys: Key[][], length?: number) {
+	equalsKeys(keys: Key[][], length?: number): boolean {
 		return Shortcut.equalsKeys(this.keys, keys, length)
 	}
 	/**
@@ -122,7 +123,7 @@ export class Shortcut<
 	static equalsKeys(keys: Key[][], base: Key[][], length?: number): boolean {
 		// Since they're pre-sorted this should be quite fast
 		if (
-			(length == undefined && base.length !== keys.length) ||
+			(length === undefined && base.length !== keys.length) ||
 			(length !== undefined && (keys.length < length || base.length < length))
 		) return false
 
@@ -138,18 +139,16 @@ export class Shortcut<
 			}) === undefined
 	}
 	get opts(): ShortcutOptions {
-		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier}
+		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier }
 	}
 	protected override _set<TKey extends keyof ShortcutHooks>(
-			key: TKey,
-			value: ShortcutHooks[TKey]["value"],
+		key: TKey,
+		value: ShortcutHooks[TKey]["value"],
 	): void {
 		switch (key) {
-			case "keys": {
-				this.keys = (value as ShortcutHooks["keys"]["value"]).map((chord) => {
-					return this.sorter.sort([...chord])
-				})
-			} break;
+			case "keys":
+				this.keys = (value as ShortcutHooks["keys"]["value"]).map(chord => this.sorter.sort([...chord]))
+				break
 			default: {
 				(this as any)[key] = value
 			}
@@ -173,6 +172,13 @@ export class Shortcut<
 			throw e
 		}
 		return true
+	}
+	triggerableBy(chain: Key[][], context: Context): boolean {
+		return this.enabled &&
+			this.command !== undefined &&
+			this.equalsKeys(chain) &&
+			this.condition.eval(context) &&
+			(this.command === undefined || this.command.condition.eval(context))
 	}
 }
 
