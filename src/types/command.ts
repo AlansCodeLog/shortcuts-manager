@@ -45,7 +45,7 @@ export type CommandOptions<
 	 *
 	 * See {@link Manager}.
 	 */
-	execute: TExec
+	execute?: TExec
 	/**
 	 * Commands may have an additional condition that must be met, apart from the shortcut's that triggered it.
 	 *

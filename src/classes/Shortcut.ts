@@ -22,6 +22,7 @@ export class Shortcut<
 	TInfo extends
 		PluginsInfo<TPlugins> =
 		PluginsInfo<TPlugins>,
+
 > extends MixinHookablePlugableBase<ShortcutHooks, TPlugins, TInfo> implements ShortcutOptions {
 	/** The keys that make up the shortcut. Note that this is NOT a unique identifier for shortcuts and cannot be used to compare them if you are making use of the when/context/active options. */
 	keys: Key[][] = []

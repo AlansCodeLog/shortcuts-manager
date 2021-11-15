@@ -1,10 +1,9 @@
-import { MixinHookablePlugableBase } from "@/mixins"
-import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
 import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
+import { MixinHookablePlugableBase } from "@/mixins"
+import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
 
-const defaultExec = () => true
 
 export class Command<
 	TExec extends
@@ -31,7 +30,7 @@ export class Command<
 	/**
 	 * See {@link CommandOptions.execute}
 	 */
-	execute: TExec = defaultExec as any as TExec
+	execute?: TExec
 	/**
 	 * See {@link CommandOptions.condition}
 	 */
@@ -77,8 +76,8 @@ export class Command<
 		if (opts.description) this.description = opts.description as string
 		if (opts.condition) this.condition = opts.condition as TCondition
 		this._mixin({
-			hookable: { keys: ["allows", "set"] },
-			plugableBase: { plugins, info, key: "name" }
+			hookable: { keys: ["allows", "set"]},
+			plugableBase: { plugins, info, key: "name" },
 		})
 	}
 	/**
@@ -101,7 +100,7 @@ export class Command<
 		)
 	}
 	get opts(): CommandOptions {
-		return { description:this.description, execute:this.execute, condition:this.condition }
+		return { description: this.description, execute: this.execute, condition: this.condition }
 	}
 }
 

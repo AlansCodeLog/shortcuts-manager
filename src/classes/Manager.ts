@@ -9,7 +9,7 @@ import type { Shortcuts } from "./Shortcuts"
 import { isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
 import { checkManagerShortcuts } from "@/helpers/checkManagerShortcuts"
 import { defaultManagerCallback } from "@/helpers/defaultManagerCallback"
-import { ERROR, ManagerErrorCallback, ToggleRootKey } from "@/types"
+import { ERROR, ManagerErrorCallback, ToggleRootKey, TriggerableShortcut } from "@/types"
 import type { AnyInputEvent } from "@/types/manager"
 
 import { Context, Key, KeysSorter, KeysStringifier, Shortcut } from "."
@@ -17,6 +17,16 @@ import { Context, Key, KeysSorter, KeysStringifier, Shortcut } from "."
 
 const sEnabled = Symbol("enabled")
 const sTimers = Symbol("timers")
+const sAwaitingKeyup = Symbol("awaitingKeyup")
+const sUntrigger = Symbol("untrigger")
+const sNativeToggleKeys = Symbol("nativeToggleKeys")
+const sNativeModifierKeys = Symbol("nativeModifierKeys")
+const sBoundKeydown = Symbol("boundKeydown")
+const sBoundKeyup = Symbol("boundKeyup")
+const sBoundMousedown = Symbol("boundMousedown")
+const sBoundMouseup = Symbol("boundMouseup")
+const sBoundWheel = Symbol("boundWheel")
+
 
 export class Manager {
 	context: Context
@@ -24,6 +34,7 @@ export class Manager {
 	commands: Commands
 	shortcuts: Shortcuts
 	stringifier: KeysStringifier
+	sorter: KeysSorter
 	private [sTimers]: Map<Key, number | NodeJS.Timeout> = new Map()
 	/**
 	 * There are cases when a keyup event might never fire because it happened out of focus.
@@ -34,14 +45,15 @@ export class Manager {
 	 */
 	autoReleaseDelay: number
 	private [sEnabled]: boolean = true
-	sorter: KeysSorter
-	private readonly nativeToggleKeys: ToggleRootKey[]
-	private readonly nativeModifierKeys: Key[]
-	private readonly _boundKeydown: Manager["_keydown"]
-	private readonly _boundKeyup: Manager["_keyup"]
-	private readonly _boundMousedown: Manager["_mousedown"]
-	private readonly _boundMouseup: Manager["_mouseup"]
-	private readonly _boundWheel: Manager["_wheel"]
+	private [sAwaitingKeyup]: boolean = false
+	private [sUntrigger]: false | TriggerableShortcut = false
+	private readonly [sNativeToggleKeys]: ToggleRootKey[]
+	private readonly [sNativeModifierKeys]: Key[]
+	private readonly [sBoundKeydown]: Manager["_keydown"]
+	private readonly [sBoundKeyup]: Manager["_keyup"]
+	private readonly [sBoundMousedown]: Manager["_mousedown"]
+	private readonly [sBoundMouseup]: Manager["_mouseup"]
+	private readonly [sBoundWheel]: Manager["_wheel"]
 	/**
 	 * The current chain of chords.
 	 */
@@ -55,7 +67,7 @@ export class Manager {
 	 *
 	 * The default callback logs the error and clears the chain.
 	 *
-	 * Note the event parameter might be undefiend because it might not exist when the manager needs to emulate a key release. See {@link Manager.autoReleaseDelay}
+	 * Note the event parameter might be undefined because it might not exist when the manager needs to emulate a key release. See {@link Manager.autoReleaseDelay}
 	 */
 	cb: ManagerErrorCallback<ERROR.MULTIPLE_MATCHING_SHORTCUTS | ERROR.NO_MATCHING_SHORTCUT> = defaultManagerCallback
 	/**
@@ -96,11 +108,13 @@ export class Manager {
 	 *
 	 * The moment a key is released after a shortcut is triggered, the command's execute function is fired again with `isKeydown = false`.
 	 *
+	 * ### Notes
+	 *
+	 * - **The creation of the manager can throw since it checks whether shortcuts contain known keys/commands.**
+	 *
 	 * ### Other
 	 *
-	 * - If you need to emulate keypresses see {@link Emulator}.
-	 *
-	 * - The creation of the manager can throw since it checks whether shortcuts contain known keys/commands.
+	 * - If you need to emulate keypresses for testing see {@link Emulator}.
 	 *
 	 * Other common things you might want/need to do though:
 	 *
@@ -139,28 +153,28 @@ export class Manager {
 
 		this.keys = keys
 		this.keys.stringifier = this.stringifier
-		this.nativeToggleKeys = this.keys.query(key => key.is.toggle === "native" && isToggleRootKey(key), true) as ToggleRootKey[]
-		this.nativeModifierKeys = this.keys.query(key => key.is.modifier === "native", true)
+		this[sNativeToggleKeys] = this.keys.query(key => key.is.toggle === "native" && isToggleRootKey(key), true) as ToggleRootKey[]
+		this[sNativeModifierKeys] = this.keys.query(key => key.is.modifier === "native", true)
 
 		this.keys.addHook("add", entry => {
 			if (entry.is.toggle === "native"
 				&& isToggleRootKey(entry)
-				&& !this.nativeToggleKeys.includes(entry as ToggleRootKey)
+				&& !this[sNativeToggleKeys].includes(entry as ToggleRootKey)
 			) {
-				this.nativeToggleKeys.push(entry as ToggleRootKey)
+				this[sNativeToggleKeys].push(entry as ToggleRootKey)
 			}
-			if (entry.is.modifier === "native" && !this.nativeModifierKeys.includes(entry)) {
-				this.nativeModifierKeys.push(entry)
+			if (entry.is.modifier === "native" && !this[sNativeModifierKeys].includes(entry)) {
+				this[sNativeModifierKeys].push(entry)
 			}
 		})
 		this.keys.addHook("remove", entry => {
-			const i = this.nativeToggleKeys.indexOf(entry as ToggleRootKey)
+			const i = this[sNativeToggleKeys].indexOf(entry as ToggleRootKey)
 			if (i > -1) {
-				this.nativeToggleKeys.splice(i)
+				this[sNativeToggleKeys].splice(i)
 			}
-			const i2 = this.nativeModifierKeys.indexOf(entry)
+			const i2 = this[sNativeModifierKeys].indexOf(entry)
 			if (i2 > -1) {
-				this.nativeToggleKeys.splice(i)
+				this[sNativeToggleKeys].splice(i)
 			}
 		})
 
@@ -171,14 +185,13 @@ export class Manager {
 		this.shortcuts.stringifier = this.stringifier
 		this.shortcuts.sorter = this.sorter
 
-		this._boundKeydown = this._keydown.bind(this)
-		this._boundKeyup = this._keyup.bind(this)
-		this._boundMousedown = this._mousedown.bind(this)
-		this._boundMouseup = this._mouseup.bind(this)
-		this._boundWheel = this._wheel.bind(this)
+		this[sBoundKeydown] = this._keydown.bind(this)
+		this[sBoundKeyup] = this._keyup.bind(this)
+		this[sBoundMousedown] = this._mousedown.bind(this)
+		this[sBoundMouseup] = this._mouseup.bind(this)
+		this[sBoundWheel] = this._wheel.bind(this)
 	}
-	protected _awaitingKeyup: boolean = false
-	protected _untrigger: false | Shortcut = false
+
 	/**
 	 * A list of currently pressed keys for convenience.
 	 *
@@ -193,21 +206,21 @@ export class Manager {
 	 * Attach the manager to an element so it can listen to the needed event listeners.
 	 */
 	attach(el: { addEventListener: HTMLElement["addEventListener"] }): void {
-		el.addEventListener("keydown", this._boundKeydown)
-		el.addEventListener("keyup", this._boundKeyup)
-		el.addEventListener("wheel", this._boundWheel)
-		el.addEventListener("mousedown", this._boundMousedown)
-		el.addEventListener("mouseup", this._boundMouseup)
+		el.addEventListener("keydown", this[sBoundKeydown])
+		el.addEventListener("keyup", this[sBoundKeyup])
+		el.addEventListener("wheel", this[sBoundWheel])
+		el.addEventListener("mousedown", this[sBoundMousedown])
+		el.addEventListener("mouseup", this[sBoundMouseup])
 	}
 	/**
 	 * Detach the manager from an element and remove all it's event listeners.
 	 */
 	detach(el: { removeEventListener: HTMLElement["removeEventListener"] }): void {
-		el.removeEventListener("keydown", this._boundKeydown)
-		el.removeEventListener("keyup", this._boundKeyup)
-		el.removeEventListener("wheel", this._boundWheel)
-		el.removeEventListener("mousedown", this._boundMousedown)
-		el.removeEventListener("mouseup", this._boundMouseup)
+		el.removeEventListener("keydown", this[sBoundKeydown])
+		el.removeEventListener("keyup", this[sBoundKeyup])
+		el.removeEventListener("wheel", this[sBoundWheel])
+		el.removeEventListener("mousedown", this[sBoundMousedown])
+		el.removeEventListener("mouseup", this[sBoundMouseup])
 	}
 	/**
 	 * Return whether the current chord chain state partially matches a shortcut which can be triggered.
@@ -215,10 +228,11 @@ export class Manager {
 	 * Returns false if awaiting keyup.
 	 */
 	inChain(): boolean {
-		if (this._awaitingKeyup) return false
+		if (this[sAwaitingKeyup]) return false
 		const shortcuts = this.shortcuts.query(shortcut =>
 			shortcut.enabled &&
 			shortcut.command &&
+			shortcut.command.execute &&
 			shortcut.equalsKeys(this.chain, this.chain.length) &&
 			shortcut.condition.eval(this.context) &&
 			(shortcut.command === undefined || shortcut.command.condition.eval(this.context))
@@ -243,9 +257,9 @@ export class Manager {
 		// @ts-expect-error is only publicly readonly
 		this.chain = keys
 		if (this.pressedKeys.length > 0) {
-			this._awaitingKeyup = true
+			this[sAwaitingKeyup] = true
 		}
-		this._awaitingKeyup = true
+		this[sAwaitingKeyup] = true
 	}
 	/**
 	 * Force clears/resets all state. Clears the chain and sets all keys to unpressed.
@@ -257,8 +271,11 @@ export class Manager {
 	 */
 	forceClear({ ignoreNative = false }: { ignoreNative?: false } = {}): void {
 		this.clearChain()
-		this._untrigger = false
-		this._awaitingKeyup = false
+		this[sUntrigger] = false
+		this[sAwaitingKeyup] = false
+		for (const [key] of this[sTimers].entries()) {
+			this._clearKeyTimer(key)
+		}
 		for (const key of Object.values(this.keys.entries)) {
 			if ((key.is.modifier || key.is.toggle === "native") && ignoreNative) return
 			key.set("pressed", false)
@@ -268,17 +285,30 @@ export class Manager {
 			}
 		}
 	}
-	enable(): void {
-		this[sEnabled] = true
+	private _checkTrigger(e?: AnyInputEvent): void {
+		if (this[sUntrigger]) {
+			const untrigger: TriggerableShortcut = this[sUntrigger] as TriggerableShortcut
+			untrigger.command.execute(false, untrigger.command, untrigger, this, e)
+			this[sUntrigger] = false
+		}
+		const res = this._getTriggerableShortcut()
+		if (res instanceof Error) {
+			this.cb(res, this, e)
+		} else if (res instanceof Shortcut) {
+			this[sUntrigger] = res
+			res.command.execute(true, res.command, res, this, e)
+		}
+		if (this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
+			if (this.inChain()) {
+				this.chain.push([])
+				this[sAwaitingKeyup] = true
+			} else if (!res && this.chain.length > 1) {
+				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
+				this.cb(error, this, e)
+			}
+		}
 	}
-	/**
-	 * Disables the manager so it will stop processing all events and calls {@link Manager.clearChain}
-	 */
-	disable(): void {
-		this[sEnabled] = false
-		this.clearChain()
-	}
-	protected _canTrigger(): false | KnownError<ERROR.MULTIPLE_MATCHING_SHORTCUTS> | Shortcut {
+	private _getTriggerableShortcut(): false | KnownError<ERROR.MULTIPLE_MATCHING_SHORTCUTS> | TriggerableShortcut {
 		const shortcuts = this.shortcuts.query(shortcut => shortcut.triggerableBy(this.chain, this.context))
 		if (shortcuts.length === 0) return false
 		if (shortcuts.length > 1) {
@@ -286,55 +316,34 @@ export class Manager {
 			${indent(shortcuts.map(shortcut => shortcut.command!.name).join("\n"), 4)}
 			`, { shortcuts })
 		} else {
-			return shortcuts[0]
+			return shortcuts[0] as TriggerableShortcut
 		}
 	}
-	protected _addToChain(keys: Key[], e: AnyInputEvent): void {
+	private _addToChain(keys: Key[], e: AnyInputEvent): void {
 		// the chain was just cleared
 		// the user could have released only part of the keys then pressed others
 		// we should ignore all keypresses until they are all released
-		if (this._awaitingKeyup) return
+		if (this[sAwaitingKeyup]) return
 		const lastChord = this.chain[this.chain.length - 1]
 		for (const key of keys) {
-			if (!lastChord.includes(key) && !this._awaitingKeyup) {
+			if (!lastChord.includes(key) && !this[sAwaitingKeyup]) {
 				lastChord.push(key)
 				this.sorter.sort(lastChord)
 				this._checkTrigger(e)
 			}
 		}
 	}
-	protected _checkTrigger(e?: AnyInputEvent): void {
-		if (this._untrigger) {
-			this._untrigger.command!.execute(false, this._untrigger.command!, this._untrigger, this, e)
-			this._untrigger = false
-		}
-		const res = this._canTrigger()
-		if (res instanceof Error) {
-			this.cb(res, this, e)
-		} else if (res instanceof Shortcut) {
-			this._untrigger = res
-			res.command!.execute(true, res.command!, res, this, e)
-		}
-		if (this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
-			if (this.inChain()) {
-				this.chain.push([])
-				this._awaitingKeyup = true
-			} else if (!res && this.chain.length > 1) {
-				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
-				this.cb(error, this, e)
-			}
-		}
-	}
-	protected _removeFromChain(keys: Key[], e?: AnyInputEvent): void {
-		if (this._untrigger) {
-			this._untrigger.command!.execute(false, this._untrigger.command!, this._untrigger, this, e)
-			this._untrigger = false
+	private _removeFromChain(keys: Key[], e?: AnyInputEvent): void {
+		if (this[sUntrigger]) {
+			const untrigger: TriggerableShortcut = this[sUntrigger] as TriggerableShortcut
+			untrigger.command.execute(false, untrigger.command, untrigger, this, e)
+			this[sUntrigger] = false
 		}
 		const lastChord = this.chain[this.chain.length - 1]
 
-		if (this._awaitingKeyup) {
+		if (this[sAwaitingKeyup]) {
 			if (this.pressedKeys.length === 0) {
-				this._awaitingKeyup = false
+				this[sAwaitingKeyup] = false
 			}
 		} else {
 			for (const key of keys) {
@@ -347,22 +356,22 @@ export class Manager {
 			}
 		}
 	}
-	protected _setEmulatedToggleState(key: Key, value: boolean): void {
+	private _setEmulatedToggleState(key: Key, value: boolean): void {
 		key.on!.set("pressed", value)
 		key.off!.set("pressed", !value)
 	}
-
-	protected _setKeyTimer(key: Key): void {
+	private _setKeyTimer(key: Key): void {
 		this[sTimers].set(key, setTimeout(() => {
 			key.set("pressed", false)
 			this._removeFromChain([key], undefined)
 		}, this.autoReleaseDelay))
 	}
-	protected _clearKeyTimer(key: Key): void {
+	private _clearKeyTimer(key: Key): void {
 		const timer = this[sTimers].get(key)
 		clearTimeout(timer as number)
+		this[sTimers].delete(key)
 	}
-	protected _setKeyState(keys: Key[], state: boolean): void {
+	private _setKeyState(keys: Key[], state: boolean): void {
 		for (const key of keys) {
 			key.set("pressed", state)
 			this._clearKeyTimer(key)
@@ -385,7 +394,7 @@ export class Manager {
 			}
 		}
 	}
-	protected getModifierState(key: Key, e: AnyInputEvent): boolean {
+	private _getModifierState(key: Key, e: AnyInputEvent): boolean {
 		return [key.id, ...key.variants ?? []].find(code => e.getModifierState(code)) !== undefined
 	}
 	/**
@@ -397,14 +406,14 @@ export class Manager {
 	 *
 	 * Modifiers need to be added/removed from the chain on changes, but not toggles.
 	 */
-	protected _checkSpecialKeys(e: AnyInputEvent): void {
-		for (const key of this.nativeToggleKeys) {
+	private _checkSpecialKeys(e: AnyInputEvent): void {
+		for (const key of this[sNativeToggleKeys]) {
 			if (key.on.pressed && key.off.pressed) {
 				throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key as Key)} is a toggle key whose on and off versions are both pressed, which is not a valid state.`, { key: key as Key })
 			}
 			// this does not guarantee the key code is valid
 			// it just returns false even for made up keys
-			if (this.getModifierState(key as Key, e)) {
+			if (this._getModifierState(key as Key, e)) {
 				if (!key.on.pressed) {
 					key.on.set("pressed", true)
 					key.off.set("pressed", false)
@@ -418,8 +427,8 @@ export class Manager {
 		}
 		const added = []
 		const removed = []
-		for (const key of this.nativeModifierKeys) {
-			if (this.getModifierState(key, e)) {
+		for (const key of this[sNativeModifierKeys]) {
+			if (this._getModifierState(key, e)) {
 				if (!key.pressed) {
 					key.set("pressed", true)
 					this._clearKeyTimer(key)
@@ -439,21 +448,21 @@ export class Manager {
 		this._addToChain(added, e)
 		this._removeFromChain(removed, e)
 	}
-	protected _keydown(e: KeyboardEvent): void {
+	private _keydown(e: KeyboardEvent): void {
 		if (!this[sEnabled]) return
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)) && !key.pressed)!
 		this._setKeyState(keys, true)
 		this._checkSpecialKeys(e)
 		this._addToChain(keys, e)
 	}
-	protected _keyup(e: KeyboardEvent): void {
+	private _keyup(e: KeyboardEvent): void {
 		if (!this[sEnabled]) return
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)) && key.pressed)!
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e)
 		this._removeFromChain(keys, e)
 	}
-	protected _wheel(e: WheelEvent): void {
+	private _wheel(e: WheelEvent): void {
 		if (!this[sEnabled]) return
 		const dir = e.deltaY < 0 ? "Up" : "Down"
 		const code = `Wheel${dir}`
@@ -464,7 +473,7 @@ export class Manager {
 		this._setKeyState(keys, false)
 		this._removeFromChain(keys, e)
 	}
-	protected _mousedown(e: MouseEvent): void {
+	private _mousedown(e: MouseEvent): void {
 		if (!this[sEnabled]) return
 		const button = e.button as any as string
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
@@ -472,7 +481,7 @@ export class Manager {
 		this._checkSpecialKeys(e)
 		this._addToChain(keys, e)
 	}
-	protected _mouseup(e: MouseEvent): void {
+	private _mouseup(e: MouseEvent): void {
 		if (!this[sEnabled]) return
 		const button = e.button as any as string
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!

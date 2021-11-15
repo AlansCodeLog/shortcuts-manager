@@ -40,6 +40,8 @@ export type ShortcutsOptions = {
 	stringifier: KeysStringifier
 }
 
+export type TriggerableShortcut = Shortcut & { command: Command & { execute: NonNullable<Command["execute"]> } }
+
 export type KeysErrors =
 	| ERROR.CHORD_W_ONLY_MODIFIERS
 	| ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS

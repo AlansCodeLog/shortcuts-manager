@@ -98,8 +98,6 @@ export class Emulator {
 			} else if (key.endsWith("-")) {
 				this.release("key", key.slice(0, key.length - 1), modifiers)
 			} else {
-				console.log({ key })
-
 				this.press("key", key, modifiers)
 				this.release("key", key, modifiers)
 			}
