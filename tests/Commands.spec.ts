@@ -1,7 +1,8 @@
-import { Command, Commands } from "@/classes"
 import { inspectError, testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 
+import { Command, Commands } from "@/classes"
 
 
 describe(testName(), () => {
@@ -31,10 +32,10 @@ describe(testName(), () => {
 			const commands = new Commands([
 				new Command("a"),
 			])
-			commands.add(new Command("a"))
+			commands.allows("add", new Command("a")).unwrap()
 		}, false)).to.throw()
 	})
-	it("throws on changing command name to a name that would conflict", () => {
+	it("error on changing command name to a name that would conflict", () => {
 		const a = new Command("a")
 		const b = new Command("b")
 		new Commands([
@@ -42,7 +43,7 @@ describe(testName(), () => {
 			b,
 		])
 		expect(inspectError(() => {
-			b.set("name", "a")
+			b.allows("name", "a").unwrap()
 		})).to.throw()
 	})
 	it("allows changing command name to a name that doesn't create a conflict", () => {

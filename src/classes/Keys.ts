@@ -57,7 +57,7 @@ export class Keys<
 		this.entries = {} as TEntries
 
 		keys.forEach(key => {
-			this.add(key)
+			if (this.allows("add", key).unwrap()) this.add(key)
 		})
 	}
 	protected override _add(entry: RawKey | Key): void {
@@ -69,10 +69,10 @@ export class Keys<
 			}
 		}
 		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
-		HookableCollection._addToDict<Key>(this, this.entries, instance, t => t.id)
+		HookableCollection._addToDict<Key>(this.entries, instance, t => t.id)
 		if (isToggleKey(instance)) {
-			HookableCollection._addToDict<Key>(this, this.entries, instance.on!, t => t.id)
-			HookableCollection._addToDict<Key>(this, this.entries, instance.off!, t => t.id)
+			HookableCollection._addToDict<Key>(this.entries, instance.on as Key, t => t.id)
+			HookableCollection._addToDict<Key>(this.entries, instance.off as Key, t => t.id)
 		}
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {

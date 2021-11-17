@@ -1,3 +1,5 @@
+import { Ok, Result } from "@alanscodelog/utils"
+
 import type { Command } from "./Command"
 import { Condition } from "./Condition"
 import type { Key } from "./Key"
@@ -5,9 +7,8 @@ import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
-import { KnownError } from "@/helpers"
-import { throwIfImpossibleToggles } from "@/helpers/throwIfImpossibleToggles"
-import { throwIfInvalidChord } from "@/helpers/throwIfInvalidChord"
+import { containsPossibleToggleChords } from "@/helpers/containsPossibleToggleChords"
+import { isValidChord } from "@/helpers/isValidChord"
 import { MixinHookablePlugableBase } from "@/mixins"
 import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 
@@ -75,12 +76,11 @@ export class Shortcut<
 			hookable: { keys: ["allows", "set"]},
 			plugableBase: { plugins, info, key: undefined },
 		})
-		this.addHook("allows", this._hooksAllows.bind(this))
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
-		this.set("command", opts.command)
-		if (opts.condition) this.set("condition", opts.condition)
-		this.set("keys", keys)
+		if (this.allows("command", opts.command).unwrap()) this.set("command", opts.command)
+		if (opts.condition && this.allows("condition", opts.condition).unwrap()) this.set("condition", opts.condition)
+		if (this.allows("keys", keys).unwrap()) this.set("keys", keys)
 	}
 	/**
 	 * Returns whether the shortcut passed is equal to this one.
@@ -155,24 +155,23 @@ export class Shortcut<
 			}
 		}
 	}
-	private _hooksAllows<TKey extends keyof ShortcutHooks>(key: TKey, value: ShortcutHooks[TKey]["value"]): true | ShortcutHooks[TKey]["error"] {
+	protected override _allows<TKey extends keyof ShortcutHooks>(key: TKey, value: ShortcutHooks[TKey]["value"]): Result<true, ShortcutHooks[TKey]["error"]> {
 		switch (key) {
 			case "keys": return this._hookAllowsKeys(value as ShortcutHooks["keys"]["value"])
-			default: return true
+			default: return Ok(true)
 		}
 	}
-	private _hookAllowsKeys(value: ShortcutHooks["keys"]["value"]): true | ShortcutHooks["keys"]["error"] {
-		try {
-			value = value.map((chord, i) => {
-				throwIfInvalidChord({ keys: value }, chord, i, this.stringifier)
-				return this.sorter.sort([...chord])
-			})
-			throwIfImpossibleToggles(value, this.stringifier)
-		} catch (e: unknown) {
-			if (e instanceof KnownError) return e
-			throw e
+	protected _hookAllowsKeys(value: ShortcutHooks["keys"]["value"]): Result<true, ShortcutHooks["keys"]["error"]> {
+		const val = []
+		for (let i = 0; i < value.length; i++) {
+			const chord = value[i]
+			const res = isValidChord({ keys: value }, chord, i, this.stringifier)
+			if (res.isError) return res
+			val.push(this.sorter.sort([...chord]))
 		}
-		return true
+		const res = containsPossibleToggleChords(value, this.stringifier)
+		if (res.isError) return res
+		return Ok(true)
 	}
 	triggerableBy(chain: Key[][], context: Context): boolean {
 		return this.enabled &&

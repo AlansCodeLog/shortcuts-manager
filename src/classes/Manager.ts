@@ -1,4 +1,5 @@
-import { crop, indent } from "@alanscodelog/utils"
+import { crop, indent, Ok, Result } from "@alanscodelog/utils"
+import { Err } from "@alanscodelog/utils/dist/utils"
 
 import type { Commands } from "./Commands"
 import type { Keys } from "./Keys"
@@ -6,13 +7,12 @@ import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import type { Shortcuts } from "./Shortcuts"
 
+import type { Context, Key, KeysSorter, KeysStringifier } from "@/classes"
 import { isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
 import { checkManagerShortcuts } from "@/helpers/checkManagerShortcuts"
 import { defaultManagerCallback } from "@/helpers/defaultManagerCallback"
 import { ERROR, ManagerErrorCallback, ToggleRootKey, TriggerableShortcut } from "@/types"
 import type { AnyInputEvent } from "@/types/manager"
-
-import { Context, Key, KeysSorter, KeysStringifier, Shortcut } from "."
 
 
 const sEnabled = Symbol("enabled")
@@ -292,31 +292,31 @@ export class Manager {
 			this[sUntrigger] = false
 		}
 		const res = this._getTriggerableShortcut()
-		if (res instanceof Error) {
-			this.cb(res, this, e)
-		} else if (res instanceof Shortcut) {
-			this[sUntrigger] = res
-			res.command.execute(true, res.command, res, this, e)
+		if (res.isError) {
+			this.cb(res.error, this, e)
+		} else if (res.value) {
+			this[sUntrigger] = res.value
+			res.value.command.execute(true, res.value.command, res.value, this, e)
 		}
 		if (this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
 			if (this.inChain()) {
 				this.chain.push([])
 				this[sAwaitingKeyup] = true
-			} else if (!res && this.chain.length > 1) {
+			} else if ((res.isOk && !res.value) && this.chain.length > 1) {
 				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
 				this.cb(error, this, e)
 			}
 		}
 	}
-	private _getTriggerableShortcut(): false | KnownError<ERROR.MULTIPLE_MATCHING_SHORTCUTS> | TriggerableShortcut {
+	private _getTriggerableShortcut(): Result<false | TriggerableShortcut, KnownError<ERROR.MULTIPLE_MATCHING_SHORTCUTS>> {
 		const shortcuts = this.shortcuts.query(shortcut => shortcut.triggerableBy(this.chain, this.context))
-		if (shortcuts.length === 0) return false
+		if (shortcuts.length === 0) return Ok(false)
 		if (shortcuts.length > 1) {
-			return new KnownError(ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.stringifier.stringify(this.chain)}:
+			return Err(KnownError, ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.stringifier.stringify(this.chain)}:
 			${indent(shortcuts.map(shortcut => shortcut.command!.name).join("\n"), 4)}
 			`, { shortcuts })
 		} else {
-			return shortcuts[0] as TriggerableShortcut
+			return Ok(shortcuts[0] as TriggerableShortcut)
 		}
 	}
 	private _addToChain(keys: Key[], e: AnyInputEvent): void {

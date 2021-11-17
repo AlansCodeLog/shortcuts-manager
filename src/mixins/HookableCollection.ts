@@ -1,9 +1,9 @@
+import { Err, Ok, Result } from "@alanscodelog/utils"
 import { crop, indent, pretty, unreachable } from "@utils/utils"
 
 import { Hookable } from "./Hookable"
 
-import type { Commands, Keys } from "@/classes"
-import { Command, Key, Shortcut } from "@/classes"
+import { Command, Commands, Key, Keys, Shortcut } from "@/classes"
 import type { Shortcuts } from "@/classes/Shortcuts"
 import { KnownError } from "@/helpers"
 import { CollectionHook, CollectionHookType, ERROR, Optional } from "@/types"
@@ -48,71 +48,54 @@ export class HookableCollection<
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _allows(_type: "add" | "remove", _value: THook["allowValue"]): true | THook["error"] | Error | never {
-		return true
+	protected _allows(type: "add" | "remove", value: THook["allowValue"]): Result<true, THook["error"] | Error> {
+		const func = this instanceof Commands
+			? (t: Command) => t.name
+			: this instanceof Keys
+			? (t: Key) => t.id
+			: undefined
+
+		switch (type) {
+			case "add":
+				return HookableCollection._canAddToDict<any>(this as any, this.entries, value, func)
+			case "remove":
+				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, value, func)
+		}
 	}
 	/**
 	 * Tells you whether an entry is allowed to be added/removed.
 	 *
-	 * Can return true or the error that would throw:
+	 * Returns a result monad. See {@link Result} from my utils lib.
+	 *
 	 * ```ts
-	 * const allowed = shortcut.allows("add", "keys", [[key.a]])
-	 * // careful, errors are objects which are truthy
-	 * if (allowed === true) {...} else { const error = allowed }
-	 * // alternatively
-	 * if (allowed instanceof Error) {...} else {...}
+	 * const entry = new Shortcut([[ctrl, a]])
+	 * const res = shortcuts.allows("add", entry)
+	 * if (res.isOk) {
+	 * 	shortcuts.add(entry)
+	 * } else { // res.isError
+	 * 	console.log(res.error.message)
+	 * }
 	 * ```
 	 */
 	allows(
 		type: "add" | "remove",
 		value: THook["allowValue"],
-	): true | THook["error"] | Error | never {
+	): Result<true, THook["error"] | Error> {
 		const self = (this as any)
 		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
-			const response = (listener as any)(type, value, self.entries)
-			if (response !== true) return response
+			const response = (listener as any as (...args: any[]) => Result<true> as (...args: any[]) => Result<true>)(type, value, self.entries)
+			if (response.isError) return response
 		}
-		if (self._allows) return self._allows(type, value)
-		return true
+		return self._allows(type, value)
 	}
 	/**
-	 * ---
 	 * Adds an entry.
 	 *
-	 * ```ts
-	 * const allowed = shortcut.allows("add", "keys", [[key.a]])
-	 * // careful, errors are truthy
-	 * if (allowed === true) {
-	 * 	shortcut.add("keys", [[key.a]])
-	 * } else {
-	 * 	const error = allowed
-	 * 	//...
-	 * }
-	 * // or
-	 * try (shortcuts.add("keys", [[key.a]])) {
-	 *
-	 * } catch(e) {
-	 *
-	 * }
-	 *
-	 * ```
-	 *
-	 * Note that this will mutate the object passed and create an instance from it if it's not one already. If it's already an instance, it might still get mutated if it's options do not conform to the collection's.
-	 *
-	 * @param {true} check If `true`, will check if the property is allowed to be set first and throw an error if it isn't.
-	 *
-	 * If you already checked whether an entry can be added with {@link HookableCollection.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
+	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	add(
 		value: THook["allowValue"],
-		check: boolean = true,
 	): void {
-		if (check) {
-			const e = this.allows("add", value)
-			if (e instanceof Error) {
-				throw e
-			}
-		}
 		const self = (this as any)
 		self._add(value)
 
@@ -120,7 +103,7 @@ export class HookableCollection<
 			listener(value, this.entries)
 		}
 	}
-	protected static _addToDict<
+	protected static _canAddToDict<
 		T extends Command | Key | Shortcut,
 		TSelf extends Commands | Keys | Shortcuts = Commands | Keys | Shortcuts,
 		TEntries extends
@@ -132,7 +115,14 @@ export class HookableCollection<
 		entry: T,
 		/** When entries are stored in a record this will give us the key the entries are keyed by. */
 		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
-	): void {
+	): Result<true,
+		KnownError<
+			T extends Key ? ERROR.DUPLICATE_KEY
+			: T extends Command ? ERROR.DUPLICATE_COMMAND
+			: T extends Shortcut ? ERROR.DUPLICATE_SHORTCUT
+			: Error
+		>
+	> {
 		const key = typeof indexer === "function"
 			? indexer(entry) as keyof TEntries
 			: indexer
@@ -166,8 +156,25 @@ export class HookableCollection<
 				? new KnownError(ERROR.DUPLICATE_SHORTCUT, text, { existing: (existing as any), self: self as Shortcuts })
 				: unreachable()
 
-			throw error
+			return Err(error) as any
 		}
+
+		return Ok(true)
+	}
+	protected static _addToDict<
+		T extends Command | Key | Shortcut,
+		TEntries extends
+		Record<string, T> | T[] =
+		Record<string, T> | T[],
+	>(
+		entries: TEntries,
+		entry: T,
+		/** When entries are stored in a record this will give us the key the entries are keyed by. */
+		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
+	): void {
+		const key = typeof indexer === "function"
+			? indexer(entry) as keyof TEntries
+			: indexer
 
 		if (Array.isArray(entries)) {
 			entries.push(entry)
@@ -176,19 +183,13 @@ export class HookableCollection<
 		}
 	}
 	/**
-	 * ---
 	 * Removes an entry.
+	 *
+	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	remove(
 		value: THook["allowValue"],
-		check: boolean = true,
 	): void {
-		if (check) {
-			const e = this.allows("remove", value)
-			if (e instanceof Error) {
-				throw e
-			}
-		}
 		const self = (this as any)
 		self._remove(value)
 
@@ -196,7 +197,7 @@ export class HookableCollection<
 			listener(value, this.entries)
 		}
 	}
-	protected static _removeFromDict<
+	protected static _canRemoveFromDict<
 		T extends Command | Key | Shortcut,
 		TSelf extends Commands | Keys | Shortcuts = Commands | Keys | Shortcuts,
 		TEntries extends
@@ -204,6 +205,43 @@ export class HookableCollection<
 		Record<string, T> | T[],
 	>(
 		self: TSelf,
+		entries: TEntries,
+		entry: T,
+		/** When entries are stored in a record this will give us the key the entries are keyed by. */
+		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
+	): Result<true, KnownError<ERROR.MISSING>> {
+		const key = typeof indexer === "function"
+			? indexer(entry) as keyof TEntries
+			: indexer
+
+		let index: number | string
+
+		if (Array.isArray(entries)) {
+			index = (entries as any[]).findIndex(item => entry.equals(item))
+		} else {
+			index = key as string
+		}
+
+		if (index === undefined) {
+			const type = entry.constructor.name
+			const text = crop`
+			Entry ${type} ${index/* .string */} does not exist in this collection.
+
+			Entry:
+			${indent(pretty(entry), 3)}
+			`
+			const error = new KnownError(ERROR.MISSING, text, { entry: (index as any), collection: self as Shortcuts })
+
+			return Err(error)
+		}
+		return Ok(true)
+	}
+	protected static _removeFromDict<
+		T extends Command | Key | Shortcut,
+		TEntries extends
+		Record<string, T> | T[] =
+		Record<string, T> | T[],
+	>(
 		entries: TEntries,
 		entry: T,
 		/** When entries are stored in a record this will give us the key the entries are keyed by. */
@@ -227,18 +265,6 @@ export class HookableCollection<
 			} else {
 				entries[key as string] = undefined as any
 			}
-		} else {
-			const type = entry.constructor.name
-			const text = crop`
-			Entry ${type} ${index/* .string */} does not exist in this collection.
-
-			Entry:
-			${indent(pretty(entry), 3)}
-			`
-
-			const error = new KnownError(ERROR.MISSING, text, { entry: (index as any), collection: self as Shortcuts })
-
-			throw error
 		}
 	}
 }

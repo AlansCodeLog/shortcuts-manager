@@ -33,10 +33,10 @@ describe(testName(), () => {
 			const keys = new Keys([
 				new Key("a"),
 			])
-			keys.add(new Key("a"))
+			keys.allows("add", new Key("a")).unwrap()
 		}).code).to.equal(ERROR.DUPLICATE_KEY)
 	})
-	it("should not throw on duplicate keys with different ideas", () => {
+	it("should not throw on duplicate keys with different ids", () => {
 		expect(() => {
 			new Keys([
 				new Key("a1", { variants: ["a"]}),

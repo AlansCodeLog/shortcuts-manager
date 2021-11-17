@@ -1,8 +1,10 @@
+import type { Condition } from "./Condition"
+import type { Plugin } from "./Plugin"
+
 import { MixinPlugableBase } from "@/mixins"
 import type { PluginsInfo } from "@/types"
 import type { ContextOptions, RecursiveRecord } from "@/types/context"
-import type { Condition } from "./Condition"
-import type { Plugin } from "./Plugin"
+
 
 const sEquals = Symbol("equals")
 
@@ -29,7 +31,7 @@ export class Context<
 	TInfo extends
 		PluginsInfo<TPlugins> =
 		PluginsInfo<TPlugins>,
-> extends MixinPlugableBase<TPlugins, TInfo>{
+> extends MixinPlugableBase<TPlugins, TInfo> {
 	/** Where the context object is stored. */
 	value: TValue
 	[sEquals]: ContextOptions<TValue>["equals"]
@@ -62,7 +64,7 @@ export class Context<
 		this.value = context
 		if (opts.equals) this[sEquals] = opts.equals
 		this._mixin({
-			plugableBase: { plugins, info, key: undefined }
+			plugableBase: { plugins, info, key: undefined },
 		})
 	}
 	/**
@@ -78,8 +80,8 @@ export class Context<
 	eval(condition: Condition): boolean {
 		return condition.eval(this)
 	}
-	get opts() {
-		return { equals: this[sEquals] }
+	get opts(): ContextOptions {
+		return { equals: this[sEquals] as ContextOptions["equals"] }
 	}
 }
 

@@ -1,11 +1,11 @@
-import { Shortcut } from "@/classes"
-import { defaultSorter } from "@/classes/KeysSorter"
-import { ERROR, TYPE_ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 import { k, properOrder } from "./helpers.keys"
 
-
+import { Shortcut } from "@/classes"
+import { defaultSorter } from "@/classes/KeysSorter"
+import { ERROR, TYPE_ERROR } from "@/types"
 
 
 describe(testName(), () => {
@@ -73,7 +73,6 @@ describe(testName(), () => {
 		expect(shortcutB1.equals(shortcutB4)).to.be.false
 	})
 	it("should guard against impossible toggle shortcut", () => {
-
 		expect(catchError(() => {
 			new Shortcut([[k.toggle1.off!], [k.toggle1.off!]])
 		}).code).to.equal(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE)
@@ -134,7 +133,7 @@ describe(testName(), () => {
 
 		expect(sorted).to.partial.deep.equal(properOrder)
 	})
-	it.only("equalsKeys", () => {
+	it("equalsKeys", () => {
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.a]])).to.equal(true)
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a], [k.b]])).to.equal(true)
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.b]])).to.equal(false)

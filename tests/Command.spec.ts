@@ -1,12 +1,13 @@
-import { Command, Condition } from "@/classes"
-import type { CommandOptions } from "@/types"
 import { testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 
+import { Command, Condition } from "@/classes"
+import type { CommandOptions } from "@/types"
 
 
 describe(testName(), () => {
-	const execute = (..._args: Parameters<CommandOptions["execute"]>): void => {}
+	const execute = (..._args: Parameters<NonNullable<CommandOptions["execute"]>>): void => {}
 	it("creates a simple command", () => {
 		expect(() => {
 			new Command("command")
@@ -26,7 +27,7 @@ describe(testName(), () => {
 		expect(command.name).to.equal("command")
 		expect(command.description).to.equal(opts.description)
 		expect(command.condition).to.equal(opts.condition)
-		expect(command.execute(true, command)).to.equal(undefined)
+		expect(command.execute!(true, command)).to.equal(undefined)
 		expect(command.condition).to.equal(opts.condition)
 	})
 	describe("checks equality from", () => {

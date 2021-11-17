@@ -1,3 +1,6 @@
+import type { Result } from "@alanscodelog/utils"
+import { Err, Ok } from "@utils/utils"
+
 import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
@@ -132,13 +135,13 @@ export class Key<
 			plugableBase: { plugins, info, key: "id" },
 		})
 	}
-	protected override _allows(key: string, value: any): true | KnownError<ERROR.INVALID_VARIANT> {
+	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
 			if (value.includes(this.id)) {
-				return new KnownError(ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id })
+				return Err(KnownError, ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id })
 			}
 		}
-		return true
+		return Ok(true)
 	}
 	/**
 	 * Adds on/off toggle states to the instance.

@@ -1,9 +1,9 @@
-import type { Key, KeysStringifier } from "@/classes"
-import { ERROR } from "@/types"
-import { crop } from "@alanscodelog/utils"
+import { crop, Err, Ok, Result } from "@alanscodelog/utils"
+
 import { KnownError } from "./KnownError"
 
-
+import type { Key, KeysStringifier } from "@/classes"
+import { ERROR } from "@/types"
 
 
 /**
@@ -12,10 +12,10 @@ import { KnownError } from "./KnownError"
  * @internal
  * This guards against that.
  */
-export function throwIfImpossibleToggles(
+export function containsPossibleToggleChords(
 	shortcut: Key[][],
 	stringifier: KeysStringifier
-): void {
+): Result<true, KnownError<ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE>> {
 	const prevToggles: [Key, number][] = []
 	let num = 0
 	let impossible: {
@@ -68,9 +68,10 @@ export function throwIfImpossibleToggles(
 	if (impossible) {
 		const prettyShortcut = stringifier.stringify(shortcut)
 		const { pos, key } = impossible
-		throw new KnownError(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE, crop`
+		return Err(KnownError, ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE, crop`
 			Shortcut "${prettyShortcut}" is impossible.
 			This shortcut has a toggle key state "${stringifier.stringify(key)}" at key #${pos + 1} that would be impossible to trigger.
 		`, { shortcut, key, i: pos })
 	}
+	return Ok(true)
 }

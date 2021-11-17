@@ -1,8 +1,11 @@
+import { catchError, testName } from "@alanscodelog/utils"
+
+import { expect } from "./chai"
+
 import { Key, KeysStringifier } from "@/classes"
 import { isToggleOffKey, isToggleOnKey } from "@/helpers"
 import { ERROR, TYPE_ERROR } from "@/types"
-import { catchError, testName } from "@alanscodelog/utils"
-import { expect } from "./chai"
+
 
 describe(testName(), () => {
 	it("allows getting opts back", () => {
@@ -39,7 +42,7 @@ describe(testName(), () => {
 		expect(on.id).to.equal("aOn")
 		expect(on.label).to.equal("a (On)")
 		expect(off.label).to.equal("a (Off)")
-		expect(on.stringifier!.stringify(on)).to.equal("a (On)")
+		expect(on.stringifier.stringify(on)).to.equal("a (On)")
 		expect(key === on).to.be.false
 		expect(key.on === on).to.be.true
 		expect(key.equals(on)).to.be.false
@@ -112,17 +115,17 @@ describe(testName(), () => {
 	})
 	it("stringify works", () => {
 		const key1 = new Key("a")
-		const key2 = new Key("a", {stringifier: new KeysStringifier({key: (_key) => "Bla"})})
+		const key2 = new Key("a", { stringifier: new KeysStringifier({ key: _key => "Bla" }) })
 		expect(key1.stringifier?.stringify(key1)).to.equal("a")
 		expect(key2.stringifier?.stringify(key2)).to.equal("Bla")
 	})
 	it("gaurds against invalid variant", () => {
 		expect(catchError(() => {
-			new Key("a", {variants: ["a"]})
+			new Key("a", { variants: ["a"]})
 		}).code).to.equal(ERROR.INVALID_VARIANT)
 		expect(catchError(() => {
-			const key = new Key("a", { variants: ["b"] })
-			key.set("variants", ["a"])
+			const key = new Key("a", { variants: ["b"]})
+			key.allows("variants", ["a"]).unwrap()
 		}).code).to.equal(ERROR.INVALID_VARIANT)
 	})
 })

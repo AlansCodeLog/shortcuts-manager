@@ -22,7 +22,7 @@ export class Hookable<
 	 * const allowsHook = ... // keep a reference if you want to remove it later
 	 * shortcut.addHook("allows", allowsHook)
 	 *
-	 * if (shortcut.allows(...)) // your hook will fire
+	 * if (shortcut.allows(...).isOk) // your hook will fire
 	 * ```
 	 *
 	 * Note that typescript can only understand the types of the errors of the builtin listeners. Therefore if you're adding listeners afterwards, you will need to pass the possible errors the listener can return as the first type parameter if you want them typed correctly:

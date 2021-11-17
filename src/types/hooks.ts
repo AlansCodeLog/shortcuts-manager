@@ -1,3 +1,6 @@
+import type { Result } from "@alanscodelog/utils"
+
+
 export type BaseHookType<TInstance, TValue, TError, TOld = TValue> = {
 	value: TValue
 	error: TError
@@ -41,7 +44,7 @@ export type BaseHook<
 		value: TValue,
 		old: TOld,
 		self: TSelf,
-	) => true | TError
+	) => Result<true, TError>
 )
 // set
 : (
@@ -71,14 +74,14 @@ TType extends "allowsAdd"
 	(
 		entry: TAllowsValue,
 		entries: TValues
-	) => true | THook["addError"]
+	) => Result<true, THook["addError"]>
 )
 : TType extends "allowsRemove"
 ? (
 	(
 		entry: TAllowsValue,
 		entries: TValues
-	) => true | THook["removeError"]
+	) => Result<true, THook["removeError"]>
 )
 : TType extends "add"
 ? (

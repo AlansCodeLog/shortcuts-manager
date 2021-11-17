@@ -1,6 +1,8 @@
-import type { BaseHook, BaseHookType } from "@/types"
+import { Result } from "@utils/utils"
+
 import { Hookable } from "./Hookable"
 
+import type { BaseHook, BaseHookType } from "@/types"
 
 
 export class HookableBase<
@@ -19,8 +21,8 @@ export class HookableBase<
 			keyof THooks =
 			keyof THooks,
 	>(
-			key: TKey,
-			value: THooks[TKey]["value"],
+		key: TKey,
+		value: THooks[TKey]["value"],
 	): void {
 		(this as any)[key] = value
 	}
@@ -29,24 +31,26 @@ export class HookableBase<
 			keyof THooks =
 			keyof THooks,
 	>(
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		_key: TKey,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		_value: THooks[TKey]["value"],
-	): true | THooks[TKey]["error"] | Error {
-		return true
+	): Result<true, THooks[TKey]["error"] | Error> {
+		return Result.Ok(true)
 	}
 	/**
 	 * Tells you whether a property is allowed to be set.
 	 *
-	 * Can return true or the error that would throw:
-	 * ```ts
-	 * const allowed = shortcut.allows("keys", [[key.a]])
-	 * // Careful to check against true
-	 * if (allowed === true) {...} else { const error = allowed }
-	 * // Alternatively
-	 * if (allowed instanceof Error) {...} else {...}
-	 * ```
+	 * Returns a result monad. See {@link Result} from my utils lib.
 	 *
-	 * @inheritDoc
+	 * ```ts
+	 * const res = shortcut.allows("keys", [[key.a]])
+	 * if (res.isOk) {
+	 * 	shortcut.set("keys", [[key.a]])
+	 * } else { // res.isError
+	 * 	console.log(res.error.message)
+	 * }
+	 * ```
 	 */
 	allows<
 		TKey extends
@@ -55,22 +59,19 @@ export class HookableBase<
 	>(
 		key: TKey,
 		value: THooks[TKey]["value"],
-	): true | THooks[TKey]["error"] | Error | never {
+	): Result<true, THooks[TKey]["error"] | Error> {
 		const self = this as any
 		for (const listener of this.listeners.allows) {
 			const response = listener(key, value, self[key], self)
-			if (response !== true) return response
+			if (response.isError) return response
 		}
 		if (self._allows) return self._allows(key, value)
-		return true
+		return Result.Ok(true)
 	}
 	/**
-	 * ---
 	 * Sets any settable properties and triggers any hooks on them.
 	 *
-	 * @param {true} check If `true`, will check if the property is allowed to be set first and throw an error if it isn't.
-	 *
-	 * If you already checked whether an entry can be added with {@link HookableBase.allows allows} immediately before calling this function, you should pass `false` to prevent the function from checking again.
+	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	set<
 		TKey extends
@@ -79,14 +80,7 @@ export class HookableBase<
 	>(
 		key: TKey,
 		value: THooks[TKey]["value"],
-		check: boolean = true,
 	): void {
-		if (check) {
-			const e = this.allows<TKey>(key, value)
-			if (e instanceof Error) {
-				throw e
-			}
-		}
 		const self = this as any
 		const oldValue = self[key]
 		self._set(key, value)

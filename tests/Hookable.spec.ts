@@ -1,9 +1,12 @@
-import { Shortcut, Shortcuts } from "@/classes"
-import { TYPE_ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
+import type { Result } from "@alanscodelog/utils/dist/utils"
+import { Err, Ok } from "@alanscodelog/utils/dist/utils"
+
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
+import { Shortcut, Shortcuts } from "@/classes"
+import { TYPE_ERROR } from "@/types"
 
 
 describe(testName(), () => {
@@ -13,13 +16,13 @@ describe(testName(), () => {
 			const listener: any = jest.fn(() => true)
 			shortcut.addHook("allows", listener)
 			shortcut.addHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(2)
+			expect(shortcut.listeners.allows.length).to.equal(1)
 			expect(shortcut.listeners.set.length).to.equal(1)
 			shortcut.set("keys", [[]])
-			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
+			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(1)
 			shortcut.removeHook("allows", listener)
 			shortcut.removeHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(1)
+			expect(shortcut.listeners.allows.length).to.equal(0)
 			expect(shortcut.listeners.set.length).to.equal(0)
 		})
 		it("throw if removing invalid listener", () => {
@@ -27,7 +30,7 @@ describe(testName(), () => {
 			const listener: any = () => {}
 			shortcut.addHook("allows", listener)
 			shortcut.addHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(2)
+			expect(shortcut.listeners.allows.length).to.equal(1)
 			expect(shortcut.listeners.set.length).to.equal(1)
 			expect(catchError(() => {
 				const listener2: any = () => {}
@@ -41,23 +44,25 @@ describe(testName(), () => {
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
 			const err = new Error("some error")
-			const listener = jest.fn(() => err)
+			const listener = jest.fn(() => Err<true>(err))
 			shortcut.addHook("allows", listener)
-			const allowed = shortcut.allows("keys", [])
-			expect(allowed).to.equal(err)
+			const res = shortcut.allows("keys", [])
+			expect(res.isError).to.equal(true)
+			if (res.isError) expect(res.error).to.equal(err)
 			expect(catchError(() => {
-				shortcut.set("keys", [])
+				shortcut.allows("keys", []).unwrap()
 			}).message).to.equal(err.message)
 		})
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
 			const err = new Error("some error")
-			const listener = jest.fn(() => err)
+			const listener = jest.fn(() => Err<true>(err))
 			shortcut.addHook("allows", listener)
-			const allowed = shortcut.allows("keys", [[]])
-			expect(allowed).to.equal(err)
+			const res = shortcut.allows("keys", [[]])
+			expect(res.isError).to.equal(true)
+			if (res.isError) expect(res.error).to.equal(err)
 			expect(catchError(() => {
-				shortcut.set("keys", [[]])
+				shortcut.allows("keys", [[]]).unwrap()
 			}).message).to.equal(err.message)
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 		})
@@ -65,7 +70,7 @@ describe(testName(), () => {
 	describe("collection classes", () => {
 		it("should correctly add/call/remove listeners", () => {
 			const shortcuts = new Shortcuts([])
-			const listener: any = jest.fn(() => true)
+			const listener: any = jest.fn(() => Ok(true))
 			shortcuts.addHook("allowsAdd", listener)
 			shortcuts.addHook("add", listener)
 			shortcuts.addHook("allowsRemove", listener)
@@ -74,14 +79,14 @@ describe(testName(), () => {
 			expect(shortcuts.listeners.add.length).to.equal(1)
 			expect(shortcuts.listeners.allowsRemove.length).to.equal(1)
 			expect(shortcuts.listeners.remove.length).to.equal(1)
-			shortcuts.allows("add",{ keys: [[]] })
+			shortcuts.allows("add", { keys: [[]]})
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(1)
-			shortcuts.add({ keys: [[]] })
-			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(3)
+			shortcuts.add({ keys: [[]]})
+			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 			shortcuts.allows("remove", shortcuts.entries[0])
-			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(4)
+			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(3)
 			shortcuts.remove(shortcuts.entries[0])
-			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(6)
+			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(4)
 			shortcuts.removeHook("allowsAdd", listener)
 			shortcuts.removeHook("add", listener)
 			shortcuts.removeHook("allowsRemove", listener)
@@ -93,7 +98,7 @@ describe(testName(), () => {
 		})
 		it("throw if removing invalid listener", () => {
 			const shortcuts = new Shortcuts([])
-			const listener: any = () => {}
+			const listener: any = () => Ok(true)
 			shortcuts.addHook("allowsAdd", listener)
 			shortcuts.addHook("add", listener)
 			shortcuts.addHook("allowsRemove", listener)
@@ -120,12 +125,13 @@ describe(testName(), () => {
 		it("throw if allow listener returns error", () => {
 			const shortcuts = new Shortcuts([])
 			const err = new Error("some error")
-			const listener = jest.fn(() => err)
-			shortcuts.addHook("allowsAdd", listener as any)
+			const listener = jest.fn(() => Err(err))
+			shortcuts.addHook("allowsAdd", listener as any as (...args: any[]) => Result<true, any>)
 			const allowed = shortcuts.allows("add", { keys: [[]]})
-			expect(allowed).to.equal(err)
+			expect(allowed.isError).to.equal(true)
+			if (allowed.isError) expect(allowed.error).to.equal(err)
 			expect(catchError(() => {
-				shortcuts.add({ keys: [[]]})
+				shortcuts.allows("add", { keys: [[]]}).unwrap()
 			}).message).to.equal(err.message)
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 		})

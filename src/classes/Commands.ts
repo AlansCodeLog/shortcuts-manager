@@ -1,4 +1,4 @@
-import { crop } from "@alanscodelog/utils"
+import { crop, Err, Ok } from "@alanscodelog/utils"
 
 import { Command } from "./Command"
 import type { Condition } from "./Condition"
@@ -53,7 +53,7 @@ export class Commands<
 		this.entries = {} as TEntries
 
 		commands.forEach(command => {
-			this.add(command)
+			if (this.allows("add", command).unwrap()) this.add(command)
 		})
 	}
 	protected override _add(entry: RawCommand | Command): void {
@@ -62,12 +62,12 @@ export class Commands<
 			if (type === "name") {
 				const existing = this.entries[value as keyof TEntries]
 				if (existing !== undefined && existing !== instance) {
-					return new KnownError(ERROR.DUPLICATE_COMMAND, crop`
+					return Err(KnownError, ERROR.DUPLICATE_COMMAND, crop`
 						Command name "${old}" cannot be changed to "${value}" because it would create a duplicate command in a "Commands" instance that this command was added to.
 					`, { existing, self: this })
 				}
 			}
-			return true
+			return Ok(true)
 		})
 		instance.addHook("set", (type, value, old) => {
 			if (type === "name") {
@@ -76,7 +76,7 @@ export class Commands<
 				this.entries[value as keyof TEntries] = existing
 			}
 		})
-		HookableCollection._addToDict<Command>(this, this.entries, instance, t => t.name)
+		HookableCollection._addToDict<Command>(this.entries, instance, t => t.name)
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]

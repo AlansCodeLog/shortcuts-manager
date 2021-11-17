@@ -1,8 +1,9 @@
-import type { Plugin } from "@/classes"
-import type { DeepPartialObj, OrToAnd, PluginInfo } from "@/types"
 import { dedupe } from "@alanscodelog/utils"
+
 import { Plugable } from "./Plugable"
 
+import type { Plugin } from "@/classes"
+import type { DeepPartialObj, OrToAnd, PluginInfo } from "@/types"
 
 
 export class PlugableBase<
@@ -16,8 +17,8 @@ export class PlugableBase<
 		{ plugableBase: { plugins, info, key } }:
 		{
 			plugableBase: {
-				plugins: Plugin<any, any>[] | undefined,
-				info: DeepPartialObj<TInfo> | undefined,
+				plugins: Plugin<any, any>[] | undefined
+				info: DeepPartialObj<TInfo> | undefined
 				key: string | undefined
 			}
 		}
@@ -31,7 +32,7 @@ export class PlugableBase<
 		}
 	}
 	protected _initPlugins(): void {
-		for (const plugin of this.plugins!) {
+		for (const plugin of this.plugins) {
 			const namespace = plugin.namespace as keyof TInfo
 			const key = this[this.key as keyof this]
 
