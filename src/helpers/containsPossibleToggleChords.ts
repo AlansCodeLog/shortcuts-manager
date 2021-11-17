@@ -68,10 +68,10 @@ export function containsPossibleToggleChords(
 	if (impossible) {
 		const prettyShortcut = stringifier.stringify(shortcut)
 		const { pos, key } = impossible
-		return Err(KnownError, ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE, crop`
+		return Err(new KnownError(ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE, crop`
 			Shortcut "${prettyShortcut}" is impossible.
 			This shortcut has a toggle key state "${stringifier.stringify(key)}" at key #${pos + 1} that would be impossible to trigger.
-		`, { shortcut, key, i: pos })
+		`, { shortcut, key, i: pos }))
 	}
 	return Ok(true)
 }

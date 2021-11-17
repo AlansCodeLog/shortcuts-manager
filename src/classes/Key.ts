@@ -138,7 +138,7 @@ export class Key<
 	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
 			if (value.includes(this.id)) {
-				return Err(KnownError, ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id })
+				return Err(new KnownError(ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id }))
 			}
 		}
 		return Ok(true)

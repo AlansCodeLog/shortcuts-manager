@@ -44,7 +44,7 @@ describe(testName(), () => {
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
 			const err = new Error("some error")
-			const listener = jest.fn(() => Err<true>(err))
+			const listener = jest.fn(() => Err(err))
 			shortcut.addHook("allows", listener)
 			const res = shortcut.allows("keys", [])
 			expect(res.isError).to.equal(true)
@@ -56,7 +56,7 @@ describe(testName(), () => {
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
 			const err = new Error("some error")
-			const listener = jest.fn(() => Err<true>(err))
+			const listener = jest.fn(() => Err(err))
 			shortcut.addHook("allows", listener)
 			const res = shortcut.allows("keys", [[]])
 			expect(res.isError).to.equal(true)

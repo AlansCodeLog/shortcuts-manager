@@ -19,7 +19,7 @@ export function isValidChord(
 	chord: Key[],
 	i: number,
 	stringifier: KeysStringifier
-): Result<true, KnownError<ERROR.CHORD_W_DUPLICATE_KEY>> {
+): Result<true, KnownError<ERROR.CHORD_W_DUPLICATE_KEY | ERROR.CHORD_W_ONLY_MODIFIERS | ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS | ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS>> {
 	const shortcut = self.keys
 	const prettyChord = stringifier.stringifyChord(chord)
 	const prettyShortut = stringifier.stringifyChain(shortcut)
@@ -43,42 +43,42 @@ export function isValidChord(
 		// eslint-disable-next-line no-shadow
 		const prettyRepeated = stringifier.stringifyKeys(repeated)
 
-		return Err(KnownError, ERROR.CHORD_W_DUPLICATE_KEY, crop`
+		return Err(new KnownError(ERROR.CHORD_W_DUPLICATE_KEY, crop`
 			Chord "${prettyChord}" in shortcut "${prettyShortut}" contains duplicate or incompatible keys:
 				${indent(prettyRepeated, 4)}
 			Shortcut chords cannot contain duplicate keys. This includes more than one of the same toggle, regardless of the state.
-		`, { shortcut: self, chord, i, keys: repeated })
+		`, { shortcut: self, chord, i, keys: repeated }))
 	}
 
 	const onlyModifiers = chord.filter(key => key.is.modifier)
 	const containsOnlyModifiers = onlyModifiers.length === chord.length
 	if (i < shortcut.length - 1 && containsOnlyModifiers) {
-		return Err(KnownError, ERROR.CHORD_W_ONLY_MODIFIERS, crop`
+		return Err(new KnownError(ERROR.CHORD_W_ONLY_MODIFIERS, crop`
 			Shortcut "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" cannot contain only modifiers if it is followed by another chord.
 			A chord can only consist of only modifiers if it's the last chord in a shortcut.
-		`, { shortcut: self, chord, i, keys: onlyModifiers })
+		`, { shortcut: self, chord, i, keys: onlyModifiers }))
 	}
 
 	const normalKeys = chord.filter(isNormalKey)
 	const prettyNormalKeys = stringifier.stringifyKeys(normalKeys)
 	if (normalKeys.length > 1) {
-		return Err(KnownError, ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS, crop`
+		return Err(new KnownError(ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS, crop`
 			Shortcut "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" contains multiple normal (non-modifier/mouse/wheel/toggle) keys: ${prettyNormalKeys}
 			Chords can only contain one.
-		`, { shortcut: self, chord, i, keys: normalKeys })
+		`, { shortcut: self, chord, i, keys: normalKeys }))
 	}
 
 	/* It might actually be possible to allow this, similar to how emulated toggle keys are handled but it would be a pain for such an odd use case (even I don't have such weird shortcuts). */
 	const wheelKeys = chord.filter(key => isWheelKey(key))
 	const prettyWheelKeys = stringifier.stringifyKeys(wheelKeys)
 	if (wheelKeys.length > 1) {
-		return Err(KnownError, ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS, crop`
+		return Err(new KnownError(ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS, crop`
 			Shortcut "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" contains multiple wheel keys: ${prettyWheelKeys}
 			Chords can only contain one.
-		`, { shortcut: self, chord, i, keys: wheelKeys })
+		`, { shortcut: self, chord, i, keys: wheelKeys }))
 	}
 	return Ok(true)
 }

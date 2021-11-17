@@ -39,13 +39,13 @@ export class Plugable<
 		const conflict = checkedPlugins.find(existing => existing !== plugin && existing.namespace === plugin.namespace)
 
 		if (conflict !== undefined) {
-			return Err(KnownError, TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES, crop`
+			return Err(new KnownError(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES, crop`
 			Plugin "${plugin.namespace}" would conflict with an existing plugin's namespace.
 			New:
 			${indent(pretty(plugin), 5)}
 			Existing:
 			${indent(pretty(conflict), 5)}
-			`, { plugins: checkedPlugins, plugin, existing: conflict })
+			`, { plugins: checkedPlugins, plugin, existing: conflict }))
 		}
 		return Ok(true)
 	}

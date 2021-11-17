@@ -97,7 +97,7 @@ export class Shortcuts<
 		const existing = this.query(entry => entry.equals(proxy.proxy) && entry !== instance, false)
 		proxy.revoke()
 		if (existing !== undefined) {
-			return Err(KnownError, ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${value}.
+			return Err(new KnownError(ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${value}.
 			Existing:
 			${indent(pretty(existing), 4)}
 
@@ -107,7 +107,7 @@ export class Shortcuts<
 			Change:
 			${indent(pretty({ key, value }), 4)}
 
-			`, { existing, self: instance as any })
+			`, { existing, self: instance as any }))
 		}
 		return Ok(true)
 	}
@@ -228,12 +228,12 @@ export class Shortcuts<
 		if (Shortcut.equalsKeys(chordsA, chordsB, chordsB.length)
 			|| Shortcut.equalsKeys(chordsB, chordsA, chordsA.length)
 		) {
-			return Err(KnownError, ERROR.INVALID_SWAP_CHORDS, crop`
+			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, crop`
 			The chords to swap cannot share starting chords.
 			Chords:
 			${indent(pretty(chordsA.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
 			${indent(pretty(chordsB.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
-			`, { chordsA, chordsB })
+			`, { chordsA, chordsB }))
 		}
 		return Ok(true)
 	}
@@ -243,7 +243,7 @@ export class Shortcuts<
 			found = chord
 		}
 		if (found) {
-			return Err(KnownError, ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${pretty(chord.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true })} contains an empty chord.`, { chord })
+			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${pretty(chord.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true })} contains an empty chord.`, { chord }))
 		}
 		return Ok(true)
 	}
@@ -275,7 +275,7 @@ export class Shortcuts<
 			shortcutsB = shortcutsB.filter(filter)
 		}
 
-		let can: Result<true, Error> = Ok(true)
+		let can: Result<true, any> = Ok(true)
 
 		for (const shortcutA of shortcutsA) {
 			shortcutA.forceUnequal = true
@@ -284,7 +284,7 @@ export class Shortcuts<
 		for (const shortcutB of shortcutsB) {
 			const res = shortcutB.allows("keys", [...chordsA.filter(chord => chord.length > 0), ...shortcutB.keys.slice(chordsA.length, shortcutB.keys.length)])
 			if (res.isError) {
-				can = res
+				can = res as any
 				break
 			}
 		}
@@ -302,7 +302,7 @@ export class Shortcuts<
 			for (const shortcutA of shortcutsA) {
 				const res = shortcutA.allows("keys", [...chordsB.filter(chord => chord.length > 0), ...shortcutA.keys.slice(chordsB.length, shortcutA.keys.length)])
 				if (res.isError) {
-					can = res
+					can = res as any
 					break
 				}
 			}

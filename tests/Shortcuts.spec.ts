@@ -50,7 +50,7 @@ describe(testName(), () => {
 	})
 	it("does not allow changing to duplicate", () => {
 		shortcut1.allows("keys", [[k.c]])
-		expect((shortcut1.allows("keys", [[k.c]]) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
+		expect((shortcut1.allows("keys", [[k.c]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
 	})
 	it("removes listener from shortcuts", () => {
 		expect(shortcut3.listeners.allows.length).to.equal(1)
@@ -78,14 +78,14 @@ describe(testName(), () => {
 			new Shortcut([[k.c]]),
 		], {}, [plugin])
 		expect(shortcuts.canSwapChords([[k.a]], [[k.b]]).isOk).to.equal(true)
-		expect((shortcuts.canSwapChords([[k.a]], [[k.a]]) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
+		expect((shortcuts.canSwapChords([[k.a]], [[k.a]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 
-		expect((shortcuts.canSwapChords([[k.modA]], [[k.modA, k.b], []]) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
+		expect((shortcuts.canSwapChords([[k.modA]], [[k.modA, k.b], []]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 
 		expect((shortcuts.canSwapChords([[k.a]], [[k.b]], shortcut => {
 			if (shortcut.keys[0][0] === k.a) return false
 			return true
-		}) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
+		}) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
 
 		const AB = new Shortcut([[k.a], [k.b]])
 		const A = new Shortcut([[k.a]])
@@ -94,8 +94,8 @@ describe(testName(), () => {
 			A,
 		], {}, [plugin])
 
-		expect((shortcuts2.canSwapChords([[k.a]], [[k.a], [k.b]]) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
-		expect((shortcuts2.canSwapChords([[k.a], [k.b]], [[k.a]]) as Result.ErrResult<true, KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
+		expect((shortcuts2.canSwapChords([[k.a]], [[k.a], [k.b]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
+		expect((shortcuts2.canSwapChords([[k.a], [k.b]], [[k.a]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 	})
 	it("swapChords", () => {
 		// eslint-disable-next-line @typescript-eslint/no-shadow

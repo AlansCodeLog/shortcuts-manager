@@ -62,9 +62,9 @@ export class Commands<
 			if (type === "name") {
 				const existing = this.entries[value as keyof TEntries]
 				if (existing !== undefined && existing !== instance) {
-					return Err(KnownError, ERROR.DUPLICATE_COMMAND, crop`
+					return Err(new KnownError(ERROR.DUPLICATE_COMMAND, crop`
 						Command name "${old}" cannot be changed to "${value}" because it would create a duplicate command in a "Commands" instance that this command was added to.
-					`, { existing, self: this })
+					`, { existing, self: this }))
 				}
 			}
 			return Ok(true)

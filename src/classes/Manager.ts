@@ -312,9 +312,9 @@ export class Manager {
 		const shortcuts = this.shortcuts.query(shortcut => shortcut.triggerableBy(this.chain, this.context))
 		if (shortcuts.length === 0) return Ok(false)
 		if (shortcuts.length > 1) {
-			return Err(KnownError, ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.stringifier.stringify(this.chain)}:
+			return Err(new KnownError(ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.stringifier.stringify(this.chain)}:
 			${indent(shortcuts.map(shortcut => shortcut.command!.name).join("\n"), 4)}
-			`, { shortcuts })
+			`, { shortcuts }))
 		} else {
 			return Ok(shortcuts[0] as TriggerableShortcut)
 		}
