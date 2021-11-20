@@ -5,7 +5,7 @@ import type { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
 import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
 import { CommandsHook, ERROR, RawCommand, RecordFromArray } from "@/types"
 
 
@@ -46,22 +46,24 @@ export class Commands<
 		plugins?: TPlugins,
 	) {
 		super()
+
 		this._mixin({
 			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
 			plugableCollection: { plugins, key: "name" },
 		})
 		this.entries = {} as TEntries
 
-		commands.forEach(command => {
-			if (this.allows("add", command).unwrap()) this.add(command)
+		commands.forEach(entry => {
+			entry = Command.create(entry, this.plugins)
+			if (this.allows("add", entry).unwrap()) this.add(entry)
 		})
 	}
-	protected override _add(entry: RawCommand | Command): void {
-		const instance = Plugable.create<Command, "name">(Command, this.plugins, "name", entry)
-		instance.addHook("allows", (type, value, old) => {
+	protected override _add(entry: Command): void {
+		entry = Command.create(entry, this.plugins)
+		entry.addHook("allows", (type, value, old) => {
 			if (type === "name") {
 				const existing = this.entries[value as keyof TEntries]
-				if (existing !== undefined && existing !== instance) {
+				if (existing !== undefined && existing !== entry) {
 					return Err(new KnownError(ERROR.DUPLICATE_COMMAND, crop`
 						Command name "${old}" cannot be changed to "${value}" because it would create a duplicate command in a "Commands" instance that this command was added to.
 					`, { existing, self: this }))
@@ -69,14 +71,14 @@ export class Commands<
 			}
 			return Ok(true)
 		})
-		instance.addHook("set", (type, value, old) => {
+		entry.addHook("set", (type, value, old) => {
 			if (type === "name") {
 				const existing = this.entries[old as keyof TEntries]
 				delete this.entries[old as keyof TEntries]
 				this.entries[value as keyof TEntries] = existing
 			}
 		})
-		HookableCollection._addToDict<Command>(this.entries, instance, t => t.name)
+		HookableCollection._addToDict<Command>(this.entries, entry, t => t.name)
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]

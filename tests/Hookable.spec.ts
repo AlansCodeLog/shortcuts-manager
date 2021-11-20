@@ -81,7 +81,7 @@ describe(testName(), () => {
 			expect(shortcuts.listeners.remove.length).to.equal(1)
 			shortcuts.allows("add", { keys: [[]]})
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(1)
-			shortcuts.add({ keys: [[]]})
+			shortcuts.add(new Shortcut([[]]))
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 			shortcuts.allows("remove", shortcuts.entries[0])
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(3)

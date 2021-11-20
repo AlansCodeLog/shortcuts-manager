@@ -1,5 +1,6 @@
-import type { PluginOptions } from "@/types"
 import { isEqual, merge } from "lodash"
+
+import type { PluginOptions } from "@/types"
 
 
 const sEquals = Symbol("equals")
@@ -42,7 +43,7 @@ export class Plugin<
 	 *
 	 * ```ts
 	 * let keys = new Keys([], {}, [plugin])
-	 * keys.add({ id: "a" })
+	 * keys.add(new Key("a"))
 	 * keys.get("a").info[namespace].myprop // override
 	 * ```
 	 */

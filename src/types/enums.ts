@@ -22,6 +22,7 @@ export enum ERROR {
 	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
 	CONFLICTING_ENTRY_PLUGINS = "CONFLICTING_ENTRY_PLUGINS",
 	MISSING = "MISSING", // removing
+	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
 
 	// === duplicate "bases"
 	DUPLICATE_KEY = "DUPLICATE_KEY",
@@ -30,12 +31,15 @@ export enum ERROR {
 
 	// === other
 	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
+
+	// === manager
 	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
 	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
-	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
 	NO_MATCHING_SHORTCUT = "NO_MATCHING_SHORTCUT",
 	UNKNOWN_KEYS = "UNKNOWN_KEYS",
 	UNKNOWN_COMMANDS = "UNKNOWN_COMMANDS",
+	KEY_IN_USE = "KEYS_IN_USE",
+	COMMAND_IN_USE = "COMMANDS_IN_USE",
 }
 
 /** Errors that will throw since they should be caught at production. */
@@ -113,6 +117,10 @@ type ERROR_Info = {
 		entry: Key | Shortcut | Command
 		collection: Keys | Shortcuts | Commands
 	}
+	[ERROR.INVALID_VARIANT]: {
+		variants: string[]
+		id: string
+	}
 
 	// === duplicate "bases"
 	[ERROR.DUPLICATE_KEY]: {
@@ -137,15 +145,13 @@ type ERROR_Info = {
 		chordsA: Key[][]
 		chordsB: Key[][]
 	}
+
+	// === manager
 	[ERROR.MULTIPLE_MATCHING_SHORTCUTS]: {
 		shortcuts: Shortcut[]
 	}
 	[ERROR.INCORRECT_TOGGLE_STATE]: {
 		key: Key
-	}
-	[ERROR.INVALID_VARIANT]: {
-		variants: string[]
-		id: string
 	}
 	[ERROR.NO_MATCHING_SHORTCUT]: {
 		chain: Key[][]
@@ -155,6 +161,12 @@ type ERROR_Info = {
 	}
 	[ERROR.UNKNOWN_COMMANDS]: {
 		entries: [Shortcut, Command][]
+	}
+	[ERROR.KEY_IN_USE]: {
+		entries: Shortcut[]
+	}
+	[ERROR.COMMAND_IN_USE]: {
+		entries: Shortcut[]
 	}
 }
 

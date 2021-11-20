@@ -84,6 +84,7 @@ export class Plugable<
 			if (isInstance) {
 				instance = entry
 				instance._addPlugins(plugins)
+				instance._initPlugins()
 			} else {
 				instance = new type(arg, opts, entryInfo, plugins)
 			}

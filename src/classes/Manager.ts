@@ -112,6 +112,8 @@ export class Manager {
 	 *
 	 * - **The creation of the manager can throw since it checks whether shortcuts contain known keys/commands.**
 	 *
+	 * - The manager adds hooks to the {@link Keys} and {@link Commands} to prevent removal of keys/commands that are in use.
+	 *
 	 * ### Other
 	 *
 	 * - If you need to emulate keypresses for testing see {@link Emulator}.
@@ -151,6 +153,12 @@ export class Manager {
 
 		checkManagerShortcuts(shortcuts, keys, commands, this.stringifier)
 
+
+		this.shortcuts = shortcuts
+		this.shortcuts.stringifier = this.stringifier
+		this.shortcuts.stringifier = this.stringifier
+		this.shortcuts.sorter = this.sorter
+
 		this.keys = keys
 		this.keys.stringifier = this.stringifier
 		this[sNativeToggleKeys] = this.keys.query(key => key.is.toggle === "native" && isToggleRootKey(key), true) as ToggleRootKey[]
@@ -177,13 +185,32 @@ export class Manager {
 				this[sNativeToggleKeys].splice(i)
 			}
 		})
+		this.keys.addHook("allowsRemove", entry => {
+			const found = this.shortcuts.query(shortcut => shortcut.containsKey(entry))
+
+			if (found.length > 0) {
+				return Err(new KnownError(ERROR.KEY_IN_USE, crop`
+				Cannot remove key ${entry.id}, it is in used by the following shortcuts:
+
+				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.keys)).join("\n"), 4)}
+				`, { entries: found }))
+			}
+			return Ok(true)
+		})
 
 		this.commands = commands
+		this.commands.addHook("allowsRemove", entry => {
+			const found = this.shortcuts.query(shortcut => shortcut.command === entry)
+			if (found.length > 0) {
+				return Err(new KnownError(ERROR.COMMAND_IN_USE, crop`
+				Cannot remove command ${entry.name}, it is in used by the following shortcuts:
 
-		this.shortcuts = shortcuts
-		this.shortcuts.stringifier = this.stringifier
-		this.shortcuts.stringifier = this.stringifier
-		this.shortcuts.sorter = this.sorter
+				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.keys)).join("\n"), 4)}
+				`, { entries: found }))
+			}
+			return Ok(true)
+		})
+
 
 		this[sBoundKeydown] = this._keydown.bind(this)
 		this[sBoundKeyup] = this._keyup.bind(this)
@@ -191,7 +218,14 @@ export class Manager {
 		this[sBoundMouseup] = this._mouseup.bind(this)
 		this[sBoundWheel] = this._wheel.bind(this)
 	}
-
+	/**
+	 * Returns if the manager is waiting for all keys to release.
+	 *
+	 * See {@link Manager.setChain}
+	 */
+	isAwaitingKeyup(): boolean {
+		return this[sAwaitingKeyup]
+	}
 	/**
 	 * A list of currently pressed keys for convenience.
 	 *
@@ -256,10 +290,9 @@ export class Manager {
 	setChain(keys: Key[][]): void {
 		// @ts-expect-error is only publicly readonly
 		this.chain = keys
-		if (this.pressedKeys.length > 0) {
+		if (this.pressedKeys().length > 0) {
 			this[sAwaitingKeyup] = true
 		}
-		this[sAwaitingKeyup] = true
 	}
 	/**
 	 * Force clears/resets all state. Clears the chain and sets all keys to unpressed.
@@ -267,9 +300,9 @@ export class Manager {
 	 * Useful for testing.
 	 *
 	 * @param opts
-	 * @param opts.ignoreNative Do not change state of native modifier/toggle keys
+	 * @param {false} opts.ignoreNative  If true, does not change state of native modifier/toggle keys.
 	 */
-	forceClear({ ignoreNative = false }: { ignoreNative?: false } = {}): void {
+	forceClear({ ignoreNative = false }: { ignoreNative?: boolean } = {}): void {
 		this.clearChain()
 		this[sUntrigger] = false
 		this[sAwaitingKeyup] = false
@@ -277,7 +310,7 @@ export class Manager {
 			this._clearKeyTimer(key)
 		}
 		for (const key of Object.values(this.keys.entries)) {
-			if ((key.is.modifier || key.is.toggle === "native") && ignoreNative) return
+			if ((key.is.modifier === "native" || key.is.toggle === "native") && ignoreNative) return
 			key.set("pressed", false)
 			if (isToggleRootKey(key)) {
 				key.on!.set("pressed", false)
@@ -342,7 +375,7 @@ export class Manager {
 		const lastChord = this.chain[this.chain.length - 1]
 
 		if (this[sAwaitingKeyup]) {
-			if (this.pressedKeys.length === 0) {
+			if (this.pressedKeys().length === 0) {
 				this[sAwaitingKeyup] = false
 			}
 		} else {

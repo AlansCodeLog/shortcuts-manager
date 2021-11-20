@@ -68,5 +68,5 @@ export type CommandsHook = CollectionHookType<
 	RawCommand | Command,
 	Record<string, Command>,
 	KnownError<ERROR.DUPLICATE_COMMAND>,
-	never
+	KnownError<ERROR.COMMAND_IN_USE>
 >

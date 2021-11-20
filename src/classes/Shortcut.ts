@@ -9,7 +9,7 @@ import type { Plugin } from "./Plugin"
 
 import { containsPossibleToggleChords } from "@/helpers/containsPossibleToggleChords"
 import { isValidChord } from "@/helpers/isValidChord"
-import { MixinHookablePlugableBase } from "@/mixins"
+import { MixinHookablePlugableBase, Plugable } from "@/mixins"
 import type { DeepPartialObj, Optional, PluginsInfo, RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 
 import type { Context } from "."
@@ -139,6 +139,20 @@ export class Shortcut<
 				}) !== undefined
 			}) === undefined
 	}
+	/**
+	 * A wrapper around static {@link Shortcut.containsKey} for the instance.
+	 */
+	containsKey(key: Key): boolean {
+		return Shortcut.containsKey(key, this.keys)
+	}
+	/**
+	 * Returns whether a shortcut's keys contains the given key.
+	 */
+	static containsKey(key: Key, keys: Key[][]): boolean {
+		return keys
+			.flat()
+			.find(existing => existing === key) !== undefined
+	}
 	get opts(): ShortcutOptions {
 		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier }
 	}
@@ -179,6 +193,9 @@ export class Shortcut<
 			this.equalsKeys(chain) &&
 			this.condition.eval(context) &&
 			(this.command === undefined || this.command.condition.eval(context))
+	}
+	static create<T extends Shortcut = Shortcut>(entry: RawShortcut, plugins: Plugin[] = []): T {
+		return Plugable.create<Shortcut, "keys">(Shortcut, plugins, "keys", entry) as T
 	}
 }
 

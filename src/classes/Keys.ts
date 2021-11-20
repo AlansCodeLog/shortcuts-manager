@@ -3,7 +3,7 @@ import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
 import { isToggleKey } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, PlugableCollection } from "@/mixins"
+import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
 import type { KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
 
 
@@ -49,6 +49,7 @@ export class Keys<
 	) {
 		super()
 		if (opts?.stringifier) this.stringifier = opts.stringifier
+
 		this._mixin({
 			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
 			plugableCollection: { plugins, key: "id" },
@@ -56,23 +57,19 @@ export class Keys<
 
 		this.entries = {} as TEntries
 
-		keys.forEach(key => {
-			if (this.allows("add", key).unwrap()) this.add(key)
+		keys.forEach(entry => {
+			entry = Key.create(entry, this.plugins)
+			if (this.allows("add", entry).unwrap()) this.add(entry)
 		})
 	}
-	protected override _add(entry: RawKey | Key): void {
-		if (this.stringifier) {
-			if (entry instanceof Key) {
-				entry.stringifier = this.stringifier
-			} else {
-				entry.opts = { ...(entry.opts ?? {}), stringifier: this.stringifier }
-			}
-		}
-		const instance = PlugableCollection.create<Key, "id">(Key, this.plugins, "id", entry)
-		HookableCollection._addToDict<Key>(this.entries, instance, t => t.id)
-		if (isToggleKey(instance)) {
-			HookableCollection._addToDict<Key>(this.entries, instance.on as Key, t => t.id)
-			HookableCollection._addToDict<Key>(this.entries, instance.off as Key, t => t.id)
+	protected override _add(entry: Key): void {
+		if (this.stringifier) entry.stringifier = this.stringifier
+		entry = Key.create(entry, this.plugins)
+
+		HookableCollection._addToDict<Key>(this.entries, entry, t => t.id)
+		if (isToggleKey(entry)) {
+			HookableCollection._addToDict<Key>(this.entries, entry.on as Key, t => t.id)
+			HookableCollection._addToDict<Key>(this.entries, entry.off as Key, t => t.id)
 		}
 	}
 	get(id: TRawKeys[number]["id"] | string): TKey {

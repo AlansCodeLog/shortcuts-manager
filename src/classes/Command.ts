@@ -1,8 +1,8 @@
 import { Condition } from "./Condition"
 import type { Plugin } from "./Plugin"
 
-import { MixinHookablePlugableBase } from "@/mixins"
-import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
+import { MixinHookablePlugableBase, Plugable } from "@/mixins"
+import type { CommandHooks, CommandOptions, DeepPartialObj, Optional, PluginsInfo, RawCommand } from "@/types"
 
 
 export class Command<
@@ -101,6 +101,9 @@ export class Command<
 	}
 	get opts(): CommandOptions {
 		return { description: this.description, execute: this.execute, condition: this.condition }
+	}
+	static create<T extends Command = Command>(entry: RawCommand, plugins: Plugin[] = []): T {
+		return Plugable.create<Command, "name">(Command, plugins, "name", entry) as T
 	}
 }
 

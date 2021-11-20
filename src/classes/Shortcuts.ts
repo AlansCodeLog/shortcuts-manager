@@ -9,7 +9,7 @@ import type { Plugin } from "./Plugin"
 import { Shortcut } from "./Shortcut"
 
 import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection, Plugable } from "@/mixins"
+import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
 import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
 
 
@@ -64,28 +64,18 @@ export class Shortcuts<
 		})
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
-		shortcuts.forEach(shortcut => {
-			if (this.allows("add", shortcut).unwrap()) this.add(shortcut)
+		shortcuts.forEach(entry => {
+			entry = Shortcut.create(entry, this.plugins)
+			if (this.allows("add", entry).unwrap()) this.add(entry)
 		})
 	}
-	protected override _add(entry: RawShortcut | TShortcut): void {
-		if (this.stringifier) {
-			if (entry instanceof Shortcut) {
-				entry.stringifier = this.stringifier
-			} else {
-				entry.opts = { ...(entry.opts ?? {}), stringifier: this.stringifier }
-			}
-		}
-		if (this.sorter) {
-			if (entry instanceof Shortcut) {
-				entry.sorter = this.sorter
-			} else {
-				entry.opts = { ...(entry.opts ?? {}), sorter: this.sorter }
-			}
-		}
-		const instance = Plugable.create<Shortcut, "keys">(Shortcut, this.plugins, "keys", entry)
-		HookableCollection._addToDict<Shortcut>(this.entries, instance, undefined)
-		instance.addHook("allows", this._boundAllowsHook)
+	protected override _add(entry: TShortcut): void {
+		if (this.stringifier) entry.stringifier = this.stringifier
+		if (this.sorter) entry.sorter = this.sorter
+		entry = Shortcut.create(entry, this.plugins)
+
+		HookableCollection._addToDict<Shortcut>(this.entries, entry, undefined)
+		entry.addHook("allows", this._boundAllowsHook)
 	}
 	protected _allowsHook(key: string, value: any, _old: any, instance: Shortcut): Result<true, KnownError<ERROR.DUPLICATE_SHORTCUT>> {
 		const proxy = Proxy.revocable(instance, {

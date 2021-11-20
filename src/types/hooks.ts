@@ -79,7 +79,7 @@ TType extends "allowsAdd"
 : TType extends "allowsRemove"
 ? (
 	(
-		entry: TAllowsValue,
+		entry: TSetValue,
 		entries: TValues
 	) => Result<true, THook["removeError"]>
 )

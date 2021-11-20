@@ -5,15 +5,15 @@ import { defaultStringifier } from "./KeysStringifier"
 import type { Plugin } from "./Plugin"
 
 import { KnownError } from "@/helpers"
-import { MixinHookablePlugableBase } from "@/mixins"
+import { MixinHookablePlugableBase, Plugable } from "@/mixins"
 import { DeepPartialObj, ERROR, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
 
 import type { KeysStringifier } from "."
 
 
 const sId = Symbol("id")
-const sKeyCreateToggle = Symbol("keyCreateToggle")
 const sLabel = Symbol("label")
+const sKeyCreateToggle = Symbol("keyCreateToggle")
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
@@ -192,6 +192,9 @@ export class Key<
 	}
 	get opts(): KeyOptions {
 		return { is: this.is, variants: this.variants, stringifier: this.stringifier, label: this.label }
+	}
+	static create<T extends Key = Key>(entry: RawKey, plugins: Plugin[] = []): T {
+		return Plugable.create<Key, "id">(Key, plugins, "id", entry) as T
 	}
 }
 

@@ -44,7 +44,7 @@ export class HookableCollection<
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _remove(_value: THook["allowValue"]): void {
+	protected _remove(_value: THook["setValue"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -83,7 +83,9 @@ export class HookableCollection<
 	): Result<true, THook["error"] | Error> {
 		const self = (this as any)
 		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
-			const response = (listener as any as (...args: any[]) => Result<true> as (...args: any[]) => Result<true>)(type, value, self.entries)
+			const response = type === "add"
+				? (listener as any)(type, value)
+				: (listener as any)(value, self.entries)
 			if (response.isError) return response
 		}
 		return self._allows(type, value)
@@ -188,7 +190,7 @@ export class HookableCollection<
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	remove(
-		value: THook["allowValue"],
+		value: THook["setValue"],
 	): void {
 		const self = (this as any)
 		self._remove(value)

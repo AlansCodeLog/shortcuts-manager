@@ -231,5 +231,5 @@ export type KeysHook = CollectionHookType<
 	Key | RawKey,
 	Record<string, Key>,
 	KnownError<ERROR.DUPLICATE_KEY>,
-	never
+	KnownError<ERROR.KEY_IN_USE>
 >

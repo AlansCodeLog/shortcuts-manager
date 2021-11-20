@@ -69,6 +69,34 @@ describe(testName(), () => {
 				)
 			}).to.not.throw()
 		})
+		it("doesn't allow removal of in use keys", () => {
+			// eslint-disable-next-line @typescript-eslint/no-shadow
+			const key = new Key("key")
+			const manager = new Manager(
+				new Keys([key]),
+				new Commands([]),
+				new Shortcuts([
+					new Shortcut([[key]]),
+				]),
+				new Context({}),
+			)
+			expect(manager.keys.allows("remove", key).isError).to.equal(true)
+		})
+		it("doesn't allow removal of in use commands", () => {
+			// eslint-disable-next-line @typescript-eslint/no-shadow
+			const key = new Key("key")
+			// eslint-disable-next-line @typescript-eslint/no-shadow
+			const command = new Command("command")
+			const manager = new Manager(
+				new Keys([key]),
+				new Commands([command]),
+				new Shortcuts([
+					new Shortcut([[key]], { command }),
+				]),
+				new Context({}),
+			)
+			expect(manager.commands.allows("remove", command).isError).to.equal(true)
+		})
 		it("should not throw when shortcuts use known commands", () => {
 			expect(() => {
 				const manager = new Manager(
@@ -101,6 +129,8 @@ describe(testName(), () => {
 			const d = new Key("KeyD")
 			const cl = new Key("Capslock", { is: { toggle: true } })
 			const ctrl = new Key("Control", { is: { modifier: true }, variants: ["ControlLeft", "ControlRight"]})
+			const sl = new Key("ScrollLock", { is: { toggle: "emulated" } })
+			const shift = new Key("shift", { is: { modifier: "emulated" }, variants: ["ShiftLeft", "ShiftRight"]})
 			const command1 = new Command("test1", { execute: execute1 })
 			const command2 = new Command("test2", { execute: execute2 })
 			const manager = new Manager(
@@ -111,11 +141,16 @@ describe(testName(), () => {
 					d,
 					cl,
 					ctrl,
+					sl,
+					shift,
 				]),
 				new Commands([command1, command2]),
 				new Shortcuts([
 					new Shortcut([[ctrl, a]], { command: command1 }),
 					new Shortcut([[ctrl, b], [ctrl, a]], { command: command2 }),
+					new Shortcut([[sl]], { command: command1 }),
+					new Shortcut([[cl]], { command: command1 }),
+					new Shortcut([[shift, a]], { command: command1 }),
 				]),
 				new Context({}),
 				callback,
@@ -179,7 +214,7 @@ describe(testName(), () => {
 				expect(manager.chain).to.deep.equal([[]])
 				expect(execute1.mock.calls.length).to.equal(2)
 			})
-			it("hooks only fire on initial press", async () => {
+			it("hooks only fire on initial press and on final release", async () => {
 				const hook = jest.fn(prop => {
 					if (prop === "pressed") { return true }
 					return false
@@ -196,6 +231,33 @@ describe(testName(), () => {
 				expect(hook.mock.results.filter(res => res.value === true).length).to.equal(3)
 				await delay(500)
 				expect(hook.mock.results.filter(res => res.value === true).length).to.equal(4)
+			})
+			it("ignores keypresses right after triggering", () => {
+				emulator.fire("ControlLeft+ KeyA+", ["ControlLeft"])
+				emulator.fire("KeyB+")
+				expect(b.pressed).to.equal(true)
+				expect(manager.chain).to.deep.equal([[]])
+				emulator.fire("ControlLeft- KeyA- KeyB-")
+				// stops ignoring
+				emulator.fire("ControlLeft+ KeyB+")
+				expect(manager.chain).to.deep.equal([[ctrl, b], []])
+			})
+			it("native modifier key via getModifierState fire shortcuts", () => {
+				emulator.fire("KeyA", ["ControlLeft"])
+				expect(execute1.mock.calls.length).to.equal(2)
+			})
+			// it makes no sense to do so since the state change might have happened out of focus a long time ago
+			it("native toggle key via getModifierState does NOT fire shortcuts", () => {
+				emulator.fire("", ["CapsLock"])
+				expect(execute1.mock.calls.length).to.equal(0)
+			})
+			it("emulated modifier key via getModifierState does NOT fire shortcuts", () => {
+				emulator.fire("KeyA", ["ShiftLeft"])
+				expect(execute1.mock.calls.length).to.equal(0)
+			})
+			it("emulated toggle key via getModifierState does NOT fire shortcuts", () => {
+				emulator.fire("", ["ScrollLock"])
+				expect(execute1.mock.calls.length).to.equal(0)
 			})
 		})
 	})

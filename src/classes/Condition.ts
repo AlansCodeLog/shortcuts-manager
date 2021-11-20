@@ -1,7 +1,9 @@
-import { MixinPlugableBase } from "@/mixins"
-import type { ConditionOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
 import type { Context } from "./Context"
 import type { Plugin } from "./Plugin"
+
+import { MixinPlugableBase } from "@/mixins"
+import type { ConditionOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
+
 
 const sEval = Symbol("eval")
 const sEquals = Symbol("equals")
@@ -47,7 +49,7 @@ export class Condition<
 	 * // for this plugin, expression should be a 1:1 representation of the text
 	 * const equals = () => true
 	 *
-	 * const conditionPlugin = new Plugin<{ expression: BooleanExpression | undefined }>(false, { expression: undefined }, {}, {equals})
+	 * const conditionPlugin = new Plugin<{ expression: BooleanExpression | undefined }> (false, { expression: undefined }, {}, {equals})
 	 * // You could also cast the properties, but it's not as safe
 	 * const conditionPlugin = new Plugin(false, { expression: undefined as BooleanExpression | undefined }, {})
 	 *
@@ -87,7 +89,7 @@ export class Condition<
 		if (opts.eval) this[sEval] = opts.eval
 		if (opts.equals) this[sEquals] = opts.equals
 		this._mixin({
-			plugableBase: { plugins, info, key: undefined }
+			plugableBase: { plugins, info, key: undefined },
 		})
 	}
 	/**

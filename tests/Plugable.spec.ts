@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { catchError, testName } from "@alanscodelog/utils"
+import { catchError, inspectError, testName } from "@alanscodelog/utils"
 
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
@@ -46,10 +46,12 @@ describe(testName(), () => {
 			const keys = new Keys([
 				{ id: "a" },
 			], {}, [plugin])
+			console.log(Key.create({ id: "b" }))
 
-			keys.add({ id: "b" })
+			keys.add(Key.create({ id: "b" }))
 
 			expect(keys.get("b").plugins).to.deep.equal([plugin])
+
 			expect(keys.get("b").info.name.test).to.equal("TestB")
 		})
 		it("for commands", () => {
@@ -57,7 +59,7 @@ describe(testName(), () => {
 				{ name: "a" },
 			], [plugin])
 
-			commands.add({ name: "b" })
+			commands.add(Command.create({ name: "b" }))
 
 			expect(commands.get("b").plugins).to.deep.equal([plugin])
 			expect(commands.get("b").info.name.test).to.equal("TestB")
@@ -68,11 +70,11 @@ describe(testName(), () => {
 			const shortcuts = new Shortcuts([
 				{ keys: [[k.a]]},
 				// @ts-expect-error typescript already warns you cant
-			], [plugin])
+			], {}, [plugin])
 
-			shortcuts.add({ keys: [[k.b]]})
+			shortcuts.add(Shortcut.create({ keys: [[k.b]]}))
 			// shortcuts can't use the overrides
-			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(2)
+			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(3)
 			expect(shortcuts.query(shortcutFilter("b"), false)!.plugins).to.deep.equal([plugin])
 			expect(shortcuts.query(shortcutFilter("b"), false)!.info.name.test).to.equal("default")
 			console.warn = warn
@@ -115,52 +117,45 @@ describe(testName(), () => {
 			expect(catchError(() => {
 				new Commands([
 					{ name: "a" },
-				], [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
-				new Commands([
-					{ name: "a" },
-				], [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
-				new Commands([
-					{ name: "a" },
-				], [conflictingPlugin, conflictingPlugin])
+				], [plugin, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for shortcuts", () => {
 			expect(catchError(() => {
 				new Shortcuts([
 					{ keys: [[k.a]]},
-				], {}, [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
-				new Shortcuts([
-					{ keys: [[k.a]]},
-				], {}, [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
-				new Shortcuts([
-					{ keys: [[k.a]]},
-				], {}, [conflictingPlugin, conflictingPlugin])
+				], {}, [pluginNoOverrides, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
 		it("for keys", () => {
 			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
-				], {}, [conflictingPlugin, conflictingPlugin])
+				], {}, [plugin, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
+		})
+	})
+	describe("does not throw for repeating plugins", () => {
+		it("for commands", () => {
+			expect(inspectError(() => {
+				new Commands([
+					{ name: "a" },
+				], [conflictingPlugin, conflictingPlugin])
+			})).to.not.throw()
+		})
+		it("for shortcuts", () => {
+			expect(inspectError(() => {
+				new Shortcuts([
+					{ keys: [[k.a]]},
+				], {}, [conflictingPlugin, conflictingPlugin])
+			})).to.not.throw()
+		})
+		it("for keys", () => {
+			expect(inspectError(() => {
 				new Keys([
 					{ id: "a" },
 				], {}, [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
-			expect(catchError(() => {
-				new Keys([
-					{ id: "a" },
-				], {}, [conflictingPlugin, conflictingPlugin])
-			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
+			})).to.not.throw()
 		})
 	})
 	describe("plugin info parameter is type checked", () => {
@@ -233,7 +228,7 @@ describe(testName(), () => {
 			pluginInfoDict,
 		)
 
-		it.only("for keys", () => {
+		it("for keys", () => {
 			expect(catchError(() => {
 				new Keys([
 					{ id: "a" },
