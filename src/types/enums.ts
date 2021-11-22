@@ -36,8 +36,10 @@ export enum ERROR {
 	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
 	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
 	NO_MATCHING_SHORTCUT = "NO_MATCHING_SHORTCUT",
-	UNKNOWN_KEYS = "UNKNOWN_KEYS",
-	UNKNOWN_COMMANDS = "UNKNOWN_COMMANDS",
+	UNKNOWN_KEYS_IN_SHORTCUTS = "UNKNOWN_KEYS_IN_SHORTCUTS",
+	UNKNOWN_COMMANDS_IN_SHORTCUTS = "UNKNOWN_COMMANDS_IN_SHORTCUTS",
+	UNKNOWN_KEYS_IN_SHORTCUT = "UNKNOWN_KEYS_IN_SHORTCUT",
+	UNKNOWN_COMMAND_IN_SHORTCUT = "UNKNOWN_COMMANDS_IN_SHORTCUT",
 	KEY_IN_USE = "KEYS_IN_USE",
 	COMMAND_IN_USE = "COMMANDS_IN_USE",
 }
@@ -80,25 +82,25 @@ type ERROR_Info = {
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
 		chord: Key[]
 		i: number
-		shortcut: { keys: Key[][] } | Shortcut
+		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS]: {
 		chord: Key[]
 		i: number
-		shortcut: { keys: Key[][] } | Shortcut
+		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS]: {
 		chord: Key[]
 		i: number
-		shortcut: { keys: Key[][] } | Shortcut
+		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_DUPLICATE_KEY]: {
 		chord: Key[]
 		i: number
-		shortcut: { keys: Key[][] } | Shortcut
+		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE]: {
@@ -156,11 +158,19 @@ type ERROR_Info = {
 	[ERROR.NO_MATCHING_SHORTCUT]: {
 		chain: Key[][]
 	}
-	[ERROR.UNKNOWN_KEYS]: {
-		entries: [Shortcut, Key[]][]
+	[ERROR.UNKNOWN_KEYS_IN_SHORTCUTS]: {
+		entries: { shortcut: Shortcut | Pick<Shortcut, "chain" | "command">, keys: Key[] }[]
 	}
-	[ERROR.UNKNOWN_COMMANDS]: {
-		entries: [Shortcut, Command][]
+	[ERROR.UNKNOWN_KEYS_IN_SHORTCUT]: {
+		shortcut: Shortcut
+		keys: Key[]
+	}
+	[ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS]: {
+		entries: { shortcut: Shortcut | Pick<Shortcut, "chain" | "command">, command: Command }[]
+	}
+	[ERROR.UNKNOWN_COMMAND_IN_SHORTCUT]: {
+		shortcut: Shortcut
+		command: Command
 	}
 	[ERROR.KEY_IN_USE]: {
 		entries: Shortcut[]

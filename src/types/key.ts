@@ -3,7 +3,7 @@ import type { DeepPartial, MakeRequired } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, KeysStringifier, Plugin } from "@/classes"
+import type { Key, Keys, KeysStringifier, Plugin } from "@/classes"
 import type { KnownError } from "@/helpers"
 
 import type { PluginsInfo } from "."
@@ -222,11 +222,13 @@ export type KeysSorterOptions = {
 
 export type KeyHooks = {
 	"label": BaseHookType<Key, string, never>
-	"pressed": BaseHookType<Key, boolean, never>
 	"variants": BaseHookType<Key, string[], ERROR.INVALID_VARIANT>
+	// cannot be allows hooked
+	"pressed": BaseHookType<Key, boolean, never, boolean, true>
 }
 
-export type KeysHook = CollectionHookType<
+export type KeysHooks = CollectionHookType<
+	Keys,
 	Key,
 	Key | RawKey,
 	Record<string, Key>,

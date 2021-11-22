@@ -5,7 +5,7 @@ import { isNormalKey } from "./isNormalKey"
 import { isWheelKey } from "./isWheelKey"
 import { KnownError } from "./KnownError"
 
-import type { Key, KeysStringifier } from "@/classes"
+import type { Key, KeysStringifier, Shortcut } from "@/classes"
 import { ERROR } from "@/types"
 
 
@@ -15,12 +15,12 @@ import { ERROR } from "@/types"
  * @internal
  */
 export function isValidChord(
-	self: { keys: Key[][] },
+	self: Pick<Shortcut, "chain">,
 	chord: Key[],
 	i: number,
 	stringifier: KeysStringifier
 ): Result<true, KnownError<ERROR.CHORD_W_DUPLICATE_KEY | ERROR.CHORD_W_ONLY_MODIFIERS | ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS | ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS>> {
-	const shortcut = self.keys
+	const shortcut = self.chain
 	const prettyChord = stringifier.stringifyChord(chord)
 	const prettyShortut = stringifier.stringifyChain(shortcut)
 

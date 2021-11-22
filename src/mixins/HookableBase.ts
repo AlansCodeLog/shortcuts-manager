@@ -51,6 +51,19 @@ export class HookableBase<
 	 * 	console.log(res.error.message)
 	 * }
 	 * ```
+	 *
+	 * For the manager, it has a special "property" `"replace"` for replacing one or more of some of it's properties (keys, commands, or shortcuts) at a time. This is because if you want to replace two of them at a time you could get errors that you would not get if you had tried to do it seperately.
+	 *
+	 * ```ts
+	 * // examples:
+	 * const res = manager.allows("replace", {shorcuts})
+	 * // same as:
+	 * const res = manager.allows("shortcuts", shorcuts)
+	 *
+	 * // multiple properties:
+	 * const res = manager.allows("replace", {keys, commands})
+	 * const res = manager.allows("replace", {keys, commands, shortcuts})
+	 * ```
 	 */
 	allows<
 		TKey extends
@@ -58,11 +71,11 @@ export class HookableBase<
 			keyof THooks,
 	>(
 		key: TKey,
-		value: THooks[TKey]["value"],
+		value: THooks[TKey]["exclude"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
 		const self = this as any
 		for (const listener of this.listeners.allows) {
-			const response = listener(key, value, self[key], self)
+			const response = listener(key as any, value, self[key], self)
 			if (response.isError) return response
 		}
 		if (self._allows) return self._allows(key, value)
@@ -72,6 +85,8 @@ export class HookableBase<
 	 * Sets any settable properties and triggers any hooks on them.
 	 *
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
+	 *
+	 * For the manager their is also the special `"replace"` property. See {@link HookableBase.set set}.
 	 */
 	set<
 		TKey extends

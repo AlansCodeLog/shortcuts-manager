@@ -39,18 +39,18 @@ describe(testName(), () => {
 	}).to.not.throw()
 
 	it("querying", () => {
-		const res = shortcuts.query(val => shortcuts.stringifier.stringify(val.keys) === "a")
+		const res = shortcuts.query(val => shortcuts.stringifier.stringify(val.chain) === "a")
 		expect(res?.length).to.equal(2)
 		expect(res[0]).to.equal(shortcut1)
 		expect(res[1]).to.equal(shortcut1c)
 	})
 	it("querying - single", () => {
-		const res2 = shortcuts.query(val => shortcuts.stringifier.stringify(val.keys) === "a", false)
+		const res2 = shortcuts.query(val => shortcuts.stringifier.stringify(val.chain) === "a", false)
 		expect(res2).to.equal(shortcut1)
 	})
 	it("does not allow changing to duplicate", () => {
-		shortcut1.allows("keys", [[k.c]])
-		expect((shortcut1.allows("keys", [[k.c]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
+		shortcut1.allows("chain", [[k.c]])
+		expect((shortcut1.allows("chain", [[k.c]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
 	})
 	it("removes listener from shortcuts", () => {
 		expect(shortcut3.listeners.allows.length).to.equal(1)
@@ -83,7 +83,7 @@ describe(testName(), () => {
 		expect((shortcuts.canSwapChords([[k.modA]], [[k.modA, k.b], []]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 
 		expect((shortcuts.canSwapChords([[k.a]], [[k.b]], shortcut => {
-			if (shortcut.keys[0][0] === k.a) return false
+			if (shortcut.chain[0][0] === k.a) return false
 			return true
 		}) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
 
@@ -107,7 +107,7 @@ describe(testName(), () => {
 		], {}, [plugin])
 
 		shortcuts.swapChords([[k.a]], [[k.b]])
-		expect(shortcuts.entries.map(shortcut => shortcut.keys)).to.deep.equal([
+		expect(shortcuts.entries.map(shortcut => shortcut.chain)).to.deep.equal([
 			[[k.b], [k.c]],
 			[[k.a], [k.d]],
 			[[k.a]],

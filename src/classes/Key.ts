@@ -32,6 +32,8 @@ export class Key<
 	readonly [sLabel]: KeyOptions["label"]
 	/**
 	 * Wether the key is currently being *held* down.
+	 *
+	 * Does not allow `allows` hooks, only `set` hooks.
 	 */
 	pressed: boolean = false
 	/** See {@link KeyOptions.is} */

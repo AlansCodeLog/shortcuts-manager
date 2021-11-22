@@ -1,18 +1,20 @@
-import { crop, indent, Ok, Result } from "@alanscodelog/utils"
-import { Err } from "@alanscodelog/utils/dist/utils"
+import { crop, Err, indent, Ok, Result } from "@alanscodelog/utils"
 
+import type { Command } from "./Command"
 import type { Commands } from "./Commands"
 import type { Keys } from "./Keys"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
+import type { Shortcut } from "./Shortcut"
 import type { Shortcuts } from "./Shortcuts"
 
 import type { Context, Key, KeysSorter, KeysStringifier } from "@/classes"
-import { isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
+import { checkShortcutCommands, checkShortcutKeys, isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
+import { castType } from "@/helpers/castType"
 import { checkManagerShortcuts } from "@/helpers/checkManagerShortcuts"
 import { defaultManagerCallback } from "@/helpers/defaultManagerCallback"
-import { ERROR, ManagerErrorCallback, ToggleRootKey, TriggerableShortcut } from "@/types"
-import type { AnyInputEvent } from "@/types/manager"
+import { MixinHookableBase } from "@/mixins/MixinHookableBase"
+import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, KeysHooks, ManagerErrorCallback, ManagerHook, ManagerReplaceValue, ShortcutHooks, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "@/types"
 
 
 const sEnabled = Symbol("enabled")
@@ -26,13 +28,19 @@ const sBoundKeyup = Symbol("boundKeyup")
 const sBoundMousedown = Symbol("boundMousedown")
 const sBoundMouseup = Symbol("boundMouseup")
 const sBoundWheel = Symbol("boundWheel")
+const sBoundKeysAddHook = Symbol("boundKeysAddHook")
+const sBoundKeysRemoveHook = Symbol("boundKeysRemoveHook")
+const sBoundKeysAllowsRemoveHook = Symbol("boundKeysAllowsRemoveHook")
+const sBoundCommandsAllowsRemoveHook = Symbol("boundCommandsAllowsRemoveHook")
+const sBoundShortcutAddHook = Symbol("shortcutAddHook")
+const sBoundShortcutRemoveHook = Symbol("shortcutRemoveHook")
+const sBoundShortcutAllowsHook = Symbol("shortcutAllowsHook")
 
-
-export class Manager {
+export class Manager extends MixinHookableBase<ManagerHook> {
 	context: Context
-	keys: Keys
-	commands: Commands
-	shortcuts: Shortcuts
+	keys!: Keys
+	commands!: Commands
+	shortcuts!: Shortcuts
 	stringifier: KeysStringifier
 	sorter: KeysSorter
 	private [sTimers]: Map<Key, number | NodeJS.Timeout> = new Map()
@@ -47,17 +55,27 @@ export class Manager {
 	private [sEnabled]: boolean = true
 	private [sAwaitingKeyup]: boolean = false
 	private [sUntrigger]: false | TriggerableShortcut = false
-	private readonly [sNativeToggleKeys]: ToggleRootKey[]
-	private readonly [sNativeModifierKeys]: Key[]
-	private readonly [sBoundKeydown]: Manager["_keydown"]
-	private readonly [sBoundKeyup]: Manager["_keyup"]
-	private readonly [sBoundMousedown]: Manager["_mousedown"]
-	private readonly [sBoundMouseup]: Manager["_mouseup"]
-	private readonly [sBoundWheel]: Manager["_wheel"]
+	private [sNativeToggleKeys]: ToggleRootKey[] = []
+	private [sNativeModifierKeys]: Key[] = []
+
+	private [sBoundKeydown]: Manager["_keydown"]
+	private [sBoundKeyup]: Manager["_keyup"]
+	private [sBoundMousedown]: Manager["_mousedown"]
+	private [sBoundMouseup]: Manager["_mouseup"]
+	private [sBoundWheel]: Manager["_wheel"]
+	private [sBoundKeysAddHook]: CollectionHook<"add", KeysHooks>
+	private [sBoundKeysRemoveHook]: CollectionHook<"remove", KeysHooks>
+	private [sBoundKeysAllowsRemoveHook]: CollectionHook<"allowsRemove", KeysHooks>
+	private [sBoundCommandsAllowsRemoveHook]: CollectionHook<"allowsRemove", CommandsHooks>
+	private [sBoundShortcutAddHook]: CollectionHook<"add", ShortcutsHooks>
+	private [sBoundShortcutRemoveHook]: CollectionHook<"remove", ShortcutsHooks>
+	private [sBoundShortcutAllowsHook]: BaseHook<"allows", ShortcutHooks>
 	/**
 	 * The current chain of chords.
+	 *
+	 * Note that it does not allow `allows` hooks, only `set` hooks.
 	 */
-	readonly chain: Key[][]
+	readonly chain!: Key[][]
 	/**
 	 * The error callback for recoverable errors such as multiple shortcuts matching, or no shortcut matching once a chord chain has been "started".
 	 *
@@ -142,81 +160,35 @@ export class Manager {
 			autoKeyupDelay?: number
 		} = {},
 	) {
-		if (cb) this.cb = cb
-
-		this.chain = [[]]
-
-		this.context = context
-		this.stringifier = stringifier ?? defaultStringifier
-		this.sorter = sorter ?? defaultSorter
-		this.autoReleaseDelay = autoKeyupDelay
-
-		checkManagerShortcuts(shortcuts, keys, commands, this.stringifier)
-
-
-		this.shortcuts = shortcuts
-		this.shortcuts.stringifier = this.stringifier
-		this.shortcuts.stringifier = this.stringifier
-		this.shortcuts.sorter = this.sorter
-
-		this.keys = keys
-		this.keys.stringifier = this.stringifier
-		this[sNativeToggleKeys] = this.keys.query(key => key.is.toggle === "native" && isToggleRootKey(key), true) as ToggleRootKey[]
-		this[sNativeModifierKeys] = this.keys.query(key => key.is.modifier === "native", true)
-
-		this.keys.addHook("add", entry => {
-			if (entry.is.toggle === "native"
-				&& isToggleRootKey(entry)
-				&& !this[sNativeToggleKeys].includes(entry as ToggleRootKey)
-			) {
-				this[sNativeToggleKeys].push(entry as ToggleRootKey)
-			}
-			if (entry.is.modifier === "native" && !this[sNativeModifierKeys].includes(entry)) {
-				this[sNativeModifierKeys].push(entry)
-			}
-		})
-		this.keys.addHook("remove", entry => {
-			const i = this[sNativeToggleKeys].indexOf(entry as ToggleRootKey)
-			if (i > -1) {
-				this[sNativeToggleKeys].splice(i)
-			}
-			const i2 = this[sNativeModifierKeys].indexOf(entry)
-			if (i2 > -1) {
-				this[sNativeToggleKeys].splice(i)
-			}
-		})
-		this.keys.addHook("allowsRemove", entry => {
-			const found = this.shortcuts.query(shortcut => shortcut.containsKey(entry))
-
-			if (found.length > 0) {
-				return Err(new KnownError(ERROR.KEY_IN_USE, crop`
-				Cannot remove key ${entry.id}, it is in used by the following shortcuts:
-
-				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.keys)).join("\n"), 4)}
-				`, { entries: found }))
-			}
-			return Ok(true)
-		})
-
-		this.commands = commands
-		this.commands.addHook("allowsRemove", entry => {
-			const found = this.shortcuts.query(shortcut => shortcut.command === entry)
-			if (found.length > 0) {
-				return Err(new KnownError(ERROR.COMMAND_IN_USE, crop`
-				Cannot remove command ${entry.name}, it is in used by the following shortcuts:
-
-				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.keys)).join("\n"), 4)}
-				`, { entries: found }))
-			}
-			return Ok(true)
-		})
-
-
+		super()
 		this[sBoundKeydown] = this._keydown.bind(this)
 		this[sBoundKeyup] = this._keyup.bind(this)
 		this[sBoundMousedown] = this._mousedown.bind(this)
 		this[sBoundMouseup] = this._mouseup.bind(this)
 		this[sBoundWheel] = this._wheel.bind(this)
+		this[sBoundKeysAddHook] = this._keysAddHook.bind(this)
+		this[sBoundKeysRemoveHook] = this._keysRemoveHook.bind(this)
+		this[sBoundKeysAllowsRemoveHook] = this._keysAllowsRemoveHook.bind(this)
+		this[sBoundCommandsAllowsRemoveHook] = this._commandsAllowsRemoveHook.bind(this)
+		this[sBoundShortcutAddHook] = this._shortcutAddHook.bind(this)
+		this[sBoundShortcutRemoveHook] = this._shortcutRemoveHook.bind(this)
+		this[sBoundShortcutAllowsHook] = this._shortcutAllowsHook.bind(this)
+
+		this._mixin({
+			hookable: { keys: ["allows", "set"]},
+		})
+
+		if (cb) this.cb = cb
+
+		this.set("chain", [[]])
+
+		this.context = context
+		this.stringifier = stringifier ?? defaultStringifier
+		this.sorter = sorter ?? defaultSorter
+		this.autoReleaseDelay = autoKeyupDelay
+		if (this.allows("replace", { shortcuts, keys, commands }).unwrap()) {
+			this.set("replace", { shortcuts, keys, commands })
+		}
 	}
 	/**
 	 * Returns if the manager is waiting for all keys to release.
@@ -281,15 +253,16 @@ export class Manager {
 		this.setChain([[]])
 	}
 	/**
-	 * In the rare case you might want to set the chain, this will set it properly such that:
+	 * In the rare case you might want to set the chain, this is a wrapper around `set("chain", ...)`\* that will set it properly such that:
 	 *
 	 * If there are still keys being pressed, the manager waits until they are all released before allowing keys to be added to the chain again.
 	 *
 	 * This prevents us from getting into potentially invalid states or triggering shortcuts when we shouldn't.
+	 *
+	 * **\*Avoid using `set("chain", ...)` directly.**
 	 */
 	setChain(keys: Key[][]): void {
-		// @ts-expect-error is only publicly readonly
-		this.chain = keys
+		this.set("chain", keys)
 		if (this.pressedKeys().length > 0) {
 			this[sAwaitingKeyup] = true
 		}
@@ -333,7 +306,7 @@ export class Manager {
 		}
 		if (this.chain[this.chain.length - 1].find(key => !isModifierKey(key))) {
 			if (this.inChain()) {
-				this.chain.push([])
+				this.set("chain", [...this.chain, []])
 				this[sAwaitingKeyup] = true
 			} else if ((res.isOk && !res.value) && this.chain.length > 1) {
 				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
@@ -357,10 +330,12 @@ export class Manager {
 		// the user could have released only part of the keys then pressed others
 		// we should ignore all keypresses until they are all released
 		if (this[sAwaitingKeyup]) return
-		const lastChord = this.chain[this.chain.length - 1]
+		const length = this.chain.length - 1
+		const lastChord = [...this.chain[length]]
 		for (const key of keys) {
 			if (!lastChord.includes(key) && !this[sAwaitingKeyup]) {
 				lastChord.push(key)
+				this.set("chain", [...this.chain.slice(0, length), lastChord])
 				this.sorter.sort(lastChord)
 				this._checkTrigger(e)
 			}
@@ -372,7 +347,7 @@ export class Manager {
 			untrigger.command.execute(false, untrigger.command, untrigger, this, e)
 			this[sUntrigger] = false
 		}
-		const lastChord = this.chain[this.chain.length - 1]
+		const lastChord = [...this.chain[this.chain.length - 1]]
 
 		if (this[sAwaitingKeyup]) {
 			if (this.pressedKeys().length === 0) {
@@ -387,6 +362,7 @@ export class Manager {
 					this._checkTrigger(e)
 				}
 			}
+			this.set("chain", [...this.chain.slice(0, this.chain.length - 1), lastChord])
 		}
 	}
 	private _setEmulatedToggleState(key: Key, value: boolean): void {
@@ -521,5 +497,126 @@ export class Manager {
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e)
 		this._removeFromChain(keys, e)
+	}
+	private _keysAddHook(entry: Key): void {
+		if (entry.is.toggle === "native"
+			&& isToggleRootKey(entry)
+			&& !this[sNativeToggleKeys].includes(entry as ToggleRootKey)
+		) {
+			this[sNativeToggleKeys].push(entry as ToggleRootKey)
+		}
+		if (entry.is.modifier === "native" && !this[sNativeModifierKeys].includes(entry)) {
+			this[sNativeModifierKeys].push(entry)
+		}
+	}
+	private _keysRemoveHook(entry: Key): void {
+		const i = this[sNativeToggleKeys].indexOf(entry as ToggleRootKey)
+		if (i > -1) {
+			this[sNativeToggleKeys].splice(i)
+		}
+		const i2 = this[sNativeModifierKeys].indexOf(entry)
+		if (i2 > -1) {
+			this[sNativeToggleKeys].splice(i)
+		}
+	}
+	private _keysAllowsRemoveHook(entry: Key): Result<true, KnownError<ERROR.KEY_IN_USE>> {
+		const found = this.shortcuts.query(shortcut => shortcut.containsKey(entry))
+
+		if (found.length > 0) {
+			return Err(new KnownError(ERROR.KEY_IN_USE, crop`
+				Cannot remove key ${entry.id}, it is in used by the following shortcuts:
+
+				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.chain)).join("\n"), 4)}
+				`, { entries: found }))
+		}
+		return Ok(true)
+	}
+	private _commandsAllowsRemoveHook(entry: Command): Result<true, KnownError < ERROR.COMMAND_IN_USE >> {
+		const found = this.shortcuts.query(shortcut => shortcut.command === entry)
+		if (found.length > 0) {
+			return Err(new KnownError(ERROR.COMMAND_IN_USE, crop`
+				Cannot remove command ${entry.name}, it is in used by the following shortcuts:
+
+				${indent(found.map(shortcut => this.stringifier.stringify(shortcut.chain)).join("\n"), 4)}
+				`, { entries: found }))
+		}
+		return Ok(true)
+	}
+	private _shortcutAddHook(shortcut: Shortcut): void {
+		shortcut.addHook("allows", this[sBoundShortcutAllowsHook])
+	}
+	private _shortcutRemoveHook(shortcut: Shortcut): void {
+		shortcut.removeHook("allows", this[sBoundShortcutAllowsHook])
+	}
+	private _shortcutAllowsHook(prop: string, value: any, _old: any, self: Shortcut): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUT | ERROR.UNKNOWN_COMMAND_IN_SHORTCUT>> {
+		if (prop === "chain") {
+			return checkShortcutKeys({ chain: value as Key[][], command: self.command }, this.keys, this.stringifier, self)
+		}
+		if (prop === "command") {
+			return checkShortcutCommands({ chain: self.chain, command: value as Command }, this.commands, this.stringifier, self)
+		}
+		return Ok(true)
+	}
+	protected override _set(key: string, value: any): void {
+		switch (key) {
+			case "replace":
+				castType<ManagerReplaceValue>(value)
+				if (value.shortcuts) {
+					if (this.shortcuts) {
+						this.shortcuts.removeHook("add", this[sBoundShortcutAddHook])
+						this.shortcuts.removeHook("remove", this[sBoundShortcutRemoveHook])
+						for (const entry of this.shortcuts.entries) entry.removeHook("allows", this[sBoundShortcutAllowsHook])
+					}
+					this.shortcuts = value.shortcuts
+					this.shortcuts.stringifier = this.stringifier
+					this.shortcuts.stringifier = this.stringifier
+					this.shortcuts.sorter = this.sorter
+					this.shortcuts.addHook("add", this[sBoundShortcutAddHook])
+					this.shortcuts.addHook("remove", this[sBoundShortcutRemoveHook])
+					for (const entry of this.shortcuts.entries) entry.addHook("allows", this[sBoundShortcutAllowsHook])
+				}
+				if (value.keys) {
+					if (this.keys) {
+						this.keys.removeHook("add", this[sBoundKeysAddHook])
+						this.keys.removeHook("remove", this[sBoundKeysRemoveHook])
+						this.keys.removeHook("allowsRemove", this[sBoundKeysAllowsRemoveHook])
+					}
+
+					this.keys = value.keys
+					this.keys.stringifier = this.stringifier
+					this[sNativeToggleKeys] = this.keys.query(k => k.is.toggle === "native" && isToggleRootKey(k), true) as ToggleRootKey[]
+					this[sNativeModifierKeys] = this.keys.query(k => k.is.modifier === "native", true)
+
+					this.keys.addHook("add", this[sBoundKeysAddHook])
+					this.keys.addHook("remove", this[sBoundKeysRemoveHook])
+					this.keys.addHook("allowsRemove", this[sBoundKeysAllowsRemoveHook])
+				}
+				if (value.commands) {
+					if (this.commands) {
+						this.commands.removeHook("allowsRemove", this[sBoundCommandsAllowsRemoveHook])
+					}
+					this.commands = value.commands
+					this.commands.addHook("allowsRemove", this[sBoundCommandsAllowsRemoveHook])
+				}
+				break
+			default:
+				(this as any)[key] = value
+				break
+		}
+	}
+	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>> {
+		switch (key) {
+			case "replace":
+				castType<ManagerReplaceValue>(value)
+				return checkManagerShortcuts(value.shortcuts ?? this.shortcuts, value.keys ?? this.keys, value.commands ?? this.commands, this.stringifier)
+			case "shortcuts":
+				return checkManagerShortcuts(value, this.keys, this.commands, this.stringifier)
+			case "keys":
+				return checkManagerShortcuts(this.shortcuts, value, undefined, this.stringifier)
+			case "commands":
+				return checkManagerShortcuts(this.shortcuts, undefined, value, this.stringifier)
+			default:
+				return Ok(true)
+		}
 	}
 }

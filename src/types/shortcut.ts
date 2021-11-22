@@ -2,7 +2,7 @@ import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { OnlyRequire, Optional } from "./utils"
 
-import type { Command, Condition, Key, KeysSorter, Shortcut } from "@/classes"
+import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "@/classes"
 import type { KeysStringifier } from "@/classes/KeysStringifier"
 import type { KnownError } from "@/helpers"
 
@@ -11,7 +11,7 @@ import type { KnownError } from "@/helpers"
  * Same as [[ShortcutOptions]] except you're allowed to only pass the keys property.
  */
 export type RawShortcut =
-Omit<OnlyRequire<Shortcut, "keys">, "opts"> &
+Omit<OnlyRequire<Shortcut, "chain">, "opts"> &
 {
 	opts?: Partial<ShortcutOptions>
 }
@@ -51,12 +51,13 @@ export type KeysErrors =
 
 export type ShortcutHooks = {
 	"active": BaseHookType<Shortcut, boolean, never>
-	"keys": BaseHookType<Shortcut, Key[][], KnownError<KeysErrors>>
+	"chain": BaseHookType<Shortcut, Key[][], KnownError<KeysErrors>>
 	"command": BaseHookType<Shortcut, Command | undefined, never>
 	"condition": BaseHookType<Shortcut, Condition, never>
 }
 
-export type ShortcutsHook = CollectionHookType<
+export type ShortcutsHooks = CollectionHookType<
+	Shortcuts,
 	Shortcut,
 	RawShortcut | Shortcut,
 	Shortcut[],

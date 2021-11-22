@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-shadow */
 import { delay, testName } from "@alanscodelog/utils"
 
 import { expect } from "./chai"
@@ -70,7 +71,6 @@ describe(testName(), () => {
 			}).to.not.throw()
 		})
 		it("doesn't allow removal of in use keys", () => {
-			// eslint-disable-next-line @typescript-eslint/no-shadow
 			const key = new Key("key")
 			const manager = new Manager(
 				new Keys([key]),
@@ -83,9 +83,8 @@ describe(testName(), () => {
 			expect(manager.keys.allows("remove", key).isError).to.equal(true)
 		})
 		it("doesn't allow removal of in use commands", () => {
-			// eslint-disable-next-line @typescript-eslint/no-shadow
 			const key = new Key("key")
-			// eslint-disable-next-line @typescript-eslint/no-shadow
+
 			const command = new Command("command")
 			const manager = new Manager(
 				new Keys([key]),
@@ -258,6 +257,65 @@ describe(testName(), () => {
 			it("emulated toggle key via getModifierState does NOT fire shortcuts", () => {
 				emulator.fire("", ["ScrollLock"])
 				expect(execute1.mock.calls.length).to.equal(0)
+			})
+			describe("hooks", () => {
+				it("correctly allows replacement", () => {
+					const key1 = new Key("key")
+					const command1 = new Command("command")
+					const manager = new Manager(
+						new Keys([key1]),
+						new Commands([command1]),
+						new Shortcuts([
+							new Shortcut([[key1]], { command: command1 }),
+						]),
+						new Context({}),
+					)
+					const command2 = new Command("new command")
+					const key2 = new Key("new key")
+					const newShortcuts = new Shortcuts([new Shortcut([[key2]], { command: command2 })])
+					const newCommands = new Commands([command2])
+					const newKeys = new Keys([key2])
+					// error individually
+					expect(manager.allows("commands", newCommands).isError).to.equal(true)
+					expect(manager.allows("shortcuts", newShortcuts).isError).to.equal(true)
+					expect(manager.allows("keys", newKeys).isError).to.equal(true)
+					expect(manager.allows("replace", {
+						shortcuts: newShortcuts,
+						commands: newCommands,
+					}).isError).to.equal(true)
+					expect(manager.allows("replace", {
+						shortcuts: newShortcuts,
+						keys: newKeys,
+					}).isError).to.equal(true)
+					expect(manager.allows("replace", {
+						commands: newCommands,
+						keys: newKeys,
+					}).isError).to.equal(true)
+
+					expect(manager.allows("replace", {
+						shortcuts: newShortcuts,
+						commands: newCommands,
+						keys: newKeys,
+					}).isOk).to.equal(true)
+					manager.set("replace", {
+						shortcuts: newShortcuts,
+						commands: newCommands,
+						keys: newKeys,
+					})
+					expect(manager.shortcuts).to.equal(newShortcuts)
+					expect(manager.commands).to.equal(newCommands)
+					expect(manager.keys).to.equal(newKeys)
+				})
+				it("does not allow setting chain but allows hooks", () => {
+					// @ts-expect-error should error
+					manager.set("chain", undefined)
+					const hook = jest.fn((_prop, _val) => { })
+					manager.addHook("set", hook)
+					manager.clearChain()
+					expect(hook.mock.calls.length).to.equal(1)
+					expect(hook.mock.calls[0][0]).to.equal("chain")
+					expect(hook.mock.calls[0][1]).to.deep.equal([[]])
+				})
 			})
 		})
 	})

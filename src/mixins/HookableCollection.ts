@@ -84,8 +84,8 @@ export class HookableCollection<
 		const self = (this as any)
 		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
 			const response = type === "add"
-				? (listener as any)(type, value)
-				: (listener as any)(value, self.entries)
+				? (listener as any as CollectionHook<"allowsAdd">)(type, value, self)
+				: (listener as any as CollectionHook<"allowsRemove">)(value, self.entries, self)
 			if (response.isError) return response
 		}
 		return self._allows(type, value)
@@ -102,7 +102,7 @@ export class HookableCollection<
 		self._add(value)
 
 		for (const listener of this.listeners.add) {
-			listener(value, this.entries)
+			listener(value, this.entries, self)
 		}
 	}
 	protected static _canAddToDict<
@@ -196,7 +196,7 @@ export class HookableCollection<
 		self._remove(value)
 
 		for (const listener of this.listeners.remove) {
-			listener(value, this.entries)
+			listener(value, this.entries, self)
 		}
 	}
 	protected static _canRemoveFromDict<

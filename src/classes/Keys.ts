@@ -4,7 +4,7 @@ import type { Plugin } from "./Plugin"
 
 import { isToggleKey } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
-import type { KeyOptions, KeysHook, KeysOptions, RawKey, RecordFromArray } from "@/types"
+import type { KeyOptions, KeysHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
 
 
 export class Keys<
@@ -20,7 +20,7 @@ export class Keys<
 	TEntries extends
 		RecordFromArray<TRawKeys, "id", TKey> =
 		RecordFromArray<TRawKeys, "id", TKey>,
-> extends MixinHookablePlugableCollection<KeysHook, TPlugins> {
+> extends MixinHookablePlugableCollection<KeysHooks, TPlugins> {
 	override entries: TEntries
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**

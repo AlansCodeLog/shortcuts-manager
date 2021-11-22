@@ -32,7 +32,7 @@ const conflictingPlugin = new Plugin(
 
 
 // this is a single key find for testing only
-const shortcutFilter = (id: string) => (entry: Shortcut) => entry.keys.find(chord => chord.find(key => key.id === id) !== undefined) !== undefined
+const shortcutFilter = (id: string) => (entry: Shortcut) => entry.chain.find(chord => chord.find(key => key.id === id) !== undefined) !== undefined
 
 /** Note there should also be no intellisense "errors" here when accessing properties. */
 
@@ -68,11 +68,11 @@ describe(testName(), () => {
 			const warn = console.warn
 			console.warn = jest.fn()
 			const shortcuts = new Shortcuts([
-				{ keys: [[k.a]]},
+				{ chain: [[k.a]]},
 				// @ts-expect-error typescript already warns you cant
 			], {}, [plugin])
 
-			shortcuts.add(Shortcut.create({ keys: [[k.b]]}))
+			shortcuts.add(Shortcut.create({ chain: [[k.b]]}))
 			// shortcuts can't use the overrides
 			expect((console.warn as jest.Mock<any, any>).mock.calls.length).to.equal(3)
 			expect(shortcuts.query(shortcutFilter("b"), false)!.plugins).to.deep.equal([plugin])
@@ -123,7 +123,7 @@ describe(testName(), () => {
 		it("for shortcuts", () => {
 			expect(catchError(() => {
 				new Shortcuts([
-					{ keys: [[k.a]]},
+					{ chain: [[k.a]]},
 				], {}, [pluginNoOverrides, conflictingPlugin])
 			}).code).to.equal(TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES)
 		})
@@ -146,7 +146,7 @@ describe(testName(), () => {
 		it("for shortcuts", () => {
 			expect(inspectError(() => {
 				new Shortcuts([
-					{ keys: [[k.a]]},
+					{ chain: [[k.a]]},
 				], {}, [conflictingPlugin, conflictingPlugin])
 			})).to.not.throw()
 		})
@@ -206,8 +206,8 @@ describe(testName(), () => {
 		})
 		it("for shortcuts", () => {
 			const shortcuts = new Shortcuts([
-				{ keys: [[k.a]]},
-				{ keys: [[k.b]]},
+				{ chain: [[k.a]]},
+				{ chain: [[k.b]]},
 			], {}, [pluginNoOverrides])
 
 			expect(shortcuts.query(shortcutFilter("a"), false)!.info.name.test).to.equal("default")
@@ -249,7 +249,7 @@ describe(testName(), () => {
 			console.warn = () => {}
 			expect(catchError(() => {
 				new Shortcuts([
-					{ keys: [[k.a]]},
+					{ chain: [[k.a]]},
 				], {}, [plugin1 as any, plugin2 as any])
 			}))
 			console.warn = warn

@@ -10,7 +10,7 @@ import { Shortcut } from "./Shortcut"
 
 import { KnownError } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
-import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHook, ShortcutsOptions } from "@/types"
+import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
 
 
 export class Shortcuts<
@@ -26,7 +26,7 @@ export class Shortcuts<
 	TEntries extends
 		TShortcut[] =
 		TShortcut[],
-> extends MixinHookablePlugableCollection<ShortcutsHook, TPlugins> {
+> extends MixinHookablePlugableCollection<ShortcutsHooks, TPlugins> {
 	override entries: TEntries
 	private readonly _boundAllowsHook: any
 	/** See {@link KeysStringifier} */
@@ -109,7 +109,7 @@ export class Shortcuts<
 	/**
 	 * Query the class for some shortcut/s. Just a simple wrapper around array find/filter
 	 *
-	 * Note: Unlike other classes, this class does not have a `get` method since shortcuts cannot be indexed by a single property, such as {@link Shortcut.keys}, because it should be perfectly possible to add two shortcuts with the same keys but, for example, where one is active and the other isn't, or where one has one condition and the other another.
+	 * Note: Unlike other classes, this class does not have a `get` method since shortcuts cannot be indexed by a single property, such as {@link Shortcut.chain}, because it should be perfectly possible to add two shortcuts with the same keys but, for example, where one is active and the other isn't, or where one has one condition and the other another.
 	 *
 	 * @param all If set to true, uses filter and returns all matching entries. Otherwise uses find and only returns the first match.
 	 */
@@ -197,12 +197,12 @@ export class Shortcuts<
 
 		this._setForceUnequal(shortcutsA, true)
 		for (const shortcutB of shortcutsB) {
-			shortcutB.set("keys", [...chordsA, ...shortcutB.keys.slice(chordsA.length, shortcutB.keys.length)])
+			shortcutB.set("chain", [...chordsA, ...shortcutB.chain.slice(chordsA.length, shortcutB.chain.length)])
 		}
 		this._setForceUnequal(shortcutsA, false)
 		this._setForceUnequal(shortcutsB, true)
 		for (const shortcutA of shortcutsA) {
-			shortcutA.set("keys", [...chordsB, ...shortcutA.keys.slice(chordsB.length, shortcutA.keys.length)])
+			shortcutA.set("chain", [...chordsB, ...shortcutA.chain.slice(chordsB.length, shortcutA.chain.length)])
 		}
 		this._setForceUnequal(shortcutsB, false)
 		return Ok(true)
@@ -250,16 +250,16 @@ export class Shortcuts<
 	 * Also checks the parameters are valid (Certain types of chords cannot be swapped, like empty chords, or chords which share a base. See canSwapChords.)
 	 */
 	canSwapChords(
-		chordsA: Key[][], chordsB: Key[][],
+		chainA: Key[][], chainB: Key[][],
 		filter?: (shortcut: Shortcut) => boolean
 	): Result<true, Error | KnownError<ERROR.INVALID_SWAP_CHORDS | ERROR.DUPLICATE_SHORTCUT>> {
-		const e = this._assertCorrectSwapParameters(chordsA, chordsB)
+		const e = this._assertCorrectSwapParameters(chainA, chainB)
 		if (e.isError) {
 			return e
 		}
 
-		let shortcutsA = this.query(shortcut => shortcut.equalsKeys(chordsA, chordsA.length)) ?? []
-		let shortcutsB = this.query(shortcut => shortcut.equalsKeys(chordsB, chordsB.length)) ?? []
+		let shortcutsA = this.query(shortcut => shortcut.equalsKeys(chainA, chainA.length)) ?? []
+		let shortcutsB = this.query(shortcut => shortcut.equalsKeys(chainB, chainB.length)) ?? []
 		if (filter) {
 			shortcutsA = shortcutsA.filter(filter)
 			shortcutsB = shortcutsB.filter(filter)
@@ -272,7 +272,7 @@ export class Shortcuts<
 		}
 
 		for (const shortcutB of shortcutsB) {
-			const res = shortcutB.allows("keys", [...chordsA.filter(chord => chord.length > 0), ...shortcutB.keys.slice(chordsA.length, shortcutB.keys.length)])
+			const res = shortcutB.allows("chain", [...chainA.filter(chord => chord.length > 0), ...shortcutB.chain.slice(chainA.length, shortcutB.chain.length)])
 			if (res.isError) {
 				can = res as any
 				break
@@ -290,7 +290,7 @@ export class Shortcuts<
 
 
 			for (const shortcutA of shortcutsA) {
-				const res = shortcutA.allows("keys", [...chordsB.filter(chord => chord.length > 0), ...shortcutA.keys.slice(chordsB.length, shortcutA.keys.length)])
+				const res = shortcutA.allows("chain", [...chainB.filter(chord => chord.length > 0), ...shortcutA.chain.slice(chainB.length, shortcutA.chain.length)])
 				if (res.isError) {
 					can = res as any
 					break

@@ -2,7 +2,7 @@ import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { AnyInputEvent } from "./manager"
 
-import type { Command, Condition, Shortcut } from "@/classes"
+import type { Command, Commands, Condition, Shortcut } from "@/classes"
 import type { Manager } from "@/classes/Manager"
 import type { KnownError } from "@/helpers"
 
@@ -63,7 +63,8 @@ export type CommandHooks = {
 	"condition": BaseHookType<Command, Condition, never>
 }
 
-export type CommandsHook = CollectionHookType<
+export type CommandsHooks = CollectionHookType<
+	Commands,
 	Command,
 	RawCommand | Command,
 	Record<string, Command>,

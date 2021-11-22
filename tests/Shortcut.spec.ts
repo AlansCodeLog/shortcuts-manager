@@ -48,7 +48,7 @@ describe(testName(), () => {
 	})
 	it("should assign keys properly", () => {
 		const shortcut2 = new Shortcut([[k.a]])
-		expect(shortcut2.keys).to.deep.equal([[k.a]])
+		expect(shortcut2.chain).to.deep.equal([[k.a]])
 	})
 	it("should compare equality properly", () => {
 		const shortcutA1 = new Shortcut([[k.a]])

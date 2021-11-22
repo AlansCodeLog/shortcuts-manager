@@ -32,6 +32,8 @@ export class Hookable<
 	 * }
 	 * let allowed = shortcut.allows<MyError>(...)
 	 * ```
+	 *
+	 * Note some classes might allow adding only some types of hooks, but not others on some properties. For example, you can add `set` hooks to the manager but not `allows` hooks.
 	 */
 	addHook<
 		TType extends

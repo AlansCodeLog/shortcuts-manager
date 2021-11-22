@@ -1,6 +1,9 @@
-import { crop, indent } from "@alanscodelog/utils/dist/utils"
+import { crop, Err, indent, Ok, Result } from "@alanscodelog/utils"
 
-import type { Command, Commands, Key, Keys, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
+import { checkShortcutCommands } from "./checkShortcutCommands"
+import { checkShortcutKeys } from "./checkShortcutKeys"
+
+import type { Commands, Keys, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
 import { ERROR } from "@/types"
 
 import { KnownError } from "."
@@ -9,51 +12,46 @@ import { KnownError } from "."
 /**
  * Throws if shortcuts contain keys/commands not in the given keys/commands set.
  */
-export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: Commands, s: KeysStringifier): void {
-	const unknownKeys = shortcuts.entries.map(shortcut =>
-		[
-			shortcut,
-			shortcut.keys
-				.flat()
-				.map(key => keys.query(known => known === key, false) === undefined
-					? key
-					: undefined)
-				.filter(key => key !== undefined),
-		] as [Shortcut, Key[]]
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	).filter(([_shortcut, keys_]) => keys_.length !== 0)
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: Commands, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: undefined, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: undefined, commands: undefined, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys | undefined, commands: Commands | undefined, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>> {
+	if (keys) {
+		const keyErrors: { shortcut: Shortcut, err: KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUT> }[] = []
+		for (const shortcut of shortcuts.entries) {
+			const res = checkShortcutKeys(shortcut, keys, s)
 
-	if (unknownKeys.length > 0) {
-		throw new KnownError(ERROR.UNKNOWN_KEYS, crop`
+			if (res.isError) {
+				keyErrors.push({ shortcut, err: res.error })
+			}
+		}
+
+		if (keyErrors.length > 0) {
+			return Err(new KnownError(ERROR.UNKNOWN_KEYS_IN_SHORTCUTS, crop`
 			Some shortcuts contain unknown keys.
 
-			${indent(unknownKeys.map(([shortcut, unknownKeys_]) =>
-			`${s.stringify(shortcut.keys)}${shortcut.command ? ` (Command: ${shortcut.command.name})` : ""}: ${s.stringifyKeys(unknownKeys_)}`).join("\n")
-			, 3)}
+			${indent(keyErrors.map(({ err }) => err.message).join("\n"), 3)}
 
-			`, { entries: unknownKeys })
+			`, { entries: keyErrors.map(({ shortcut, err }) => ({ shortcut, keys: err.info.keys })) }))
+		}
 	}
-
-	const unknownCommands = shortcuts.entries.map(shortcut =>
-		[
-			shortcut,
-			shortcut.command
-				? commands.query(known => known === shortcut.command, false) === undefined
-					? shortcut.command
-					: undefined
-				: undefined,
-		]
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	).filter(([_shortcut, command]) => command !== undefined) as [Shortcut, Command][]
-
-	if (unknownCommands.length > 0) {
-		throw new KnownError(ERROR.UNKNOWN_COMMANDS, crop`
+	if (commands) {
+		const commandErrors: { shortcut: Shortcut, err: KnownError<ERROR.UNKNOWN_COMMAND_IN_SHORTCUT> }[] = []
+		for (const shortcut of shortcuts.entries) {
+			const res = checkShortcutCommands(shortcut, commands, s)
+			if (res.isError) {
+				commandErrors.push({ shortcut, err: res.error })
+			}
+		}
+		if (commandErrors.length > 0) {
+			return Err(new KnownError(ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS, crop`
 			Some shortcuts contain unknown commands.
 
-			${indent(unknownCommands.map(([shortcut, unknownCommand]) =>
-			`${s.stringify(shortcut.keys)}: Command ${unknownCommand.name}`
-		).join("\n"))}
+			${indent(commandErrors.map(({ err }) => err.message).join("\n"), 3)}
 
-			`, { entries: unknownCommands })
+			`, { entries: commandErrors.map(({ shortcut, err }) => ({ shortcut, command: err.info.command })) }))
+		}
 	}
+	return Ok(true)
 }
+

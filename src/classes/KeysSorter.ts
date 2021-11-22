@@ -1,11 +1,13 @@
-import { keyOrder } from "@/helpers"
-import { KeysSorterOptions, KEY_SORT_POS } from "@/types"
 import type { Key } from "./Key"
+
+import { keyOrder } from "@/helpers"
+import { KEY_SORT_POS, KeysSorterOptions } from "@/types"
+
 
 const sSort = Symbol("sort")
 const sDefaultSort = Symbol("defaultSort")
 /**
- * Creates a keys sorter for shortcut chords.
+ * Creates a keys sorter for shortcut chains.
  *
  * Can either be passed some re-arranged enum of KeySortPos or it's keys, for example:
  * ```ts
@@ -37,7 +39,7 @@ export class KeysSorter {
 	}
 	constructor(opts: Partial<KeysSorterOptions> = {}) {
 		if (opts.order) this.order = opts.order
-		if (opts.sort) this[sSort]! = opts.sort
+		if (opts.sort) this[sSort] = opts.sort
 	}
 	sort(keys: Key[]): Key[] {
 		if (this[sSort]) {

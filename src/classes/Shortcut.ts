@@ -25,8 +25,8 @@ export class Shortcut<
 		PluginsInfo<TPlugins>,
 
 > extends MixinHookablePlugableBase<ShortcutHooks, TPlugins, TInfo> implements ShortcutOptions {
-	/** The keys that make up the shortcut. Note that this is NOT a unique identifier for shortcuts and cannot be used to compare them if you are making use of the when/context/active options. */
-	keys: Key[][] = []
+	/** The chain of key chords that make up the shortcut. Note that this is NOT a unique identifier for shortcuts and cannot be used to compare them if you are making use of the when/context/active options. */
+	chain: Key[][] = []
 	/** See {@link KeysStringifier} */
 	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/** See {@link KeysSorter} */
@@ -80,7 +80,7 @@ export class Shortcut<
 		if (opts.sorter) this.sorter = opts.sorter
 		if (this.allows("command", opts.command).unwrap()) this.set("command", opts.command)
 		if (opts.condition && this.allows("condition", opts.condition).unwrap()) this.set("condition", opts.condition)
-		if (this.allows("keys", keys).unwrap()) this.set("keys", keys)
+		if (this.allows("chain", keys).unwrap()) this.set("chain", keys)
 	}
 	/**
 	 * Returns whether the shortcut passed is equal to this one.
@@ -93,7 +93,7 @@ export class Shortcut<
 			this === shortcut
 			||
 			(
-				this.equalsKeys(shortcut.keys)
+				this.equalsKeys(shortcut.chain)
 				&& this.equalsInfo(shortcut)
 				&& this.condition.equals(shortcut.condition)
 				&& (this.command?.equals(shortcut.command) || shortcut.command?.equals(this.command) || this.command === shortcut.command)
@@ -104,7 +104,7 @@ export class Shortcut<
 	 * A wrapper around static {@link Shortcut.equalsKeys} for the instance.
 	 */
 	equalsKeys(keys: Key[][], length?: number): boolean {
-		return Shortcut.equalsKeys(this.keys, keys, length)
+		return Shortcut.equalsKeys(this.chain, keys, length)
 	}
 	/**
 	 * Returns if the given chords are equal.
@@ -143,7 +143,7 @@ export class Shortcut<
 	 * A wrapper around static {@link Shortcut.containsKey} for the instance.
 	 */
 	containsKey(key: Key): boolean {
-		return Shortcut.containsKey(key, this.keys)
+		return Shortcut.containsKey(key, this.chain)
 	}
 	/**
 	 * Returns whether a shortcut's keys contains the given key.
@@ -161,8 +161,8 @@ export class Shortcut<
 		value: ShortcutHooks[TKey]["value"],
 	): void {
 		switch (key) {
-			case "keys":
-				this.keys = (value as ShortcutHooks["keys"]["value"]).map(chord => this.sorter.sort([...chord]))
+			case "chain":
+				this.chain = (value as ShortcutHooks["chain"]["value"]).map(chord => this.sorter.sort([...chord]))
 				break
 			default: {
 				(this as any)[key] = value
@@ -171,15 +171,15 @@ export class Shortcut<
 	}
 	protected override _allows<TKey extends keyof ShortcutHooks>(key: TKey, value: ShortcutHooks[TKey]["value"]): Result<true, ShortcutHooks[TKey]["error"]> {
 		switch (key) {
-			case "keys": return this._hookAllowsKeys(value as ShortcutHooks["keys"]["value"])
+			case "chain": return this._hookAllowsKeys(value as ShortcutHooks["chain"]["value"])
 			default: return Ok(true)
 		}
 	}
-	protected _hookAllowsKeys(value: ShortcutHooks["keys"]["value"]): Result<true, ShortcutHooks["keys"]["error"]> {
+	protected _hookAllowsKeys(value: ShortcutHooks["chain"]["value"]): Result<true, ShortcutHooks["chain"]["error"]> {
 		const val = []
 		for (let i = 0; i < value.length; i++) {
 			const chord = value[i]
-			const res = isValidChord({ keys: value }, chord, i, this.stringifier)
+			const res = isValidChord({ chain: value }, chord, i, this.stringifier)
 			if (res.isError) return res
 			val.push(this.sorter.sort([...chord]))
 		}
@@ -195,7 +195,7 @@ export class Shortcut<
 			(this.command === undefined || this.command.condition.eval(context))
 	}
 	static create<T extends Shortcut = Shortcut>(entry: RawShortcut, plugins: Plugin[] = []): T {
-		return Plugable.create<Shortcut, "keys">(Shortcut, plugins, "keys", entry) as T
+		return Plugable.create<Shortcut, "chain">(Shortcut, plugins, "chain", entry) as T
 	}
 }
 

@@ -6,7 +6,7 @@ import type { Plugin } from "./Plugin"
 
 import { KnownError } from "@/helpers"
 import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
-import { CommandsHook, ERROR, RawCommand, RecordFromArray } from "@/types"
+import { CommandsHooks, ERROR, RawCommand, RecordFromArray } from "@/types"
 
 
 export class Commands<
@@ -24,7 +24,7 @@ export class Commands<
 	TEntries extends
 		RecordFromArray<TRawCommands, "name", TCommand> =
 		RecordFromArray<TRawCommands, "name", TCommand>,
-> extends MixinHookablePlugableCollection<CommandsHook, TPlugins> {
+> extends MixinHookablePlugableCollection<CommandsHooks, TPlugins> {
 	override entries: TEntries
 	/**
 	 * # Commands

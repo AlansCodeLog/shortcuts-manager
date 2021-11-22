@@ -3,6 +3,7 @@
 export { Hookable } from "./Hookable"
 export { HookableBase } from "./HookableBase"
 export { HookableCollection } from "./HookableCollection"
+export { MixinHookableBase } from "./MixinHookableBase"
 export { MixinHookablePlugableBase } from "./MixinHookablePlugableBase"
 export { MixinHookablePlugableCollection } from "./MixinHookablePlugableCollection"
 export { MixinPlugableBase } from "./MixinPlugableBase"

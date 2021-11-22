@@ -1,17 +1,21 @@
-import type { Plugin } from "@/classes";
-import type { BaseHookType, PluginsInfo } from "@/types";
-import type { Mixin } from "@utils/types";
-import { mixin } from "@utils/utils";
-import { Hookable } from "./Hookable";
-import { HookableBase } from "./HookableBase";
-import { Plugable } from "./Plugable";
-import { PlugableBase } from "./PlugableBase";
+import type { Mixin } from "@utils/types"
+import { mixin } from "@utils/utils"
+
+import { Hookable } from "./Hookable"
+import { HookableBase } from "./HookableBase"
+import { Plugable } from "./Plugable"
+import { PlugableBase } from "./PlugableBase"
+
+import type { Plugin } from "@/classes"
+import type { BaseHookType, PluginsInfo } from "@/types"
 
 
 export class MixinHookablePlugableBase<
-	THooks extends Record<string, BaseHookType<any, any, any>>,
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	THooks extends Record<string, BaseHookType<any, any, any, any, any>>,
 	TPlugins extends Plugin<any, undefined>[],
-	TInfo extends PluginsInfo<TPlugins>
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	TInfo extends PluginsInfo<TPlugins>,
 > { }
 export interface MixinHookablePlugableBase<THooks, TPlugins, TInfo> extends
 	Mixin<
@@ -19,8 +23,7 @@ export interface MixinHookablePlugableBase<THooks, TPlugins, TInfo> extends
 		| PlugableBase<TPlugins, TInfo>
 	>,
 	HookableBase<THooks>,
-	PlugableBase<TPlugins, TInfo>
-{
+	PlugableBase<TPlugins, TInfo> {
 	/** @internal */
 	_constructor: never
 }
