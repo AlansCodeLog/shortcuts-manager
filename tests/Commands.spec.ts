@@ -21,7 +21,7 @@ describe(testName(), () => {
 		expect(commands.entries.a).to.exist
 		expect(commands.entries.b).to.exist
 	})
-	it("throws on duplicate commands", () => {
+	it.only("throws on duplicate commands", () => {
 		expect(inspectError(() => {
 			new Commands([
 				new Command("a"),

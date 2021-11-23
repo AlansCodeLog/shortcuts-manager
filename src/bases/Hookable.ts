@@ -8,9 +8,8 @@ export class Hookable<
 	THooks extends Record<string, any>,
 	TTypes extends keyof THooks = keyof THooks,
 > {
-	listeners!: {[K in keyof THooks]: THooks[K][] }
-	protected _constructor({ hookable: { keys } }: { hookable: { keys: TTypes[] } }): void {
-		this.listeners = {} as any
+	listeners: {[K in keyof THooks]: THooks[K][] } = {} as any
+	constructor(keys: TTypes[]) {
 		for (const key of keys) this.listeners[key] = [] as any
 	}
 	/**

@@ -1,7 +1,9 @@
+import { crop, testName } from "@alanscodelog/utils"
+
+import { expect } from "./chai"
+
 import { Key } from "@/classes"
 import { defaultStringifier, KeysStringifier } from "@/classes/KeysStringifier"
-import { crop, testName } from "@alanscodelog/utils"
-import { expect } from "./chai"
 
 
 describe(testName(), () => {
@@ -23,11 +25,12 @@ describe(testName(), () => {
 			new Key("c"),
 		]
 
+		/* eslint-disable @typescript-eslint/typedef */
 		const stringifier = new KeysStringifier({
 			key(key) {return `"${key.label}"`},
 			keys(keys) {return keys.join("!")},
 			chord(chord) {return chord.join("~")},
-			chain(chain) {return chain.join("=")}
+			chain(chain) {return chain.join("=")},
 		})
 		expect(stringifier.stringify(keysList[0])).to.equal(`"a"`)
 		expect(stringifier.stringify(keysList)).to.equal(`"a"~"b"~"c"`)

@@ -49,10 +49,10 @@ export type CommandOptions<
 	/**
 	 * Commands may have an additional condition that must be met, apart from the shortcut's that triggered it.
 	 *
-	 * If the command is created without a condition, it is assigned a blank condition. If you are using plugins on your commands you should pass a blank condition made with your plugins.
+	 * If the command is created without a condition, it is assigned a blank condition. If you are using a custom condition class, you should probably always pass a blank condition.
 	 */
 	condition: TCondition
-	/** See {@link Command.description} */
+	/** A description of what the command does. */
 	description: string
 }
 
@@ -65,8 +65,8 @@ export type CommandHooks = {
 
 export type CommandsHooks = CollectionHookType<
 	Commands,
-	Command,
-	RawCommand | Command,
+	[Command],
+	[RawCommand | Command],
 	Record<string, Command>,
 	KnownError<ERROR.DUPLICATE_COMMAND>,
 	KnownError<ERROR.COMMAND_IN_USE>

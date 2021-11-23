@@ -4,7 +4,6 @@ import { keyOrder } from "@/helpers"
 import { KEY_SORT_POS, KeysSorterOptions } from "@/types"
 
 
-const sSort = Symbol("sort")
 const sDefaultSort = Symbol("defaultSort")
 /**
  * Creates a keys sorter for shortcut chains.
@@ -25,11 +24,12 @@ const sDefaultSort = Symbol("defaultSort")
  * ```
  * They way this works is the enum should contain every possible combination of key "types". All sort does is determine the type and use it's position in the enum to know where to sort it. If two keys are of the same type, they are sorted alphabetically by their id.
  *
- * Or you can pass a completely custom sort function if you really want to (in which case the order option will remain unused unless you use it).
+ * Or you can extend from the class and implement a custom sort function.
+ *
+ * Ideally a single sorter should be created and shared amongst all instances. This is already taken care of if you do not pass a custom sorter, a default sorter instance is re-used throughout.
  */
 export class KeysSorter {
 	order: KeysSorterOptions["order"] = KEY_SORT_POS;
-	[sSort]: KeysSorterOptions["sort"]
 	[sDefaultSort](a: Key, b: Key, order: KeysSorterOptions["order"]): number {
 		// -1 = a b
 		if (keyOrder(a, order) < keyOrder(b, order)) return -1
@@ -39,12 +39,8 @@ export class KeysSorter {
 	}
 	constructor(opts: Partial<KeysSorterOptions> = {}) {
 		if (opts.order) this.order = opts.order
-		if (opts.sort) this[sSort] = opts.sort
 	}
 	sort(keys: Key[]): Key[] {
-		if (this[sSort]) {
-			return keys.sort((a, b) => this[sSort]!(a, b, this.order))
-		}
 		return keys.sort((a, b) => this[sDefaultSort]!(a, b, this.order))
 	}
 }

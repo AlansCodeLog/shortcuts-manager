@@ -3,10 +3,8 @@ import type { DeepPartial, MakeRequired } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, Keys, KeysStringifier, Plugin } from "@/classes"
+import type { Key, Keys, KeysStringifier } from "@/classes"
 import type { KnownError } from "@/helpers"
-
-import type { PluginsInfo } from "."
 
 
 // import type{ KnownError } from "@/helpers"
@@ -35,16 +33,10 @@ export type ToggleKey<T extends Key = Key> = T & {
 }
 
 export type ToggleRootKey<
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
-	TInfo extends
-		PluginsInfo<TPlugins> =
-		PluginsInfo<TPlugins>,
 	TId extends
 		string =
 		string>
-= MakeRequired<Key<TPlugins, TInfo, TId>, "on" | "off">
+= MakeRequired<Key<TId>, "on" | "off">
 
 export type AnyKey = Key | ToggleKey<any>
 
@@ -56,7 +48,7 @@ export type KeyOptions = {
 	 */
 	label: string | ((key: Key) => string)
 	/**
-	 * {@link KeysStringifier}
+	 * See {@link KeysStringifier}
 	 */
 	stringifier: KeysStringifier
 	/**
@@ -64,7 +56,7 @@ export type KeyOptions = {
 	 *
 	 * For example, without variants, there's no way to have a shortcut like `[[Ctrl, A]]` where Ctrl can be either of the right/lefts Ctrl keys. One could create two shortcuts for both keys, but only one key would be considered triggered at a time on the layout.
 	 *
-	 * Variants can solve this by allowing us to create a key that's only labeled as `Ctrl`. The `id` can be set to an invalid key code like (we still need an id for plugins, etc), preferably one that indicates what's happening (e.g. `VirtualCtrl`). The variants can be set to `["ControlLeft", "ControlRight"]`. Now you can have shortcuts like `[[VirtualCtrl, A]]` and either control key will trigger them.
+	 * Variants can solve this by allowing us to create a key that's only labeled as `Ctrl`. The `id` can be set to an invalid key code like (we still need an id for the {@link Keys} class), preferably one that indicates what's happening (e.g. `VirtualCtrl`). The variants can be set to `["ControlLeft", "ControlRight"]`. Now you can have shortcuts like `[[VirtualCtrl, A]]` and either control key will trigger them.
 	 *
 	 * ```ts
 	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl", variants: ["ControlLeft", "ControlRight"] })
@@ -77,14 +69,12 @@ export type KeyOptions = {
 	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl Left", variants: ["ControlLeft", "ControlRight"] })
 	 * const virtualCtrl2 = new Key("VirtualCtrl2" {label: "Ctrl Right", variants: ["ControlLeft", "ControlRight"] })
 	 *
-	 * // same labels, different styles
+	 * // same labels, different sizes
 	 * const virtualCtrl = new Key("VirtualCtrl"
-	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"] },
-	 * 	{ layout: {size: "1.5"} }, [layoutPlugin]
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"], layout: {width: 1.5} },
 	 * )
 	 * const virtualCtrl2 = new Key("VirtualCtrl2"
-	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"] },
-	 * 	{ layout: {size: "2"} }, [layoutPlugin]
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"], layout: {width: 2}},
 	 * )
 	 *
 	 * ```
@@ -97,6 +87,16 @@ export type KeyOptions = {
 	 *
 	 */
 	variants: string[] | undefined
+	/**
+	 * Describes the physical size of the key.
+	 *
+	 * See {@link KeyOptions.variants} for how to create two of the same key with different sizes.
+	 *
+	 * The library does not render the layout, but provides this to standardize how this is handled.
+	 *
+	 * If the layout is undefined the key should not be rendered. The default size is `1` for everything except toggle on/off keys (which are set to `undefined` since you do not usually want to render them).
+	 */
+	layout: { width: number, height: number } | undefined
 	is: {
 		/**
 		 * Whether the key is a modifier. A modifier can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"`.
@@ -209,14 +209,9 @@ export type KeysOptions = {
 
 export type KeysSorterOptions = {
 	/**
-	 * Specify how keys are sorted depending on what type of keys they are (see [[KeySortPos]]) and then alphabetically. This should be enough control for 99.99% of cases. Otherwise see [[ShortcutOptions.sort]]
+	 * Specify how keys are sorted depending on what type of keys they are (see {@link KeySortPos}) and then alphabetically.
 	 */
 	order: typeof KEY_SORT_POS | Record<keyof typeof KEY_SORT_POS, number>
-	/**
-	 * Specify a completely custom sort function.
-	 * [[ShortcutOptions.order]] will be ignored, though it will be available via this.sort because the function (which should NOT be an arrow function) is bound to [[ShortcutOptions]] which also means any other options (like [[ShortcutOptions.parser]]) are also available.
-	 */
-	sort?: (shortcut1: Key, shortcut2: Key, order: KeysSorterOptions["order"]) => number
 }
 
 
@@ -229,9 +224,10 @@ export type KeyHooks = {
 
 export type KeysHooks = CollectionHookType<
 	Keys,
-	Key,
-	Key | RawKey,
+	[ key: Key, row?: number, col?: number ],
+	[ key: Key | RawKey, row?: number, col?: number ],
 	Record<string, Key>,
-	KnownError<ERROR.DUPLICATE_KEY>,
-	KnownError<ERROR.KEY_IN_USE>
+	KnownError<ERROR.DUPLICATE_KEY | ERROR.KEYS_CANNOT_ADD_TOGGLE>,
+	KnownError<ERROR.KEY_IN_USE | ERROR.MISSING>,
+	[Key]
 >

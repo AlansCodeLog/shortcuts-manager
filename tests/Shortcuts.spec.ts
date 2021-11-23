@@ -4,19 +4,15 @@ import type { Result } from "@alanscodelog/utils/dist/utils"
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
-import { Condition, Plugin, Shortcut, Shortcuts } from "@/classes"
+import { Condition, Shortcut, Shortcuts } from "@/classes"
 import type { KnownError } from "@/helpers"
 import { ERROR } from "@/types"
 
 
-const plugin = new Plugin(
-	"test",
-	{ prop: "default" },
-)
 const shortcut1 = new Shortcut([[k.a]])
 const shortcut1b = new Shortcut([[k.a]])
 const shortcut1c = new Shortcut([[k.a]], { condition: new Condition("other") })
-const shortcut2 = new Shortcut([[k.b]], {}, { test: { prop: "override" } }, [plugin])
+const shortcut2 = new Shortcut([[k.b]])
 const shortcut3 = new Shortcut([[k.c]])
 
 describe(testName(), () => {
@@ -25,7 +21,7 @@ describe(testName(), () => {
 			new Shortcuts([
 				shortcut1,
 				shortcut1b,
-			], {}, [plugin])
+			])
 		}).to.throw()
 	})
 	let shortcuts: Shortcuts
@@ -35,7 +31,7 @@ describe(testName(), () => {
 			shortcut1c,
 			shortcut2,
 			shortcut3,
-		], {}, [plugin])
+		])
 	}).to.not.throw()
 
 	it("querying", () => {
@@ -76,7 +72,7 @@ describe(testName(), () => {
 			new Shortcut([[k.b], [k.b]]),
 			new Shortcut([[k.b]]),
 			new Shortcut([[k.c]]),
-		], {}, [plugin])
+		])
 		expect(shortcuts.canSwapChords([[k.a]], [[k.b]]).isOk).to.equal(true)
 		expect((shortcuts.canSwapChords([[k.a]], [[k.a]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 
@@ -92,7 +88,7 @@ describe(testName(), () => {
 		const shortcuts2 = new Shortcuts([
 			AB,
 			A,
-		], {}, [plugin])
+		])
 
 		expect((shortcuts2.canSwapChords([[k.a]], [[k.a], [k.b]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
 		expect((shortcuts2.canSwapChords([[k.a], [k.b]], [[k.a]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.INVALID_SWAP_CHORDS)
@@ -104,7 +100,7 @@ describe(testName(), () => {
 			new Shortcut([[k.b], [k.d]]),
 			new Shortcut([[k.b]]),
 			new Shortcut([[k.c]]),
-		], {}, [plugin])
+		])
 
 		shortcuts.swapChords([[k.a]], [[k.b]])
 		expect(shortcuts.entries.map(shortcut => shortcut.chain)).to.deep.equal([

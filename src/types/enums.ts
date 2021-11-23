@@ -1,7 +1,7 @@
 import type { BaseHook } from "./hooks"
 import type { AnyInputEvent } from "./manager"
 
-import type { Command, Commands, Key, Keys, Plugin, Shortcut, Shortcuts } from "@/classes"
+import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
 import type { Manager } from "@/classes/Manager"
 import type { KnownError } from "@/helpers"
 
@@ -20,7 +20,6 @@ export enum ERROR {
 	CHORD_W_DUPLICATE_KEY = "CHORD_W_DUPLICATE_KEY",
 	IMPOSSIBLE_TOGGLE_SEQUENCE = "IMPOSSIBLE_TOGGLE_SEQUENCE",
 	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
-	CONFLICTING_ENTRY_PLUGINS = "CONFLICTING_ENTRY_PLUGINS",
 	MISSING = "MISSING", // removing
 	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
 
@@ -28,6 +27,7 @@ export enum ERROR {
 	DUPLICATE_KEY = "DUPLICATE_KEY",
 	DUPLICATE_COMMAND = "DUPLICATE_COMMAND",
 	DUPLICATE_SHORTCUT = "DUPLICATE_SHORTCUT",
+	KEYS_CANNOT_ADD_TOGGLE = "KEYS_CANNOT_ADD_TOGGLE",
 
 	// === other
 	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
@@ -42,12 +42,11 @@ export enum ERROR {
 	UNKNOWN_COMMAND_IN_SHORTCUT = "UNKNOWN_COMMANDS_IN_SHORTCUT",
 	KEY_IN_USE = "KEYS_IN_USE",
 	COMMAND_IN_USE = "COMMANDS_IN_USE",
+
 }
 
 /** Errors that will throw since they should be caught at production. */
 export enum TYPE_ERROR {
-	CLONER_NOT_SPECIFIED = "CLONER_NOT_SPECIFIED",
-	CONFLICTING_PLUGIN_NAMESPACES = "CONFLICTING_PLUGIN_NAMESPACES",
 	ILLEGAL_OPERATION = "ILLEGAL_OPERATION",
 	LISTENER_DOES_NOT_EXIST = "LISTENER_DOES_NOT_EXIST",
 }
@@ -111,12 +110,8 @@ type ERROR_Info = {
 	[ERROR.INVALID_KEY_OPTIONS]: {
 		self: Key
 	}
-	[ERROR.CONFLICTING_ENTRY_PLUGINS]: {
-		entry: Key | Shortcut | Command
-		collection: Keys | Shortcuts | Commands
-	}
 	[ERROR.MISSING]: {
-		entry: Key | Shortcut | Command
+		entry: Key | Shortcut | Command | string
 		collection: Keys | Shortcuts | Commands
 	}
 	[ERROR.INVALID_VARIANT]: {
@@ -136,6 +131,9 @@ type ERROR_Info = {
 	[ERROR.DUPLICATE_COMMAND]: {
 		existing: Command
 		self: Commands
+	}
+	[ERROR.KEYS_CANNOT_ADD_TOGGLE]: {
+		entry: Key
 	}
 
 	// === other
@@ -182,14 +180,6 @@ type ERROR_Info = {
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type TYPE_ERROR_Info = {
-	[TYPE_ERROR.CLONER_NOT_SPECIFIED]: {
-		info: any
-	}
-	[TYPE_ERROR.CONFLICTING_PLUGIN_NAMESPACES]: {
-		plugins: Plugin<any, any>[]
-		plugin: Plugin<any, any>
-		existing: Plugin<any, any>
-	}
 	[TYPE_ERROR.ILLEGAL_OPERATION]: undefined
 	[TYPE_ERROR.LISTENER_DOES_NOT_EXIST]: {
 		listener: BaseHook<any, any>[]

@@ -1,81 +1,75 @@
-import { crop, indent, pretty } from "@alanscodelog/utils"
+import { AnyClass, crop, indent, pretty } from "@alanscodelog/utils"
 import type { Result } from "@alanscodelog/utils/dist/utils"
 import { Err, Ok } from "@alanscodelog/utils/dist/utils"
 
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
-import type { Plugin } from "./Plugin"
 import { Shortcut } from "./Shortcut"
 
-import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
+import { HookableCollection } from "@/bases"
+import { castType, KnownError } from "@/helpers"
 import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
 
 
 export class Shortcuts<
-	TPlugins extends
-		Plugin<any, undefined>[] =
-		Plugin<any, undefined>[],
 	TShortcut extends
-		Shortcut<TPlugins> =
-		Shortcut<TPlugins>,
+		Shortcut =
+		Shortcut,
 	TRawShortcuts extends
 		(RawShortcut | TShortcut)[] =
 		(RawShortcut | TShortcut)[],
 	TEntries extends
 		TShortcut[] =
 		TShortcut[],
-> extends MixinHookablePlugableCollection<ShortcutsHooks, TPlugins> {
+> extends HookableCollection<ShortcutsHooks> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
+	protected _basePrototype: AnyClass<Shortcut> & { create(...args: any[]): Shortcut } = Shortcut
 	override entries: TEntries
 	private readonly _boundAllowsHook: any
-	/** See {@link KeysStringifier} */
+	/** @inheritdoc */
 	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
+	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
 	/**
 	 * # Shortcut
 	 *
 	 * Creates a set of shortcuts.
 	 *
-	 * If existing shortcuts and plugins are passed, forces the shortcuts to conform to those. It is not a good idea to pass existing shortcuts with plugins already added that are different from the plugins passed to the class.
+	 * Conforms instances to have the same stringifier/sorter options.
 	 *
 	 * Note:
 	 * - This will mutate the shortcuts passed to it.
 	 * - It can throw. See {@link ERROR} for why.
 	 *
-	 * @template TPlugins **@internal** See {@link PlugableCollection}
-	 * @template TShortcut **@internal** Makes it so that all shortcuts in this instance are correctly typed with the plugins of the instance.
+	 * @template TShortcut **@internal** Makes it so that all shortcuts in this instance are correctly typed when accesing from `entries`.
 	 * @template TRawShortcuts **@internal** Allow passing raw shortcuts.
 	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
 	 * @param shortcuts A list of {@link Shortcut | shortcuts}.
-	 * @param plugins See {@link Shortcuts.plugins}
 	 */
 	constructor(
 		shortcuts: TRawShortcuts,
 		opts: Partial<ShortcutsOptions> = {},
-		plugins?: TPlugins,
 	) {
 		super()
 		if (opts.stringifier) this.stringifier = opts.stringifier
 		if (opts.sorter) this.sorter = opts.sorter
-		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
-			plugableCollection: { plugins, key: "" },
-		})
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
-		shortcuts.forEach(entry => {
-			entry = Shortcut.create(entry, this.plugins)
+		for (let entry of shortcuts) {
+			entry = this._basePrototype.create(entry)
 			if (this.allows("add", entry).unwrap()) this.add(entry)
-		})
+		}
 	}
-	protected override _add(entry: TShortcut): void {
+	protected override _add(entry: Shortcut | RawShortcut): void {
 		if (this.stringifier) entry.stringifier = this.stringifier
 		if (this.sorter) entry.sorter = this.sorter
-		entry = Shortcut.create(entry, this.plugins)
+		entry = this._basePrototype.create(entry)
+		castType<Shortcut>(entry)
 
-		HookableCollection._addToDict<Shortcut>(this.entries, entry, undefined)
 		entry.addHook("allows", this._boundAllowsHook)
+
+		const entries = this.entries as any
+		entries.push(entry)
 	}
 	protected _allowsHook(key: string, value: any, _old: any, instance: Shortcut): Result<true, KnownError<ERROR.DUPLICATE_SHORTCUT>> {
 		const proxy = Proxy.revocable(instance, {
@@ -104,7 +98,11 @@ export class Shortcuts<
 
 	protected override _remove(shortcut: Shortcut): void {
 		shortcut.removeHook("allows", this._boundAllowsHook)
-		HookableCollection._removeFromDict<Shortcut>(this.entries, shortcut, undefined)
+		const i = this.entries.indexOf(shortcut as any)
+		// just in case
+		if (i > -1) {
+			this.entries.splice(i, 1)
+		}
 	}
 	/**
 	 * Query the class for some shortcut/s. Just a simple wrapper around array find/filter
@@ -305,5 +303,3 @@ export class Shortcuts<
 		return can
 	}
 }
-// export interface Shortcuts<TPlugins> extends HookableCollection<ShortcutsHook>, PlugableCollection<TPlugins> { }
-// mixin(Shortcuts, [Hookable, HookableCollection, Plugable, PlugableCollection])

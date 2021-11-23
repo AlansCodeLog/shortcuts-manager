@@ -13,11 +13,12 @@ export type BaseHookType<TInstance extends Bases | Manager, TValue, TError, TOld
 	exclude: TExclude
 }
 
-export type CollectionHookType<TInstance extends Collections, TSetValue, TAllowValue, TValues, TAddError = Error | never, TRemoveError = Error | never> = {
+export type CollectionHookType<TInstance extends Collections, TSetArgs extends any[], TAllowArgs extends any[], TValues, TAddError = Error | never, TRemoveError = Error | never, TRemoveArgs extends any[] = TSetArgs> = {
 	// this is only for the listeners
 	// internally we receive allowValue entries which each class turns to setValue for set (set/add/remove) listeners
-	setValue: TSetValue
-	allowValue: TAllowValue
+	setArgs: TSetArgs
+	removeArgs: TRemoveArgs
+	allowArgs: TAllowArgs
 	values: TValues
 	addError: TAddError
 	removeError: TRemoveError
@@ -80,12 +81,15 @@ export type CollectionHook<
 	TSelf extends
 		THook["self"] =
 		THook["self"],
-	TAllowsValue extends
-		THook["allowValue"] =
-		THook["allowValue"],
-	TSetValue extends
-		THook["setValue"] =
-		THook["setValue"],
+	TAllowsArgs extends
+		THook["allowArgs"] =
+		THook["allowArgs"],
+	TSetArgs extends
+		THook["setArgs"] =
+		THook["setArgs"],
+	TRemoveArgs extends
+		THook["removeArgs"] =
+		THook["removeArgs"],
 	TValues extends
 		THook["values"] =
 		THook["values"],
@@ -93,33 +97,33 @@ export type CollectionHook<
 TType extends "allowsAdd"
 ? (
 	(
-		entry: TAllowsValue,
+		self: TSelf,
 		entries: TValues,
-		self: TSelf
+		...args: TAllowsArgs
 	) => Result<true, THook["addError"]>
 )
 : TType extends "allowsRemove"
 ? (
 	(
-		entry: TSetValue,
+		self: TSelf,
 		entries: TValues,
-		self: TSelf
+		...args: TRemoveArgs
 	) => Result<true, THook["removeError"]>
 )
 : TType extends "add"
 ? (
 	(
-		entry: TSetValue,
+		self: TSelf,
 		entries: TValues,
-		self: TSelf
+		...args: TSetArgs
 	) => void
 )
 : TType extends "remove"
 ? (
 	(
-		entry: TSetValue,
+		self: TSelf,
 		entries: TValues,
-		self: TSelf
+		...args: TRemoveArgs
 	) => void
 )
 : never

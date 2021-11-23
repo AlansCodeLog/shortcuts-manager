@@ -1,12 +1,7 @@
 import type { Condition } from "./Condition"
-import type { Plugin } from "./Plugin"
 
-import { MixinPlugableBase } from "@/mixins"
-import type { PluginsInfo } from "@/types"
-import type { ContextOptions, RecursiveRecord } from "@/types/context"
+import type { RecursiveRecord } from "@/types"
 
-
-const sEquals = Symbol("equals")
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
 	const keys1 = Object.keys(obj)
@@ -25,65 +20,36 @@ function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
 
 export class Context<
 	TValue = RecursiveRecord,
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
-	TInfo extends
-		PluginsInfo<TPlugins> =
-		PluginsInfo<TPlugins>,
-> extends MixinPlugableBase<TPlugins, TInfo> {
+> {
 	/** Where the context object is stored. */
 	value: TValue
-	[sEquals]: ContextOptions<TValue>["equals"]
 	/**
 	 * # Context
 	 *
-	 * Like {@link Condition}, provides a wrapper around contexts.
+	 * Like {@link Condition}, provides a way to descrive contexts.
 	 *
 	 * Contexts describe the relevant application state. They are what {@link Condition}s are evaluated against.
 	 *
-	 * The class provides a default `equals` method that can do fast comparisons for simple flat or nested objects (simple as in it assumes values are not arrays).
-	 *
-	 * If you need something more complex, you can pass a custom `equals` method. See {@link ContextOptions} for details.
-	 *
 	 * @template TValue **@internal** Captures the type of the context value.
-	 * @template TPlugins **@internal** See {@link PlugableBase}
-	 * @template TInfo **@internal** See {@link PlugableBase}
 	 * @param context See {@link Context.value}
-	 * @param opts See {@link ContextOptions}
-	 * @param info See {@link Context.info}
-	 * @param plugins See {@link Context.plugins}
 	 */
 	constructor(
 		context: TValue,
-		opts: ContextOptions<TValue> = {},
-		info?: TInfo,
-		plugins?: TPlugins
 	) {
-		super()
 		this.value = context
-		if (opts.equals) this[sEquals] = opts.equals
-		this._mixin({
-			plugableBase: { plugins, info, key: undefined },
-		})
 	}
 	/**
 	 * Returns whether the context passed is equal to this one.
 	 *
-	 * To return true, their values must be equal according to the class (see {@link ContextOptions.equals}), and they must be equal according to their plugins.
+	 * The default methods provides a simple comparison that can handle simple flat or nested objects (simple as in it assumes values are not arrays). If you need something more complex you will need to extend from the class and override the method.
 	 */
-	equals(context: Context<any, any, any>): context is Context<TValue, TPlugins, TInfo> {
-		if (this[sEquals]) return this[sEquals]!(this, context) && this.equalsInfo(context)
-		return fastIsEqual(this.value, context.value) && this.equalsInfo(context)
+	equals(context: Context<any>): context is Context<TValue> {
+		return fastIsEqual(this.value, context.value)
 	}
-	/** A wrapper around the parameter's eval function if you prefer to write `context.eval(condition)` instead of `condition.eval(context)` */
+	/**
+	 * A wrapper around the parameter's eval function if you prefer to write `context.eval(condition)` instead of `condition.eval(context)`
+	 */
 	eval(condition: Condition): boolean {
 		return condition.eval(this)
 	}
-	get opts(): ContextOptions {
-		return { equals: this[sEquals] as ContextOptions["equals"] }
-	}
 }
-
-// export interface Context<TValue, TPlugins, TInfo> extends PlugableBase<TPlugins, TInfo>, IgnoreUnusedTypes<[TValue]> { }
-// mixin(Context, [Plugable, PlugableBase])

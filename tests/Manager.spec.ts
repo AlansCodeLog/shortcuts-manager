@@ -61,7 +61,7 @@ describe(testName(), () => {
 		it("should not throw when shortcuts don't use commands", () => {
 			expect(() => {
 				const manager = new Manager(
-					new Keys([key]),
+					new Keys([[key]]),
 					new Commands([]),
 					new Shortcuts([
 						new Shortcut([[key]]),
@@ -73,7 +73,7 @@ describe(testName(), () => {
 		it("doesn't allow removal of in use keys", () => {
 			const key = new Key("key")
 			const manager = new Manager(
-				new Keys([key]),
+				new Keys([[key]]),
 				new Commands([]),
 				new Shortcuts([
 					new Shortcut([[key]]),
@@ -87,7 +87,7 @@ describe(testName(), () => {
 
 			const command = new Command("command")
 			const manager = new Manager(
-				new Keys([key]),
+				new Keys([[key]]),
 				new Commands([command]),
 				new Shortcuts([
 					new Shortcut([[key]], { command }),
@@ -99,7 +99,7 @@ describe(testName(), () => {
 		it("should not throw when shortcuts use known commands", () => {
 			expect(() => {
 				const manager = new Manager(
-					new Keys([key]),
+					new Keys([[key]]),
 					new Commands([command]),
 					new Shortcuts([
 						new Shortcut([[key]], { command }),
@@ -133,7 +133,7 @@ describe(testName(), () => {
 			const command1 = new Command("test1", { execute: execute1 })
 			const command2 = new Command("test2", { execute: execute2 })
 			const manager = new Manager(
-				new Keys([
+				new Keys([[
 					a,
 					b,
 					c,
@@ -142,7 +142,7 @@ describe(testName(), () => {
 					ctrl,
 					sl,
 					shift,
-				]),
+				]]),
 				new Commands([command1, command2]),
 				new Shortcuts([
 					new Shortcut([[ctrl, a]], { command: command1 }),
@@ -263,7 +263,7 @@ describe(testName(), () => {
 					const key1 = new Key("key")
 					const command1 = new Command("command")
 					const manager = new Manager(
-						new Keys([key1]),
+						new Keys([[key1]]),
 						new Commands([command1]),
 						new Shortcuts([
 							new Shortcut([[key1]], { command: command1 }),
@@ -274,7 +274,7 @@ describe(testName(), () => {
 					const key2 = new Key("new key")
 					const newShortcuts = new Shortcuts([new Shortcut([[key2]], { command: command2 })])
 					const newCommands = new Commands([command2])
-					const newKeys = new Keys([key2])
+					const newKeys = new Keys([[key2]])
 					// error individually
 					expect(manager.allows("commands", newCommands).isError).to.equal(true)
 					expect(manager.allows("shortcuts", newShortcuts).isError).to.equal(true)

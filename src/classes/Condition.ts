@@ -1,125 +1,50 @@
 import type { Context } from "./Context"
-import type { Plugin } from "./Plugin"
-
-import { MixinPlugableBase } from "@/mixins"
-import type { ConditionOptions, DeepPartialObj, Optional, PluginsInfo } from "@/types"
 
 
-const sEval = Symbol("eval")
-const sEquals = Symbol("equals")
-
-export class Condition<
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
-	TInfo extends
-		PluginsInfo<TPlugins> =
-	PluginsInfo<TPlugins>,
-	TOpts extends
-		ConditionOptions<TPlugins, TInfo> =
-		ConditionOptions<TPlugins, TInfo>,
-> extends MixinPlugableBase<TPlugins, TInfo> {
+export class Condition {
 	/**
 	 * The main text representation of the condition. Note that this is NOT a unique identifier for conditions and cannot be used to compare them if you are using boolean expressions for your conditions. See {@link Condition.constructor} for an explanation.
 	 */
-	text!: string
-	[sEval]: ConditionOptions<TPlugins, TInfo>["eval"]
-	[sEquals]: ConditionOptions<TPlugins, TInfo>["equals"]
+	text: string
 	/**
 	 * # Condition
 	 * Create a condition.
 	 *
-	 * This class doesn't really do anything except provide a standardized way to wrap conditions. They do not implement any evaluation. Those must be implemented by you or some external library. You can then pass an `eval` function to tell the class how to eval your condition.
+	 * This class doesn't really do anything except provide a standardized way to describe conditions. You will probably need to extend from it. It does not implement any evaluation. Those must be implemented by you or some external library.
 	 *
-	 * Conditions require a text representation. If you need an additional representation (e.g. to store a parsed condition) or other information stored, you can use a plugin.
-	 *
-	 * ```ts
-	 * // suppose we have an external library with the following interface:
-	 * class BooleanExpression {
-	 * 	...
-	 * 	evaluate(context: Record<string, boolean>): boolean { ... }
-	 * }
-	 * ```
-	 *
-	 * Now since expression is not a primitive type, we do not want to do not want to set the default value to `new BooleanExpression()` because it will get assigned everywhere and if you treat the property as mutable... chaos.
-	 *
-	 * Instead we can set it to `undefined` and pass the type expression could be as the first type parameter. You will also need to do this if a property can be multiple types.
-	 *
-	 * ```ts
-	 * // for this plugin, expression should be a 1:1 representation of the text
-	 * const equals = () => true
-	 *
-	 * const conditionPlugin = new Plugin<{ expression: BooleanExpression | undefined }> (false, { expression: undefined }, {}, {equals})
-	 * // You could also cast the properties, but it's not as safe
-	 * const conditionPlugin = new Plugin(false, { expression: undefined as BooleanExpression | undefined }, {})
-	 *
-	 * // We save the eval function to pass again to other conditions, because it's no longer inline, we need to type it
-	 * // Don't pass [typeof conditionPlugin, typeof otherPlugin] for the type parameter it will cause issues
-	 * const conditionEval: ConditionOptions<(typeof conditionPlugin | typeof otherPlugin)[]>["eval"] =
-	 * 	(self, context) => self.info.expression?.evaluate(context.variables) //autocompletes
-	 *
-	 * const condition = new Condition("a", { eval: conditionEval }, { expression: new BooleanExpression("a") }, [conditionPlugin])
-	 * ```
-	 *
-	 * @template TPlugins **@internal** See {@link PlugableBase}
-	 * @template TInfo **@internal** See {@link PlugableBase}
 	 * @param text See {@link Condition.text}
-	 * @param opts See {@link ConditionOptions}
-	 * @param info See {@link Condition.info}
-	 * @param plugins See {@link Condition.plugins}
 	 */
 	constructor(
 		text: string,
-		opts?: Optional<TOpts>,
-	)
-	constructor(
-		text: string,
-		opts: Optional<TOpts>,
-		info: DeepPartialObj<TInfo>,
-		plugins: TPlugins
-	)
-	constructor(
-		text: string,
-		opts: Optional<TOpts> = {} as TOpts,
-		info?: TInfo,
-		plugins?: TPlugins,
 	) {
-		super()
 		this.text = text
-		if (opts.eval) this[sEval] = opts.eval
-		if (opts.equals) this[sEquals] = opts.equals
-		this._mixin({
-			plugableBase: { plugins, info, key: undefined },
-		})
 	}
 	/**
-	 * Evals the condition against a context.
-	 *
-	 * If the class was not passed an `eval` method, the method always returns true.
-	 *
-	 * See {@link ConditionOptions.eval} for more details.
+	 * Evals the condition against a context. The base method always returns true.
 	 */
-	eval(context: Context): boolean {
-		if (this[sEval]) return this[sEval]!(this, context)
+	/* eslint-disable @typescript-eslint/no-unused-vars */
+	/* eslint-disable @typescript-eslint/naming-convention */
+	// @ts-expect-error we want autocompletion to suggest without underscore
+	eval(context: Context<any>): boolean {
 		return true
 	}
 	/**
 	 * Returns whether the condition passed is equal to this one.
 	 *
-	 * To return true, they must be equal according to the instance the method is called from, and they must be equal according to their plugins.
+	 * The default method does a simplistic check of the `text` property for equality. If you override the method you will likely want it to just always return false.
 	 *
-	 * see {@link ConditionOptions.equals}
+	 * Why? Because unless you're using simple single variable conditions that you can presort to make them uniquely identifiable (i.e. not boolean expressions, e.g. `!a b !c`), this will return A LOT of false negatives.
+	 *
+	 * Why the false negatives? Because two conditions might be functionally equal but have differing representations (e.g: `a && b`, `b && a`). You might think, lets normalize them all, but normalizing boolean expressions (converting them to CNF) can be dangerous with very long expressions because it can take exponential time.
+	 *
+	 * Now the main reason for checking the equality of two conditions is to check if two shortcuts might conflict. If we're using boolean expressions it just can't be done safely.
+	 *
+	 * This is a personal preference, but if we have a method that gives false negatives it can be confusing that some shortcuts immediately error when added because their conditions are simple, while others don't until triggered. The simpler, more consistent alternative is to only have them error on triggering. Aditionally conflicting conditions can be shown on the keyboard layout when then user picks contexts to check against.
+	 *
+	 * Why use the default implementation at all then? Well, shortcuts aren't the only ones that have conditions, commands can too, but unlike shortcuts, usually it's developers who are in charge of assigning a command's condition, and since they are usually simple, it's more possible to make sure the conditions are unique (e.g. tests could enforce they're unique by converting them all to CNF and pre-checking them for equality).
 	 */
 	equals(condition: Condition): boolean {
-		if (this[sEquals]) return this[sEquals]!(this, condition) && this.equalsInfo(condition)
 		if (this === condition) return true
-		return this.text === condition.text && this.equalsInfo(condition)
-	}
-	get opts(): ConditionOptions<TPlugins, TInfo> {
-		return { eval: this[sEval], equals: this[sEquals] }
+		return this.text === condition.text
 	}
 }
-
-// export interface Condition<TPlugins, TInfo> extends PlugableBase<TPlugins, TInfo> { }
-// mixin(Condition, [Plugable, PlugableBase])
-

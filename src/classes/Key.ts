@@ -2,11 +2,10 @@ import type { Result } from "@alanscodelog/utils"
 import { Err, Ok } from "@utils/utils"
 
 import { defaultStringifier } from "./KeysStringifier"
-import type { Plugin } from "./Plugin"
 
+import { HookableBase } from "@/bases"
 import { KnownError } from "@/helpers"
-import { MixinHookablePlugableBase, Plugable } from "@/mixins"
-import { DeepPartialObj, ERROR, KeyHooks, KeyOptions, Optional, PluginsInfo, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
+import { ERROR, KeyHooks, KeyOptions, Optional, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
 
 import type { KeysStringifier } from "."
 
@@ -18,16 +17,10 @@ const sKeyCreateToggle = Symbol("keyCreateToggle")
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
 export class Key<
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
-	TInfo extends
-		PluginsInfo<TPlugins> =
-		PluginsInfo<TPlugins>,
 	TId extends
 		string =
 		string,
-> extends MixinHookablePlugableBase<KeyHooks, TPlugins, TInfo> implements KeyOptions {
+> extends HookableBase<KeyHooks> implements KeyOptions {
 	readonly [sId]: TId
 	readonly [sLabel]: KeyOptions["label"]
 	/**
@@ -36,8 +29,11 @@ export class Key<
 	 * Does not allow `allows` hooks, only `set` hooks.
 	 */
 	pressed: boolean = false
+	// cannot inherit doc
 	/** See {@link KeyOptions.is} */
 	is: KeyOptions["is"]
+	/** @inheritdoc */
+	layout: KeyOptions["layout"] = [] as any
 	/**
 	 * If the key is a toggle key, pass this when defining shortcuts if you want them to trigger when the key is toggled on. Otherwise if you just pass the key it will trigger on every change of state.
 	 *
@@ -48,8 +44,9 @@ export class Key<
 	declare off?: ToggleKey<Key>
 	/** This property is only available on toggle states (e.g. key.on / key.off). */
 	declare root: Key & { on: ToggleKey<Key>, off: ToggleKey<Key> }
-	/** See {@link KeyOptions.variants} */
+	/** @inheritdoc */
 	variants: KeyOptions["variants"]
+	/** @inheritdoc */
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
 	 * # Key
@@ -59,13 +56,9 @@ export class Key<
 	 *
 	 * Options cannot be changed once set (because a toggle key might have be created, which can't be uncreated). It's recommended you just create a new key if you happen to expose changing key options to users. You can then attempt to change all shortcuts to the new key (note you will have to find the toggles as well if they were created) and report back any errors to users (e.g. changing from/to a modifier can render shortcut chords invalid).
 	 *
-	 * @template TPlugins **@internal** See {@link PlugableBase}
-	 * @template TInfo **@internal** See {@link PlugableBase}
 	 * @template TId **@internal** See {@link ./README.md Collection Entries}
 	 * @param id See {@link Key.id}
 	 * @param opts Set {@link KeyOptions}. Options cannot be changed once set, {@link Key}.
-	 * @param info See {@link Key.info}
-	 * @param plugins See {@link Key.plugins}
 	 */
 	constructor(
 		id: TId,
@@ -74,14 +67,10 @@ export class Key<
 	constructor(
 		id: TId,
 		opts: Optional<RawKey["opts"]> | { },
-		info: DeepPartialObj<TInfo>,
-		plugins: TPlugins
 	)
 	constructor(
 		id: TId,
 		opts: RawKey["opts"] = { },
-		info?: DeepPartialObj<TInfo>,
-		plugins?: TPlugins
 	) {
 		super()
 		if (opts.variants) {
@@ -132,10 +121,6 @@ export class Key<
 		}
 
 		Object.freeze(this.is)
-		this._mixin({
-			hookable: { keys: ["allows", "set"]},
-			plugableBase: { plugins, info, key: "id" },
-		})
 	}
 	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
@@ -180,26 +165,15 @@ export class Key<
 	/**
 	 * Returns whether the key passed is equal to this one.
 	 *
-	 * To return true, their ids must be equal, and they must be equal according to their plugins.
+	 * To return true, their ids must be equal.
 	 */
 	equals(key: Key): key is Key {
-		return (
-			this === key
-			||
-			(
-				this.id === key.id
-				&& this.equalsInfo(key)
-			)
-		)
+		return this === key || this.id === key.id
 	}
 	get opts(): KeyOptions {
 		return { is: this.is, variants: this.variants, stringifier: this.stringifier, label: this.label }
 	}
-	static create<T extends Key = Key>(entry: RawKey, plugins: Plugin[] = []): T {
-		return Plugable.create<Key, "id">(Key, plugins, "id", entry) as T
+	static create<T extends Key = Key>(entry: RawKey): T {
+		return HookableBase.createAny<Key, "id">(Key, "id", entry) as T
 	}
 }
-
-// export interface Key<TPlugins, TInfo> extends HookableBase<KeyHooks>, PlugableBase<TPlugins, TInfo> {}
-// mixin(Key, [Hookable, HookableBase, Plugable, PlugableBase])
-

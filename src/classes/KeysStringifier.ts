@@ -1,16 +1,13 @@
 import { unreachable } from "@utils/utils"
+
 import { Key } from "./Key"
 
-const sKey= Symbol ("key")
-const sKeys = Symbol ("keys")
-const sShortcut = Symbol ("shortcut")
-const sChord = Symbol ("chord")
 
 type KeysStringifierOptions = {
-	key?:(key: Key) => string
-	keys?:(key: string[]) => string
-	chord?:(key: string[]) => string
-	chain?:(key: string[]) => string
+	key?: (key: Key) => string
+	keys?: (key: string[]) => string
+	chord?: (key: string[]) => string
+	chain?: (key: string[]) => string
 }
 
 /**
@@ -20,7 +17,7 @@ type KeysStringifierOptions = {
  *
  * That method called then calls the other in a chain (e.g. if you pass a shortcut, it will call `stringifyChain` which will call `stringifyChord` and so on.)
  *
- * This is why most of the methods you can specify only take in `string[]`. `key` is the only exception.
+ * This is why most of the methods you can specify only take in `string[]`. `key` is the only exception. If you need something more complex you can always extend from the class and override methods.
  *
  * The default method uses a key's label and combines keys inside chords with `+` and the chords of shortcut chains with a space ` `.
  * ```
@@ -31,45 +28,45 @@ type KeysStringifierOptions = {
  *
  * `stringifyKeys` is for {@link Keys} which only describes a list of keys and not a chord. The default method returns a list of keys joined by a coma `, `.
  *
- * Ideally a single stringifier should be created and shared amongst all instances.
+ * Ideally a single stringifier should be created and shared amongst all instances. This is already taken care of if you do not pass a custom stringifier, a default stringifier instance is re-used throughout.
  */
 export class KeysStringifier {
-	[sKey]: KeysStringifierOptions["key"]
-	[sKeys]: KeysStringifierOptions["keys"]
-	[sShortcut]: KeysStringifierOptions["chain"]
-	[sChord]: KeysStringifierOptions["chord"]
+	protected _key: KeysStringifierOptions["key"]
+	protected _keys: KeysStringifierOptions["keys"]
+	protected _shortcut: KeysStringifierOptions["chain"]
+	protected _chord: KeysStringifierOptions["chord"]
 	constructor(opts: KeysStringifierOptions = {}) {
-		if (opts.key) this[sKey] = opts.key
-		if (opts.keys) this[sKeys] = opts.keys
-		if (opts.chord) this[sChord] = opts.chord
-		if (opts.chain) this[sShortcut] = opts.chain
+		if (opts.key) this._key = opts.key
+		if (opts.keys) this._keys = opts.keys
+		if (opts.chord) this._chord = opts.chord
+		if (opts.chain) this._shortcut = opts.chain
 	}
 	stringify(keyChordOrShorcut: Key | Key[] | Key[][]): string {
 		if (keyChordOrShorcut instanceof Key) return this.stringifyKey(keyChordOrShorcut)
 		if (Array.isArray(keyChordOrShorcut)) {
-			if (keyChordOrShorcut.length == 0) return this.stringifyChord(keyChordOrShorcut as Key[])
+			if (keyChordOrShorcut.length === 0) return this.stringifyChord(keyChordOrShorcut as Key[])
 			if (Array.isArray(keyChordOrShorcut[0])) return this.stringifyChain(keyChordOrShorcut as Key[][])
 			return this.stringifyChord(keyChordOrShorcut as Key[])
 		}
 		unreachable()
 	}
 	stringifyKey(key: Key): string {
-		if (this[sKey]) return this[sKey]!(key)
+		if (this._key) return this._key(key)
 		return key.label
 	}
 	stringifyChord(keys: Key[]): string {
 		const stringified = keys.map(key => this.stringifyKey(key))
-		if (this[sChord]) return this[sChord]!(stringified)
+		if (this._chord) return this._chord(stringified)
 		return stringified.join("+")
 	}
 	stringifyChain(shortcut: Key[][]): string {
 		const stringified = shortcut.map(chord => this.stringifyChord(chord))
-		if (this[sShortcut]) return this[sShortcut]!(stringified)
+		if (this._shortcut) return this._shortcut(stringified)
 		return stringified.join(" ")
 	}
 	stringifyKeys(chord: Key[]): string {
 		const stringified = chord.map(key => this.stringifyKey(key))
-		if (this[sKeys]) return this[sKeys]!(stringified)
+		if (this._keys) return this._keys(stringified)
 		return stringified.join(", ")
 	}
 }

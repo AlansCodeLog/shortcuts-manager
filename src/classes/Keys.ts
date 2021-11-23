@@ -1,32 +1,42 @@
-import { Key } from "./Key"
-import { defaultStringifier } from "./KeysStringifier"
-import type { Plugin } from "./Plugin"
+import { AnyClass, Err, Ok, Result } from "@alanscodelog/utils"
 
-import { isToggleKey } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
-import type { KeyOptions, KeysHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
+import { defaultStringifier } from "./KeysStringifier"
+
+import { HookableCollection } from "@/bases"
+import { castType, isToggleKey, KnownError } from "@/helpers"
+import { ERROR, KeyOptions, KeysHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
+
+import { Key } from "."
 
 
 export class Keys<
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
 	TKey extends
-		Key<TPlugins> =
-		Key<TPlugins>,
+		Key =
+		Key,
 	TRawKeys extends
-		RawKey[] =
-		RawKey[],
+		RawKey[][] =
+		RawKey[][],
 	TEntries extends
-		RecordFromArray<TRawKeys, "id", TKey> =
-		RecordFromArray<TRawKeys, "id", TKey>,
-> extends MixinHookablePlugableCollection<KeysHooks, TPlugins> {
+		RecordFromArray<TRawKeys[number], "id", TKey> =
+		RecordFromArray<TRawKeys[number], "id", TKey>,
+> extends HookableCollection<KeysHooks> implements Pick<KeyOptions, "stringifier"> {
+	protected _basePrototype: AnyClass<Key> & { create(...args: any[]): Key } = Key
 	override entries: TEntries
+	/** @inheritdoc */
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
+	layout: Key[][]
 	/**
 	 * Creates a set of keys.
 	 *
-	 * In the case plugins forces the keys to conform to those, adds missing properties, etc. Same thing with the stringifier option.
+	 * ```ts
+	 * const Escape = new Key("Escape")
+	 * // ...
+	 * const keys = new Keys([Escape, ...])
+	 * // access individually later
+	 * keys.entries.Escape
+	 * ```
+	 *
+	 * Conforms instances to have the same stringifier option.
 	 *
 	 *	All versions of toggle keys are automatically also added to the set.
 	 *
@@ -34,46 +44,71 @@ export class Keys<
 	 * - This will mutate the keys passed to it.
 	 * - It can throw. See {@link ERROR} for why.
 	 *
-	 * @template TPlugins **@internal** See {@link PlugableCollection}
-	 * @template TKey **@internal** Makes it so that all keys in this instance are correctly typed with the plugins of the instance.
+	 * @template TKey **@internal** Makes it so that all keys in this instance are correctly typed when accesing from `entries`.
 	 * @template TRawKeys **@internal** Allow passing raw keys.
 	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
 	 * @param keys A list of {@link Key | keys}.
 	 * @param opts A list of {@link KeysOptions}.
-	 * @param plugins See {@link Keys.plugins}
 	 */
 	constructor(
 		keys: TRawKeys,
 		opts?: Partial<KeysOptions>,
-		plugins?: TPlugins,
 	) {
 		super()
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 
-		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
-			plugableCollection: { plugins, key: "id" },
-		})
-
 		this.entries = {} as TEntries
-
-		keys.forEach(entry => {
-			entry = Key.create(entry, this.plugins)
-			if (this.allows("add", entry).unwrap()) this.add(entry)
-		})
-	}
-	protected override _add(entry: Key): void {
-		if (this.stringifier) entry.stringifier = this.stringifier
-		entry = Key.create(entry, this.plugins)
-
-		HookableCollection._addToDict<Key>(this.entries, entry, t => t.id)
-		if (isToggleKey(entry)) {
-			HookableCollection._addToDict<Key>(this.entries, entry.on as Key, t => t.id)
-			HookableCollection._addToDict<Key>(this.entries, entry.off as Key, t => t.id)
+		this.layout = []
+		for (let r = 0; r < keys.length; r++) {
+			const row = keys[r]
+			this.layout.push([])
+			for (let c = 0; c < row.length; c++) {
+				let entry = row[c]
+				entry = this._basePrototype.create(entry)
+				if (this.allows("add", entry, r, c).unwrap()) this.add(entry, r, c)
+			}
 		}
 	}
-	get(id: TRawKeys[number]["id"] | string): TKey {
+	protected override _add(entry: Key | RawKey, row: number = 0, col: number = 0): void {
+		entry = this._basePrototype.create(entry)
+		castType<Key>(entry)
+
+		if (this.stringifier) entry.stringifier = this.stringifier
+
+		const entries = this.entries as any
+		entries[entry.id] = entry
+		if (isToggleKey(entry)) {
+			entries[entry.on!.id] = entry.on
+			entries[entry.off!.id] = entry.off
+		}
+		this.layout[row].splice(col, 0, entry)
+	}
+	protected override _remove(entry: Key): void {
+		const entries = this.entries as any
+		const pos = this.position(entry.id)
+		if (pos.isOk) {
+			this.layout[pos.value.row].splice(pos.value.col, 1)
+			delete entries[entry.id]
+			if (isToggleKey(entry)) {
+				delete entries[entry.on!.id]
+				delete entries[entry.on!.id]
+			}
+		} // else user did not check first, do nothing
+	}
+	get(id: TRawKeys[number][number]["id"] | string): TKey {
 		return this.entries[id as keyof TEntries]
+	}
+	position(id: TRawKeys[number][number]["id"] | string): Result<{ row: number, col: number }, KnownError<ERROR.MISSING>> {
+		for (let r = 0; r < this.layout.length; r++) {
+			const row = this.layout[r]
+			for (let c = 0; c < row.length; c++) {
+				const key = row[c]
+				if (key.id === id) {
+					return Ok({ row: r, col: c })
+				}
+			}
+		}
+		return Err(new KnownError(ERROR.MISSING, `Could not find key ${id} in layout.`, { entry: id, collection: this }))
 	}
 	/** Query the class. Just a simple wrapper around array find/filter. */
 	query(filter: Parameters<TKey[]["filter"]>["0"], all?: true): TKey[]
@@ -84,5 +119,3 @@ export class Keys<
 			: Object.values(this.entries).find(filter as any)!
 	}
 }
-// export interface Keys<TPlugins> extends HookableCollection<KeysHook>, PlugableCollection<TPlugins> { }
-// mixin(Keys, [Hookable, HookableCollection, Plugable, PlugableCollection])

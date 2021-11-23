@@ -5,7 +5,7 @@ import { k, properOrder } from "./helpers.keys"
 
 import { Shortcut } from "@/classes"
 import { defaultSorter } from "@/classes/KeysSorter"
-import { ERROR, TYPE_ERROR } from "@/types"
+import { ERROR } from "@/types"
 
 
 describe(testName(), () => {
@@ -14,12 +14,6 @@ describe(testName(), () => {
 		expect(Object.keys(shortcut.opts).length).to.be.greaterThan(0)
 	})
 
-	it("should throw if info passed but no plugins", () => {
-		expect(catchError(() => {
-			// @ts-expect-error we want the wrong overload to error
-			new Shortcut("A", { }, { test: "test" })
-		}).code).to.equal(TYPE_ERROR.CLONER_NOT_SPECIFIED)
-	})
 	it("should throw if duplicate keys in chords", () => {
 		expect(catchError(() => {
 			new Shortcut([[k.a, k.a, k.a]])

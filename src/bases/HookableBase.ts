@@ -2,12 +2,13 @@ import { Result } from "@utils/utils"
 
 import { Hookable } from "./Hookable"
 
-import type { BaseHook, BaseHookType } from "@/types"
+import type { Command, Condition, Key, Shortcut } from "@/classes"
+import type { BaseHook, BaseHookType, RawCommand, RawKey, RawShortcut } from "@/types"
 
 
 export class HookableBase<
 	THooks extends
-		Record<string, BaseHookType<any, any, any>>,
+		Record<string, BaseHookType<any, any, any, any, any>>,
 	TAllowsListener extends
 		BaseHook<"allows", THooks> =
 		BaseHook<"allows", THooks>,
@@ -15,7 +16,9 @@ export class HookableBase<
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsListener, set: TSetListener }> {
-	declare _constructor: Hookable<{ allows: TAllowsListener, set: TSetListener }>["_constructor"]
+	constructor() {
+		super(["allows", "set"])
+	}
 	protected _set<
 		TKey extends
 			keyof THooks =
@@ -102,5 +105,22 @@ export class HookableBase<
 		for (const listener of this.listeners.set) {
 			listener(key, value, oldValue, self)
 		}
+	}
+	protected static createAny<
+		T extends Condition | Command | Shortcut | Key,
+		TKey extends keyof T,
+		TClass extends new (...args: any[]) => T = new (...args: any[]) => T,
+		TEntry extends T | RawCommand | RawKey | RawShortcut = T | RawCommand | RawKey | RawShortcut,
+	>(type: TClass, key: TKey, entry: TEntry): T {
+		const isInstance = (entry instanceof type)
+
+		const arg = entry[key as keyof TEntry]
+
+		const opts = (entry as any).opts
+
+		const instance = isInstance
+				? entry
+				: new type(arg, opts)
+		return instance
 	}
 }

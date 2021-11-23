@@ -4,7 +4,7 @@ import { expect } from "./chai"
 
 import { Key, KeysStringifier } from "@/classes"
 import { isToggleOffKey, isToggleOnKey } from "@/helpers"
-import { ERROR, TYPE_ERROR } from "@/types"
+import { ERROR } from "@/types"
 
 
 describe(testName(), () => {
@@ -13,12 +13,6 @@ describe(testName(), () => {
 		expect(Object.keys(key.opts).length).to.be.greaterThan(0)
 	})
 
-	it("should throw if info passed but no plugins", () => {
-		expect(catchError(() => {
-			// @ts-expect-error we want the wrong overload to error
-			const key = new Key("a", {}, { test: "test" })
-		}).code).to.equal(TYPE_ERROR.CLONER_NOT_SPECIFIED)
-	})
 	it("should compare equality properly", () => {
 		const key1 = new Key("a")
 		const key2 = new Key("a")

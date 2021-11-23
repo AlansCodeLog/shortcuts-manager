@@ -17,15 +17,15 @@ Omit<OnlyRequire<Shortcut, "chain">, "opts"> &
 }
 
 export type ShortcutOptions = {
-	/** See {@link Shortcut.command} */
+	/** The {@link Command} to associate with the shortcut. */
 	command?: Optional<Command>
 	/**
-	 * See {@link Shortcut.condition}
+	 * The {@link Condition} a shortcut is allowed to be triggered on. If both the command and the shortcut have a condition, both must be met.
 	 *
-	 * If the shortcut is created without a condition, it is assigned a blank condition. If you are using plugins on your conditions you should pass a blank condition made with your plugins.
+	 * If the shortcut is created without a condition, it is assigned a blank condition. If you are using a custom condition class, you should probably always pass a blank condition.
 	 */
 	condition: Optional<Condition>
-	/** See {@link Shortcut.enabled} */
+	/** Whether the shortcut is enabled. Defaults to true. */
 	enabled: boolean
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
@@ -58,9 +58,9 @@ export type ShortcutHooks = {
 
 export type ShortcutsHooks = CollectionHookType<
 	Shortcuts,
-	Shortcut,
-	RawShortcut | Shortcut,
+	[Shortcut],
+	[RawShortcut | Shortcut],
 	Shortcut[],
-	KnownError<ERROR.DUPLICATE_SHORTCUT | ERROR.CONFLICTING_ENTRY_PLUGINS>,
+	KnownError<ERROR.DUPLICATE_SHORTCUT>,
 	KnownError<ERROR.MISSING>
 >

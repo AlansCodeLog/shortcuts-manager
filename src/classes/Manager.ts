@@ -8,13 +8,13 @@ import { defaultStringifier } from "./KeysStringifier"
 import type { Shortcut } from "./Shortcut"
 import type { Shortcuts } from "./Shortcuts"
 
+import { HookableBase } from "@/bases"
 import type { Context, Key, KeysSorter, KeysStringifier } from "@/classes"
 import { checkShortcutCommands, checkShortcutKeys, isModifierKey, isToggleRootKey, KnownError } from "@/helpers"
 import { castType } from "@/helpers/castType"
 import { checkManagerShortcuts } from "@/helpers/checkManagerShortcuts"
 import { defaultManagerCallback } from "@/helpers/defaultManagerCallback"
-import { MixinHookableBase } from "@/mixins/MixinHookableBase"
-import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, KeysHooks, ManagerErrorCallback, ManagerHook, ManagerReplaceValue, ShortcutHooks, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "@/types"
+import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, KeysHooks, ManagerErrorCallback, ManagerHook, ManagerReplaceValue, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "@/types"
 
 
 const sEnabled = Symbol("enabled")
@@ -36,7 +36,7 @@ const sBoundShortcutAddHook = Symbol("shortcutAddHook")
 const sBoundShortcutRemoveHook = Symbol("shortcutRemoveHook")
 const sBoundShortcutAllowsHook = Symbol("shortcutAllowsHook")
 
-export class Manager extends MixinHookableBase<ManagerHook> {
+export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
 	context: Context
 	keys!: Keys
 	commands!: Commands
@@ -173,10 +173,6 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 		this[sBoundShortcutAddHook] = this._shortcutAddHook.bind(this)
 		this[sBoundShortcutRemoveHook] = this._shortcutRemoveHook.bind(this)
 		this[sBoundShortcutAllowsHook] = this._shortcutAllowsHook.bind(this)
-
-		this._mixin({
-			hookable: { keys: ["allows", "set"]},
-		})
 
 		if (cb) this.cb = cb
 
@@ -498,7 +494,7 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 		this._checkSpecialKeys(e)
 		this._removeFromChain(keys, e)
 	}
-	private _keysAddHook(entry: Key): void {
+	private _keysAddHook(_self: any, _entries: any, entry: Key): void {
 		if (entry.is.toggle === "native"
 			&& isToggleRootKey(entry)
 			&& !this[sNativeToggleKeys].includes(entry as ToggleRootKey)
@@ -509,7 +505,7 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 			this[sNativeModifierKeys].push(entry)
 		}
 	}
-	private _keysRemoveHook(entry: Key): void {
+	private _keysRemoveHook(_self: any, _entries: any, entry: Key): void {
 		const i = this[sNativeToggleKeys].indexOf(entry as ToggleRootKey)
 		if (i > -1) {
 			this[sNativeToggleKeys].splice(i)
@@ -519,7 +515,7 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 			this[sNativeToggleKeys].splice(i)
 		}
 	}
-	private _keysAllowsRemoveHook(entry: Key): Result<true, KnownError<ERROR.KEY_IN_USE>> {
+	private _keysAllowsRemoveHook(_self: any, _entries: any, entry: Key): Result<true, KnownError<ERROR.KEY_IN_USE>> {
 		const found = this.shortcuts.query(shortcut => shortcut.containsKey(entry))
 
 		if (found.length > 0) {
@@ -531,7 +527,7 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 		}
 		return Ok(true)
 	}
-	private _commandsAllowsRemoveHook(entry: Command): Result<true, KnownError < ERROR.COMMAND_IN_USE >> {
+	private _commandsAllowsRemoveHook(_self: any, _entries: any, entry: Command): Result<true, KnownError < ERROR.COMMAND_IN_USE >> {
 		const found = this.shortcuts.query(shortcut => shortcut.command === entry)
 		if (found.length > 0) {
 			return Err(new KnownError(ERROR.COMMAND_IN_USE, crop`
@@ -542,10 +538,10 @@ export class Manager extends MixinHookableBase<ManagerHook> {
 		}
 		return Ok(true)
 	}
-	private _shortcutAddHook(shortcut: Shortcut): void {
+	private _shortcutAddHook(_self: any, _entries: any, shortcut: Shortcut): void {
 		shortcut.addHook("allows", this[sBoundShortcutAllowsHook])
 	}
-	private _shortcutRemoveHook(shortcut: Shortcut): void {
+	private _shortcutRemoveHook(_self: any, _entries: any, shortcut: Shortcut): void {
 		shortcut.removeHook("allows", this[sBoundShortcutAllowsHook])
 	}
 	private _shortcutAllowsHook(prop: string, value: any, _old: any, self: Shortcut): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUT | ERROR.UNKNOWN_COMMAND_IN_SHORTCUT>> {

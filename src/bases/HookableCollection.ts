@@ -3,10 +3,9 @@ import { crop, indent, pretty, unreachable } from "@utils/utils"
 
 import { Hookable } from "./Hookable"
 
-import { Command, Commands, Key, Keys, Shortcut } from "@/classes"
-import type { Shortcuts } from "@/classes/Shortcuts"
-import { KnownError } from "@/helpers"
-import { CollectionHook, CollectionHookType, ERROR, Optional } from "@/types"
+import { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
+import { isToggleKey, isToggleRootKey, KnownError } from "@/helpers"
+import { CollectionHook, CollectionHookType, ERROR } from "@/types"
 
 
 export class HookableCollection<
@@ -37,29 +36,25 @@ export class HookableCollection<
 		allowsRemove: TAllowsRemoveListener
 	},
 > extends Hookable<TListeners> {
-	declare _constructor: Hookable<TListeners>["_constructor"]
+	constructor() {
+		super(["add", "remove", "allowsAdd", "allowsRemove"])
+	}
 	entries!: TEntries
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _add(_value: THook["allowValue"]): void {
+	protected _add(..._args: THook["allowArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _remove(_value: THook["setValue"]): void {
+	protected _remove(..._args: THook["removeArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _allows(type: "add" | "remove", value: THook["allowValue"]): Result<true, THook["error"] | Error> {
-		const func = this instanceof Commands
-			? (t: Command) => t.name
-			: this instanceof Keys
-			? (t: Key) => t.id
-			: undefined
-
+	protected _allows(type: "add" | "remove", ...args: THook["allowArgs"]): Result<true, THook["error"] | Error> {
 		switch (type) {
 			case "add":
-				return HookableCollection._canAddToDict<any>(this as any, this.entries, value, func)
+				return HookableCollection._canAddToDict<any>(this as any, this.entries, args[0])
 			case "remove":
-				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, value, func)
+				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, args[0])
 		}
 	}
 	/**
@@ -76,33 +71,37 @@ export class HookableCollection<
 	 * 	console.log(res.error.message)
 	 * }
 	 * ```
+	 *
+	 * See {@link HookableCollection.add add } for not on {@link Keys} class.
 	 */
 	allows(
 		type: "add" | "remove",
-		value: THook["allowValue"],
+		...args: THook["allowArgs"]
 	): Result<true, THook["error"] | Error> {
 		const self = (this as any)
 		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
 			const response = type === "add"
-				? (listener as any as CollectionHook<"allowsAdd">)(type, value, self)
-				: (listener as any as CollectionHook<"allowsRemove">)(value, self.entries, self)
+				? (listener as any as CollectionHook<"allowsAdd">)(self, type, ...args as any[])
+				: (listener as any as CollectionHook<"allowsRemove">)(self, self.entries, ...args as any[])
 			if (response.isError) return response
 		}
-		return self._allows(type, value)
+		return self._allows(type, ...args as any[])
 	}
 	/**
 	 * Adds an entry.
 	 *
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
+	 *
+	 * Note for adding keys to {@link Keys}, you will need to pass `{key, col, row}` as the value. `col`/`row` are optional and default to 0. This is not neccesary when removing a key, just `key` can be passed as the value.
 	 */
 	add(
-		value: THook["allowValue"],
+		...args: THook["allowArgs"]
 	): void {
 		const self = (this as any)
-		self._add(value)
+		self._add(...args as any[])
 
 		for (const listener of this.listeners.add) {
-			listener(value, this.entries, self)
+			listener(args, this.entries, self)
 		}
 	}
 	protected static _canAddToDict<
@@ -115,26 +114,25 @@ export class HookableCollection<
 		self: TSelf,
 		entries: TEntries,
 		entry: T,
-		/** When entries are stored in a record this will give us the key the entries are keyed by. */
-		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
 	): Result<true,
 		KnownError<
-			T extends Key ? ERROR.DUPLICATE_KEY
+			T extends Key ? ERROR.DUPLICATE_KEY | ERROR.KEYS_CANNOT_ADD_TOGGLE
 			: T extends Command ? ERROR.DUPLICATE_COMMAND
 			: T extends Shortcut ? ERROR.DUPLICATE_SHORTCUT
 			: Error
 		>
 	> {
-		const key = typeof indexer === "function"
-			? indexer(entry) as keyof TEntries
-			: indexer
-
 		let existing: any | undefined
 
-		if (Array.isArray(entries)) {
-			existing = (entries as any[]).find(item => entry.equals(item))
-		} else {
-			existing = (entries as any)[key as string]
+		if (self instanceof Keys) {
+			if (isToggleKey(entry as Key) && !isToggleRootKey(entry as Key)) {
+				return Err(new KnownError(ERROR.KEYS_CANNOT_ADD_TOGGLE, `Toggle keys are automatically added to the key set when the root key is added, on/off instances cannot be added individually.`, { entry: entry as Key })) as any
+			}
+			existing = (entries as any)[(entry as any as Key).id]
+		} else if (self instanceof Commands) {
+			existing = (entries as any)[(entry as Command).name]
+		} else if (self instanceof Shortcuts) {
+			existing = (entries as Shortcut[]).find(item => (entry as Shortcut).equals(item))
 		}
 
 		if (existing) {
@@ -163,40 +161,19 @@ export class HookableCollection<
 
 		return Ok(true)
 	}
-	protected static _addToDict<
-		T extends Command | Key | Shortcut,
-		TEntries extends
-		Record<string, T> | T[] =
-		Record<string, T> | T[],
-	>(
-		entries: TEntries,
-		entry: T,
-		/** When entries are stored in a record this will give us the key the entries are keyed by. */
-		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
-	): void {
-		const key = typeof indexer === "function"
-			? indexer(entry) as keyof TEntries
-			: indexer
-
-		if (Array.isArray(entries)) {
-			entries.push(entry)
-		} else {
-			entries[key as string] = entry
-		}
-	}
 	/**
 	 * Removes an entry.
 	 *
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	remove(
-		value: THook["setValue"],
+		...args: THook["removeArgs"]
 	): void {
 		const self = (this as any)
-		self._remove(value)
+		self._remove(...args as any)
 
 		for (const listener of this.listeners.remove) {
-			listener(value, this.entries, self)
+			listener(self, this.entries, ...args as any)
 		}
 	}
 	protected static _canRemoveFromDict<
@@ -209,64 +186,24 @@ export class HookableCollection<
 		self: TSelf,
 		entries: TEntries,
 		entry: T,
-		/** When entries are stored in a record this will give us the key the entries are keyed by. */
-		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
 	): Result<true, KnownError<ERROR.MISSING>> {
-		const key = typeof indexer === "function"
-			? indexer(entry) as keyof TEntries
-			: indexer
+		let existing: any
 
-		let index: number | string
-
-		if (Array.isArray(entries)) {
-			index = (entries as any[]).findIndex(item => entry.equals(item))
-		} else {
-			index = key as string
+		if (this instanceof Keys) {
+			existing = (entries as any)[(entry as Key).id]
+		} else if (this instanceof Commands) {
+			existing = (entries as any)[(entry as Command).name]
+		} else if (this instanceof Shortcuts) {
+			existing = (entries as any[]).find(item => entry.equals(item))
 		}
 
-		if (index === undefined) {
-			const type = entry.constructor.name
-			const text = crop`
-			Entry ${type} ${index/* .string */} does not exist in this collection.
+		if (existing === undefined) {
+			return Err(new KnownError(ERROR.MISSING, crop`
+			${entry.constructor.name} does not exist in this collection.
 
-			Entry:
 			${indent(pretty(entry), 3)}
-			`
-			const error = new KnownError(ERROR.MISSING, text, { entry: (index as any), collection: self as Shortcuts })
-
-			return Err(error)
+			`, { entry, collection: self as any }))
 		}
 		return Ok(true)
-	}
-	protected static _removeFromDict<
-		T extends Command | Key | Shortcut,
-		TEntries extends
-		Record<string, T> | T[] =
-		Record<string, T> | T[],
-	>(
-		entries: TEntries,
-		entry: T,
-		/** When entries are stored in a record this will give us the key the entries are keyed by. */
-		indexer: Optional<keyof TEntries | ((entry: T) => string)>,
-	): void {
-		const key = typeof indexer === "function"
-			? indexer(entry) as keyof TEntries
-			: indexer
-
-		let index: number | string
-
-		if (Array.isArray(entries)) {
-			index = (entries as any[]).findIndex(item => entry.equals(item))
-		} else {
-			index = key as string
-		}
-
-		if (index !== undefined) {
-			if (Array.isArray(entries)) {
-				entries.splice(index as number, 1)
-			} else {
-				entries[key as string] = undefined as any
-			}
-		}
 	}
 }

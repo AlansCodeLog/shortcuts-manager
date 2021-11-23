@@ -1,30 +1,26 @@
-import { crop, Err, Ok } from "@alanscodelog/utils"
+import { AnyClass, crop, Err, Ok } from "@alanscodelog/utils"
 
-import { Command } from "./Command"
 import type { Condition } from "./Condition"
-import type { Plugin } from "./Plugin"
 
-import { KnownError } from "@/helpers"
-import { HookableCollection, MixinHookablePlugableCollection } from "@/mixins"
+import { HookableCollection } from "@/bases"
+import { castType, KnownError } from "@/helpers"
 import { CommandsHooks, ERROR, RawCommand, RecordFromArray } from "@/types"
+
+import { Command } from "."
 
 
 export class Commands<
-	// See [[Plugable]]
-	TPlugins extends
-		Plugin<any, any>[] =
-		Plugin<any, any>[],
-	// See [[./README #Collection Entries]] for how this works
 	TCommand extends
-		Command<any, Condition, TPlugins> =
-		Command<any, Condition, TPlugins>,
+		Command<any, Condition> =
+		Command<any, Condition>,
 	TRawCommands extends
 		RawCommand[] =
 		RawCommand[],
 	TEntries extends
 		RecordFromArray<TRawCommands, "name", TCommand> =
 		RecordFromArray<TRawCommands, "name", TCommand>,
-> extends MixinHookablePlugableCollection<CommandsHooks, TPlugins> {
+> extends HookableCollection<CommandsHooks> {
+	protected _basePrototype: AnyClass<Command> & { create(...args: any[]): Command } = Command
 	override entries: TEntries
 	/**
 	 * # Commands
@@ -34,32 +30,25 @@ export class Commands<
 	 * - This will mutate the keys passed to it.
 	 * - It can throw. See {@link ERROR} for why.
 	 *
-	 * @template TPlugins **@internal** See {@link PlugableCollection}
 	 * @template TCommand **@internal** See {@link ./README.md Collection Entries}
 	 * @template TRawCommands **@internal** Allow passing raw commands.
 	 * @template TEntries **@internal** See {@link ./README.md Collection Entries}
 	 * @param commands A list of {@link Command | commands}.
-	 * @param plugins See {@link Commands.plugins}
 	 */
 	constructor(
 		commands: TRawCommands,
-		plugins?: TPlugins,
 	) {
 		super()
-
-		this._mixin({
-			hookable: { keys: ["add", "remove", "allowsAdd", "allowsRemove"]},
-			plugableCollection: { plugins, key: "name" },
-		})
 		this.entries = {} as TEntries
 
-		commands.forEach(entry => {
-			entry = Command.create(entry, this.plugins)
+		for (let entry of commands) {
+			entry = this._basePrototype.create(entry)
 			if (this.allows("add", entry).unwrap()) this.add(entry)
-		})
+		}
 	}
-	protected override _add(entry: Command): void {
-		entry = Command.create(entry, this.plugins)
+	protected override _add(entry: Command | RawCommand): void {
+		entry = this._basePrototype.create(entry)
+		castType<Command>(entry)
 		entry.addHook("allows", (type, value, old) => {
 			if (type === "name") {
 				const existing = this.entries[value as keyof TEntries]
@@ -78,7 +67,12 @@ export class Commands<
 				this.entries[value as keyof TEntries] = existing
 			}
 		})
-		HookableCollection._addToDict<Command>(this.entries, entry, t => t.name)
+		const entries = this.entries as any
+		entries[entry.name] = entry
+	}
+	protected override _remove(entry: Command): void {
+		const entries = this.entries as any
+		delete entries[entry.name]
 	}
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]
@@ -92,5 +86,3 @@ export class Commands<
 			: Object.values(this.entries).find(filter as any)!
 	}
 }
-// export interface Commands<TPlugins> extends HookableCollection<CommandsHook>, PlugableCollection<TPlugins> { }
-// mixin(Commands, [Hookable, HookableCollection, Plugable, PlugableCollection])
