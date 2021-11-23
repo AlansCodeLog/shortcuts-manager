@@ -88,15 +88,15 @@ export type KeyOptions = {
 	 */
 	variants: string[] | undefined
 	/**
-	 * Describes the physical size of the key.
+	 * Describes the physical size and position of the key.
 	 *
 	 * See {@link KeyOptions.variants} for how to create two of the same key with different sizes.
 	 *
-	 * The library does not render the layout, but provides this to standardize how this is handled.
+	 * If the layout is undefined the key should not be rendered. The default size is `1` for everything except toggle on/off keys (which are set to `undefined` automatically since you do not usually want to render them).
 	 *
-	 * If the layout is undefined the key should not be rendered. The default size is `1` for everything except toggle on/off keys (which are set to `undefined` since you do not usually want to render them).
+	 * The `svg` prop provides a standardized way of providing a custom shape. {@link Manager.render} will use it's built-in beveled square shape if no other is provided.
 	 */
-	layout: { width: number, height: number } | undefined
+	layout: { width: number, height: number, x: number, y: number, svg?: string } | undefined
 	is: {
 		/**
 		 * Whether the key is a modifier. A modifier can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"`.
@@ -224,10 +224,10 @@ export type KeyHooks = {
 
 export type KeysHooks = CollectionHookType<
 	Keys,
-	[ key: Key, row?: number, col?: number ],
-	[ key: Key | RawKey, row?: number, col?: number ],
+	Key,
+	Key | RawKey,
 	Record<string, Key>,
 	KnownError<ERROR.DUPLICATE_KEY | ERROR.KEYS_CANNOT_ADD_TOGGLE>,
 	KnownError<ERROR.KEY_IN_USE | ERROR.MISSING>,
-	[Key]
+	Key
 >

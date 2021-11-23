@@ -41,20 +41,20 @@ export class HookableCollection<
 	}
 	entries!: TEntries
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _add(..._args: THook["allowArgs"]): void {
+	protected _add(_entry: THook["allowArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _remove(..._args: THook["removeArgs"]): void {
+	protected _remove(_entry: THook["removeArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _allows(type: "add" | "remove", ...args: THook["allowArgs"]): Result<true, THook["error"] | Error> {
+	protected _allows(type: "add" | "remove", entry: THook["allowArgs"]): Result<true, THook["error"] | Error> {
 		switch (type) {
 			case "add":
-				return HookableCollection._canAddToDict<any>(this as any, this.entries, args[0])
+				return HookableCollection._canAddToDict<any>(this as any, this.entries, entry[0])
 			case "remove":
-				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, args[0])
+				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, entry[0])
 		}
 	}
 	/**
@@ -76,16 +76,16 @@ export class HookableCollection<
 	 */
 	allows(
 		type: "add" | "remove",
-		...args: THook["allowArgs"]
+		entry: THook["allowArgs"]
 	): Result<true, THook["error"] | Error> {
 		const self = (this as any)
 		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
 			const response = type === "add"
-				? (listener as any as CollectionHook<"allowsAdd">)(self, type, ...args as any[])
-				: (listener as any as CollectionHook<"allowsRemove">)(self, self.entries, ...args as any[])
+				? (listener as any as CollectionHook<"allowsAdd">)(self, type, entry)
+				: (listener as any as CollectionHook<"allowsRemove">)(self, self.entries, entry)
 			if (response.isError) return response
 		}
-		return self._allows(type, ...args as any[])
+		return self._allows(type, entry)
 	}
 	/**
 	 * Adds an entry.
@@ -95,13 +95,13 @@ export class HookableCollection<
 	 * Note for adding keys to {@link Keys}, you will need to pass `{key, col, row}` as the value. `col`/`row` are optional and default to 0. This is not neccesary when removing a key, just `key` can be passed as the value.
 	 */
 	add(
-		...args: THook["allowArgs"]
+		entry: THook["allowArgs"]
 	): void {
 		const self = (this as any)
-		self._add(...args as any[])
+		self._add(entry)
 
 		for (const listener of this.listeners.add) {
-			listener(args, this.entries, self)
+			listener(entry, this.entries, self)
 		}
 	}
 	protected static _canAddToDict<
@@ -167,13 +167,13 @@ export class HookableCollection<
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	remove(
-		...args: THook["removeArgs"]
+		entry: THook["removeArgs"]
 	): void {
 		const self = (this as any)
-		self._remove(...args as any)
+		self._remove(entry)
 
 		for (const listener of this.listeners.remove) {
-			listener(self, this.entries, ...args as any)
+			listener(self, this.entries, entry)
 		}
 	}
 	protected static _canRemoveFromDict<

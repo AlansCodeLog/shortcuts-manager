@@ -1,10 +1,10 @@
-import { AnyClass, Err, Ok, Result } from "@alanscodelog/utils"
+import type { AnyClass } from "@alanscodelog/utils"
 
 import { defaultStringifier } from "./KeysStringifier"
 
 import { HookableCollection } from "@/bases"
-import { castType, isToggleKey, KnownError } from "@/helpers"
-import { ERROR, KeyOptions, KeysHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
+import { castType, isToggleKey } from "@/helpers"
+import type { KeyOptions, KeysHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
 
 import { Key } from "."
 
@@ -14,17 +14,16 @@ export class Keys<
 		Key =
 		Key,
 	TRawKeys extends
-		RawKey[][] =
-		RawKey[][],
+		(RawKey | Key)[] =
+		(RawKey | Key)[],
 	TEntries extends
-		RecordFromArray<TRawKeys[number], "id", TKey> =
-		RecordFromArray<TRawKeys[number], "id", TKey>,
+		RecordFromArray<TRawKeys, "id", TKey> =
+		RecordFromArray<TRawKeys, "id", TKey>,
 > extends HookableCollection<KeysHooks> implements Pick<KeyOptions, "stringifier"> {
 	protected _basePrototype: AnyClass<Key> & { create(...args: any[]): Key } = Key
 	override entries: TEntries
 	/** @inheritdoc */
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
-	layout: Key[][]
 	/**
 	 * Creates a set of keys.
 	 *
@@ -58,18 +57,13 @@ export class Keys<
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 
 		this.entries = {} as TEntries
-		this.layout = []
-		for (let r = 0; r < keys.length; r++) {
-			const row = keys[r]
-			this.layout.push([])
-			for (let c = 0; c < row.length; c++) {
-				let entry = row[c]
-				entry = this._basePrototype.create(entry)
-				if (this.allows("add", entry, r, c).unwrap()) this.add(entry, r, c)
-			}
+		for (let entry of keys) {
+			entry = this._basePrototype.create(entry)
+			castType<Key>(entry)
+			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
 	}
-	protected override _add(entry: Key | RawKey, row: number = 0, col: number = 0): void {
+	protected override _add(entry: Key | RawKey): void {
 		entry = this._basePrototype.create(entry)
 		castType<Key>(entry)
 
@@ -81,34 +75,17 @@ export class Keys<
 			entries[entry.on!.id] = entry.on
 			entries[entry.off!.id] = entry.off
 		}
-		this.layout[row].splice(col, 0, entry)
 	}
 	protected override _remove(entry: Key): void {
 		const entries = this.entries as any
-		const pos = this.position(entry.id)
-		if (pos.isOk) {
-			this.layout[pos.value.row].splice(pos.value.col, 1)
-			delete entries[entry.id]
-			if (isToggleKey(entry)) {
-				delete entries[entry.on!.id]
-				delete entries[entry.on!.id]
-			}
-		} // else user did not check first, do nothing
-	}
-	get(id: TRawKeys[number][number]["id"] | string): TKey {
-		return this.entries[id as keyof TEntries]
-	}
-	position(id: TRawKeys[number][number]["id"] | string): Result<{ row: number, col: number }, KnownError<ERROR.MISSING>> {
-		for (let r = 0; r < this.layout.length; r++) {
-			const row = this.layout[r]
-			for (let c = 0; c < row.length; c++) {
-				const key = row[c]
-				if (key.id === id) {
-					return Ok({ row: r, col: c })
-				}
-			}
+		delete entries[entry.id]
+		if (isToggleKey(entry)) {
+			delete entries[entry.on!.id]
+			delete entries[entry.on!.id]
 		}
-		return Err(new KnownError(ERROR.MISSING, `Could not find key ${id} in layout.`, { entry: id, collection: this }))
+	}
+	get(id: TRawKeys[number]["id"] | string): TKey {
+		return this.entries[id as keyof TEntries]
 	}
 	/** Query the class. Just a simple wrapper around array find/filter. */
 	query(filter: Parameters<TKey[]["filter"]>["0"], all?: true): TKey[]

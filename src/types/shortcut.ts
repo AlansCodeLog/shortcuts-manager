@@ -58,8 +58,8 @@ export type ShortcutHooks = {
 
 export type ShortcutsHooks = CollectionHookType<
 	Shortcuts,
-	[Shortcut],
-	[RawShortcut | Shortcut],
+	Shortcut,
+	RawShortcut | Shortcut,
 	Shortcut[],
 	KnownError<ERROR.DUPLICATE_SHORTCUT>,
 	KnownError<ERROR.MISSING>

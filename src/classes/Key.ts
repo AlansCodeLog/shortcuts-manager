@@ -171,7 +171,7 @@ export class Key<
 		return this === key || this.id === key.id
 	}
 	get opts(): KeyOptions {
-		return { is: this.is, variants: this.variants, stringifier: this.stringifier, label: this.label }
+		return { is: this.is, variants: this.variants, layout: this.layout, stringifier: this.stringifier, label: this.label }
 	}
 	static create<T extends Key = Key>(entry: RawKey): T {
 		return HookableBase.createAny<Key, "id">(Key, "id", entry) as T

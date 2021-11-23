@@ -13,7 +13,7 @@ export type BaseHookType<TInstance extends Bases | Manager, TValue, TError, TOld
 	exclude: TExclude
 }
 
-export type CollectionHookType<TInstance extends Collections, TSetArgs extends any[], TAllowArgs extends any[], TValues, TAddError = Error | never, TRemoveError = Error | never, TRemoveArgs extends any[] = TSetArgs> = {
+export type CollectionHookType<TInstance extends Collections, TSetArgs, TAllowArgs, TValues, TAddError = Error | never, TRemoveError = Error | never, TRemoveArgs = TSetArgs> = {
 	// this is only for the listeners
 	// internally we receive allowValue entries which each class turns to setValue for set (set/add/remove) listeners
 	setArgs: TSetArgs
@@ -99,7 +99,7 @@ TType extends "allowsAdd"
 	(
 		self: TSelf,
 		entries: TValues,
-		...args: TAllowsArgs
+		entry: TAllowsArgs
 	) => Result<true, THook["addError"]>
 )
 : TType extends "allowsRemove"
@@ -107,7 +107,7 @@ TType extends "allowsAdd"
 	(
 		self: TSelf,
 		entries: TValues,
-		...args: TRemoveArgs
+		entry: TRemoveArgs
 	) => Result<true, THook["removeError"]>
 )
 : TType extends "add"
@@ -115,7 +115,7 @@ TType extends "allowsAdd"
 	(
 		self: TSelf,
 		entries: TValues,
-		...args: TSetArgs
+		entry: TSetArgs
 	) => void
 )
 : TType extends "remove"
@@ -123,28 +123,8 @@ TType extends "allowsAdd"
 	(
 		self: TSelf,
 		entries: TValues,
-		...args: TRemoveArgs
+		entry: TRemoveArgs
 	) => void
 )
 : never
 
-// export type ManagerHook<
-// 	TType extends "allowsReplace" | "replace" | "chain",
-// 	THook extends ManagerHookType<any, any, any> = ManagerHookType<any, any, any>,
-// 	TSelf extends
-// 		THook["self"] =
-// 		THook["self"],
-// 	TReplaceValue extends
-// 		THook["replaceValue"] =
-// 		THook["replaceValue"],
-// 	TChainValue extends
-// 		THook["setValue"] =
-// 		THook["setValue"],
-// > =
-// TType extends "allowsReplace"
-// ? (value: TReplaceValue, self: TSelf) => Result<true, THook["replaceError"]>
-// : TType extends "replace"
-// ? (value: TReplaceValue, self: TSelf) => void
-// : TType extends "chain"
-// ? (value: TChainValue, self: TSelf) => void
-// : never
