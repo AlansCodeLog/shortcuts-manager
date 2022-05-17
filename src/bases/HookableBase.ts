@@ -1,21 +1,20 @@
-import { Result } from "@utils/utils"
-
+import type { BaseHook, BaseHookType } from "@/types"
+import { Ok, Result } from "@utils/utils"
 import { Hookable } from "./Hookable"
 
-import type { Command, Condition, Key, Shortcut } from "@/classes"
-import type { BaseHook, BaseHookType, RawCommand, RawKey, RawShortcut } from "@/types"
+
 
 
 export class HookableBase<
 	THooks extends
-		Record<string, BaseHookType<any, any, any, any, any>>,
-	TAllowsListener extends
+		Record<string, BaseHookType<any, any, any, any, any, any>>,
+	TAllowsHook extends
 		BaseHook<"allows", THooks> =
 		BaseHook<"allows", THooks>,
-	TSetListener extends
+	TSetHook extends
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
-> extends Hookable<{ allows: TAllowsListener, set: TSetListener }> {
+> extends Hookable<{ allows: TAllowsHook, set: TSetHook }> {
 	constructor() {
 		super(["allows", "set"])
 	}
@@ -74,22 +73,22 @@ export class HookableBase<
 			keyof THooks,
 	>(
 		key: TKey,
-		value: THooks[TKey]["exclude"] extends true ? never : THooks[TKey]["value"],
+		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
 		const self = this as any
-		for (const listener of this.listeners.allows) {
-			const response = listener(key as any, value, self[key], self)
+		for (const hook of this.hooks.allows) {
+			const response = hook(key as any, value, self[key], self)
 			if (response.isError) return response
 		}
 		if (self._allows) return self._allows(key, value)
 		return Result.Ok(true)
 	}
 	/**
-	 * Sets any settable properties and triggers any hooks on them.
+	 * Sets the property and triggers any hooks on it.
 	 *
-	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
+	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first or use {@link HookableBase.safeSet}.
 	 *
-	 * For the manager their is also the special `"replace"` property. See {@link HookableBase.set set}.
+	 * For the manager there is also the special `"replace"` property. See {@link HookableBase.set set}.
 	 */
 	set<
 		TKey extends
@@ -97,30 +96,44 @@ export class HookableBase<
 			keyof THooks,
 	>(
 		key: TKey,
-		value: THooks[TKey]["value"],
+		value: THooks[TKey]["excludeSet"] extends true ? never : THooks[TKey]["value"],
 	): void {
 		const self = this as any
 		const oldValue = self[key]
 		self._set(key, value)
-		for (const listener of this.listeners.set) {
-			listener(key, value, oldValue, self)
+		for (const hook of this.hooks.set) {
+			hook(key, value, oldValue, self)
 		}
 	}
-	protected static createAny<
-		T extends Condition | Command | Shortcut | Key,
-		TKey extends keyof T,
-		TClass extends new (...args: any[]) => T = new (...args: any[]) => T,
-		TEntry extends T | RawCommand | RawKey | RawShortcut = T | RawCommand | RawKey | RawShortcut,
-	>(type: TClass, key: TKey, entry: TEntry): T {
-		const isInstance = (entry instanceof type)
-
-		const arg = entry[key as keyof TEntry]
-
-		const opts = (entry as any).opts
-
-		const instance = isInstance
-				? entry
-				: new type(arg, opts)
-		return instance
+	/**
+	 * Like `set` but checks first if the property can be set.
+	 *
+	 * Returns a result monad. See {@link Result} from my utils lib.
+	 * ```ts
+	 * const res = shortcut.safeSet("keys", [[key.a]])
+	 *
+	 * if (res.isError) {...}
+	 *
+	 * // alternatively throw immediately
+	 * shortcut.safeSet("keys", [[key.a]]).unwrap()
+	 * ```
+	 */
+	safeSet<
+		TKey extends
+		keyof THooks =
+		keyof THooks,
+	>(
+			key: TKey,
+			value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
+	): Result<true, THooks[TKey]["error"] | Error> {
+		const res = this.allows(key, value)
+		if (res.isError) return res
+		else this.set(key, value)
+		return Ok(true)
 	}
 }
+
+/**
+ *
+ *
+ */

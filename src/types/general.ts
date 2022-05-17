@@ -18,3 +18,14 @@ export type IgnoreUnusedTypes<T = any[]> = {}
 // @ts-expect-error See above.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export abstract class IgnoreClassUnusedTypes<T = any[]> {}
+
+
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export type NavigatorWKeyboard = {
+	keyboard?: {
+		getLayoutMap(): Promise<KeyboardLayoutMap>
+	}
+}
+export type KeyCode = string
+export type KeyLabel = string
+export type KeyboardLayoutMap = Map<KeyCode, KeyLabel>

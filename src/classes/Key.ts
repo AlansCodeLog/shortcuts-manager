@@ -1,18 +1,11 @@
-import type { Result } from "@alanscodelog/utils"
-import { Err, Ok } from "@utils/utils"
-
-import { defaultStringifier } from "./KeysStringifier"
-
 import { HookableBase } from "@/bases"
 import { KnownError } from "@/helpers"
-import { ERROR, KeyHooks, KeyOptions, Optional, RawKey, ToggleKey, TYPE_ERROR } from "@/types"
-
+import { createInstance } from "@/helpers/createInstance"
+import { ERROR, KeyHooks, KeyOptions, RawKey, ToggleKey } from "@/types"
+import { Result, setReadOnly } from "@alanscodelog/utils"
+import { Err, Ok } from "@utils/utils"
 import type { KeysStringifier } from "."
-
-
-const sId = Symbol("id")
-const sLabel = Symbol("label")
-const sKeyCreateToggle = Symbol("keyCreateToggle")
+import { defaultStringifier } from "./KeysStringifier"
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
@@ -21,19 +14,27 @@ export class Key<
 		string =
 		string,
 > extends HookableBase<KeyHooks> implements KeyOptions {
-	readonly [sId]: TId
-	readonly [sLabel]: KeyOptions["label"]
 	/**
 	 * Wether the key is currently being *held* down.
 	 *
-	 * Does not allow `allows` hooks, only `set` hooks.
+	 * @RequiresSet @SetHookable
 	 */
-	pressed: boolean = false
+	readonly pressed: boolean = false
 	// cannot inherit doc
 	/** See {@link KeyOptions.is} */
-	is: KeyOptions["is"]
+	readonly is: KeyOptions["is"]
 	/** @inheritdoc */
-	layout: KeyOptions["layout"] = [] as any
+	readonly width: number = 1
+	/** @inheritdoc */
+	readonly height: number = 1
+	/** @inheritdoc */
+	readonly x: number = 0
+	/** @inheritdoc */
+	readonly y: number = 0
+	/** @inheritdoc */
+	readonly render: boolean = true
+	/** @inheritdoc */
+	classes: string[]
 	/**
 	 * If the key is a toggle key, pass this when defining shortcuts if you want them to trigger when the key is toggled on. Otherwise if you just pass the key it will trigger on every change of state.
 	 *
@@ -45,7 +46,7 @@ export class Key<
 	/** This property is only available on toggle states (e.g. key.on / key.off). */
 	declare root: Key & { on: ToggleKey<Key>, off: ToggleKey<Key> }
 	/** @inheritdoc */
-	variants: KeyOptions["variants"]
+	readonly variants: KeyOptions["variants"]
 	/** @inheritdoc */
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
@@ -62,39 +63,21 @@ export class Key<
 	 */
 	constructor(
 		id: TId,
-		opts?: RawKey["opts"],
-	)
-	constructor(
-		id: TId,
-		opts: Optional<RawKey["opts"]> | { },
-	)
-	constructor(
-		id: TId,
 		opts: RawKey["opts"] = { },
 	) {
 		super()
+
+		setReadOnly(this, "id", id)
 		if (opts.variants) {
-			this.variants = opts.variants
-			if (this.variants.includes(id)) {
-				throw new KnownError(ERROR.INVALID_VARIANT, `Attempted to create a key ${this.stringifier.stringify(this)} with the following variants: [${this.variants.join(", ")}], but one of the variants is the key id itself.`, { variants: this.variants, id })
-			}
+			this.safeSet("variants", opts.variants).unwrap()
 		}
-		this[sId] = id
-		this[sLabel] = opts.label ?? id
-		// should function like a real property, enumerable and visible to JSON.stringify
-		Object.defineProperties(this, {
-			id: {
-				get(): string { return this[sId] },
-				set(): void { throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "The id property of a key cannot be changed once set.", undefined) },
-				enumerable: true,
-			},
-			// need this because label might be a function
-			label: {
-				get(): string { return typeof this[sLabel] === "function" ? this[sLabel](this) : this[sLabel] },
-				set(val: string): void { this[sLabel] = val},
-				enumerable: true,
-			},
-		})
+		this.label = opts.label ?? this.id
+
+		this.classes = opts.classes ?? []
+		this.x = opts.x ?? this.x
+		this.y = opts.y ?? this.y
+		this.width = opts.width ?? this.width
+		this.height = opts.height ?? this.height
 
 		if (opts.stringifier) this.stringifier = opts.stringifier as KeysStringifier
 		this.is = {
@@ -102,30 +85,25 @@ export class Key<
 			modifier: false,
 		}
 		if (opts.is?.modifier === true) {
-			this.is.modifier = "native"
+			setReadOnly(this.is, "modifier", "native")
 		} else if (opts.is?.modifier) {
-			this.is.modifier = opts.is.modifier
+			setReadOnly(this.is, "modifier", opts.is.modifier)
 		}
 		if (opts.is?.toggle) {
-			this.is.toggle = opts.is.toggle === true
+			setReadOnly(this.is, "toggle", opts.is.toggle === true
 				? "native"
-				: opts.is.toggle
-			/* eslint-disable @typescript-eslint/no-unused-vars */
-			/* eslint-disable prefer-rest-params */
-			if (arguments[4] !== BYPASS_TOGGLE_CREATION) {
+				: opts.is.toggle)
+			if (arguments[2] !== BYPASS_TOGGLE_CREATION) {
 				// arguments might be shorter and we need to be sure the bypass is the fourth argument
-				this[sKeyCreateToggle]([arguments[1], arguments[2], arguments[3]])
+				this._keyCreateToggle(opts)
 			}
-			/* eslint-enable @typescript-eslint/no-unused-vars */
-			/* eslint-enable prefer-rest-params */
 		}
-
 		Object.freeze(this.is)
 	}
 	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
 			if (value.includes(this.id)) {
-				return Err(new KnownError(ERROR.INVALID_VARIANT, `Attempted to change the variants of key ${this.stringifier.stringify(this)} with the following variants: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id }))
+				return Err(new KnownError(ERROR.INVALID_VARIANT, `Attempted to set the variants of key ${this.stringifier.stringify(this)} to: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id }))
 			}
 		}
 		return Ok(true)
@@ -134,11 +112,24 @@ export class Key<
 	 * Adds on/off toggle states to the instance.
 	 * See {@link KeyOptions.is.toggle} for how this works.
 	 */
-	[sKeyCreateToggle](args: any[]): void {
-		Object.defineProperty(this, "on", { configurable: false, enumerable: true, value: new Key(`${this.id}On`, ...args, BYPASS_TOGGLE_CREATION) })
-		Object.defineProperty(this.on, "root", { configurable: false, enumerable: false, value: this })
-		Object.defineProperty(this, "off", { configurable: false, enumerable: true, value: new Key(`${this.id}Off`, ...args, BYPASS_TOGGLE_CREATION) })
-		Object.defineProperty(this.off, "root", { configurable: false, enumerable: false, value: this })
+	private _keyCreateToggle(opts: RawKey["opts"] = {}): void {
+		//@ts-expect-error
+		this.on = new Key(`${this.id}On`, {...opts, render: false}, BYPASS_TOGGLE_CREATION) as ToggleKey
+		//@ts-expect-error
+		this.off = new Key(`${this.id}Off`, {...opts, render: false}, BYPASS_TOGGLE_CREATION) as ToggleKey
+		if (this.label) {
+			const val = this.label
+			if (this.on.allows("label", `${val} (On)`).isOk) this.on.set("label", `${val} (On)`)
+			if (this.off.allows("label", `${val} (Off)`).isOk) this.off.set("label", `${val} (Off)`)
+		}
+		this.on.root = this as any
+		this.off.root = this as any
+		this.addHook("set", (prop, val) => {
+			if (prop == "label") {
+				if (this.on!.allows("label", `${val} (On)`).isOk) this.on!.set("label", `${val} (On)`)
+				if (this.off!.allows("label", `${val} (Off)`).isOk) this.off!.set("label", `${val} (Off)`)
+			}
+		})
 	}
 	/**
 	 * The id used to identify which key was pressed.
@@ -171,9 +162,19 @@ export class Key<
 		return this === key || this.id === key.id
 	}
 	get opts(): KeyOptions {
-		return { is: this.is, variants: this.variants, layout: this.layout, stringifier: this.stringifier, label: this.label }
+		return { is: this.is, variants: this.variants, x:this.x, y:this.y, width:this.width, height:this.height, stringifier: this.stringifier, label: this.label, render:this.render, classes:this.classes }
 	}
+	/** Create an instance from a raw entry. */
 	static create<T extends Key = Key>(entry: RawKey): T {
-		return HookableBase.createAny<Key, "id">(Key, "id", entry) as T
+		return createInstance<Key, "id">(Key, "id", entry) as T
+	}
+	export(): RawKey {
+		const opts: any = { ...this.opts }
+		delete opts.stringifier
+		opts.is = {...opts.is}
+		return {
+			id: this.id,
+			...opts
+		}
 	}
 }

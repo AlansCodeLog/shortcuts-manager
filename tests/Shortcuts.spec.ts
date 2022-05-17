@@ -1,12 +1,12 @@
-import { testName } from "@alanscodelog/utils"
-import type { Result } from "@alanscodelog/utils/dist/utils"
-
-import { expect } from "./chai"
-import { k } from "./helpers.keys"
-
 import { Condition, Shortcut, Shortcuts } from "@/classes"
 import type { KnownError } from "@/helpers"
 import { ERROR } from "@/types"
+import { testName } from "@alanscodelog/utils"
+import type { Result } from "@alanscodelog/utils/dist/utils"
+import { expect } from "./chai"
+import { k } from "./helpers.keys"
+
+
 
 
 const shortcut1 = new Shortcut([[k.a]])
@@ -49,21 +49,21 @@ describe(testName(), () => {
 		expect((shortcut1.allows("chain", [[k.c]]) as Result.ErrResult<KnownError>).error.code).to.equal(ERROR.DUPLICATE_SHORTCUT)
 	})
 	it("removes listener from shortcuts", () => {
-		expect(shortcut3.listeners.allows.length).to.equal(1)
+		expect(shortcut3.hooks.allows.length).to.equal(1)
 		expect(shortcuts.entries.length).to.equal(4)
 		shortcuts.remove(shortcut3)
 		expect(shortcuts.entries.length).to.equal(3)
 
-		expect(shortcut3.listeners.allows.length).to.equal(0)
+		expect(shortcut3.hooks.allows.length).to.equal(0)
 
 		shortcuts.add(shortcut3)
 		expect(shortcuts.entries.length).to.equal(4)
-		expect(shortcut3.listeners.allows.length).to.equal(1)
+		expect(shortcut3.hooks.allows.length).to.equal(1)
 
 		expect(() => {
 			shortcuts.allows("add", shortcut3).unwrap()
 		}).to.throw()
-		expect(shortcut3.listeners.allows.length).to.equal(1)
+		expect(shortcut3.hooks.allows.length).to.equal(1)
 	})
 	it("canSwapChords", () => {
 		// eslint-disable-next-line @typescript-eslint/no-shadow

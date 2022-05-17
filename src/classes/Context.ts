@@ -1,6 +1,6 @@
+import type { RecursiveRecord } from "@/types"
 import type { Condition } from "./Condition"
 
-import type { RecursiveRecord } from "@/types"
 
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
@@ -51,5 +51,8 @@ export class Context<
 	 */
 	eval(condition: Condition): boolean {
 		return condition.eval(this)
+	}
+	export(): Pick<Context, "value"> {
+		return { value: this.value }
 	}
 }

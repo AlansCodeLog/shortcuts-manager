@@ -15,7 +15,9 @@ module.exports = {
 		"dist",
 		"docs",
 	],
-	rules: {},
+	rules: {
+		"no-unused-private-class-members": undefined, // TODO
+	},
 	parserOptions: { project: "tsconfig.json" },
 	// 🟠 - I like to toggle these on occasionally, but otherwise keep off
 	overrides: [

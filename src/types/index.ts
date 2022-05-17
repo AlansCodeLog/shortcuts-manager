@@ -2,9 +2,9 @@
 
 export * from "./manager"
 export * from "./hooks"
+export * from "./enums"
 export * from "./general"
 export * from "./utils"
-export * from "./enums"
 export * from "./command"
 export * from "./key"
 export * from "./shortcut"

@@ -1,10 +1,9 @@
+import { Key, KeysStringifier } from "@/classes"
+import { ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
-
 import { expect } from "./chai"
 
-import { Key, KeysStringifier } from "@/classes"
-import { isToggleOffKey, isToggleOnKey } from "@/helpers"
-import { ERROR } from "@/types"
+
 
 
 describe(testName(), () => {
@@ -22,12 +21,9 @@ describe(testName(), () => {
 		expect(key1.equals(key3)).to.be.false
 	})
 	it("should create toggle key properly", () => {
-		function label(key: Key): string {
-			return isToggleOnKey(key) ? `${key.root.id} (On)` : isToggleOffKey(key) ? `${key.root.id} (Off)` : `${key.id}`
-		}
 		const key2 = new Key("a", { is: { toggle: false } })
 		expect(key2.on).to.not.exist
-		const key = new Key("a", { is: { toggle: true }, label })
+		const key = new Key("a", { is: { toggle: true} })
 		const on = key.on!
 		const off = key.off!
 
@@ -52,7 +48,7 @@ describe(testName(), () => {
 		}
 
 		expect(props.find(prop => ["on", "off"].includes(prop))).to.be.undefined
-		expect(props.find(prop => ["root"].includes(prop))).to.be.undefined
+		expect(props.find(prop => ["root"].includes(prop))).to.exist
 
 		expect("on" in on).to.equal(false)
 		expect("off" in on).to.equal(false)
@@ -64,7 +60,7 @@ describe(testName(), () => {
 
 		expect(Object.keys(on).includes("on")).to.be.false
 		expect(Object.keys(on).includes("off")).to.be.false
-		expect(Object.keys(on).includes("root")).to.be.false
+		expect(Object.keys(on).includes("root")).to.be.true
 		expect(Object.keys(on).includes("equals")).to.equal(Object.keys(key).includes("equals"))
 		expect(Object.keys(on).includes("string")).to.equal(Object.keys(key).includes("string"))
 

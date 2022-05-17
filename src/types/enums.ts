@@ -1,9 +1,10 @@
-import type { BaseHook } from "./hooks"
-import type { AnyInputEvent } from "./manager"
-
 import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
 import type { Manager } from "@/classes/Manager"
 import type { KnownError } from "@/helpers"
+import type { ManagerListener } from "."
+import type { BaseHook } from "./hooks"
+import type { AnyInputEvent } from "./manager"
+
 
 
 /**
@@ -42,13 +43,26 @@ export enum ERROR {
 	UNKNOWN_COMMAND_IN_SHORTCUT = "UNKNOWN_COMMANDS_IN_SHORTCUT",
 	KEY_IN_USE = "KEYS_IN_USE",
 	COMMAND_IN_USE = "COMMANDS_IN_USE",
-
+	UNKNOWN_KEY_EVENT = "UNKNOWN_KEY_EVENT",
+	// internal
+	RECORDING = "RECORDING",
+	IMPORT_COMMAND = "IMPORT_KEY",
+	IMPORT_SHORTCUT_COMMAND = "IMPORT_SHORTCUT_COMMAND",
+	IMPORT_SHORTCUT_KEY = "IMPORT_SHORTCUT_KEY"
 }
+
+export type ChainErrors =
+	| ERROR.CHORD_W_DUPLICATE_KEY
+	| ERROR.CHORD_W_ONLY_MODIFIERS
+	| ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS
+	| ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS
+	| ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE
 
 /** Errors that will throw since they should be caught at production. */
 export enum TYPE_ERROR {
 	ILLEGAL_OPERATION = "ILLEGAL_OPERATION",
-	LISTENER_DOES_NOT_EXIST = "LISTENER_DOES_NOT_EXIST",
+	HOOK_DOES_NOT_EXIST = "HOOK_DOES_NOT_EXIST",
+	FILTER_DOES_NOT_EXIST = "FILTER_DOES_NOT_EXIST",
 }
 
 
@@ -79,31 +93,32 @@ export type ErrorInfo<T extends ERROR | TYPE_ERROR> =
 type ERROR_Info = {
 	// === shortcut init related problems
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
+		self: Shortcut | Manager | undefined
 		chord: Key[]
 		i: number
-		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS]: {
+		self: Shortcut | Manager | undefined
 		chord: Key[]
 		i: number
-		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS]: {
+		self: Shortcut | Manager | undefined
 		chord: Key[]
 		i: number
-		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.CHORD_W_DUPLICATE_KEY]: {
+		self: Shortcut | Manager | undefined
 		chord: Key[]
 		i: number
-		shortcut: Pick<Shortcut, "chain"> | Shortcut
 		keys: Key[]
 	}
 	[ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE]: {
-		shortcut: Key[][]
+		self: Shortcut | Manager | undefined
+		chain: Key[][]
 		i: number
 		key: Key
 	}
@@ -176,14 +191,27 @@ type ERROR_Info = {
 	[ERROR.COMMAND_IN_USE]: {
 		entries: Shortcut[]
 	}
+	[ERROR.UNKNOWN_KEY_EVENT]: {
+		e: KeyboardEvent
+	}
+	[ERROR.IMPORT_COMMAND]: { command: ReturnType<Command["export"]>, commands: Commands}
+	[ERROR.IMPORT_SHORTCUT_COMMAND]: { command: string, shortcut: ReturnType<Shortcut["export"]>
+}
+	[ERROR.IMPORT_SHORTCUT_KEY]: { id: string, shortcut: ReturnType<Shortcut["export"]>}
+	// internal
+	[ERROR.RECORDING]: undefined
 }
 
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type TYPE_ERROR_Info = {
 	[TYPE_ERROR.ILLEGAL_OPERATION]: undefined
-	[TYPE_ERROR.LISTENER_DOES_NOT_EXIST]: {
-		listener: BaseHook<any, any>[]
-		listeners: BaseHook<any, any>[]
+	[TYPE_ERROR.HOOK_DOES_NOT_EXIST]: {
+		hook: BaseHook<any, any>[]
+		hooks: BaseHook<any, any>[]
+	}
+	[TYPE_ERROR.FILTER_DOES_NOT_EXIST]: {
+		filter: ManagerListener
+		filters: ManagerListener[]
 	}
 }
 

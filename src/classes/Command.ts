@@ -1,7 +1,8 @@
+import { HookableBase } from "@/bases"
+import { createInstance } from "@/helpers/createInstance"
+import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "@/types"
 import { Condition } from "./Condition"
 
-import { HookableBase } from "@/bases"
-import type { CommandHooks, CommandOptions, Optional, RawCommand } from "@/types"
 
 
 export class Command<
@@ -78,8 +79,16 @@ export class Command<
 	get opts(): CommandOptions {
 		return { description: this.description, execute: this.execute, condition: this.condition }
 	}
+	/** Create an instance from a raw entry. */
 	static create<T extends Command = Command>(entry: RawCommand): T {
-		return HookableBase.createAny<Command, "name">(Command, "name", entry) as T
+		return createInstance<Command, "name">(Command, "name", entry) as T
+	}
+	export(): ExportedCommand {
+		return {
+			name: this.name,
+			description: this.description,
+			condition: this.condition.export()
+		}
 	}
 }
 

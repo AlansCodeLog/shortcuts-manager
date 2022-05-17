@@ -1,6 +1,6 @@
-import { unreachable } from "@utils/utils"
-
+import { unreachable } from "@alanscodelog/utils"
 import { Key } from "./Key"
+
 
 
 type KeysStringifierOptions = {
@@ -44,7 +44,7 @@ export class KeysStringifier {
 	stringify(keyChordOrShorcut: Key | Key[] | Key[][]): string {
 		if (keyChordOrShorcut instanceof Key) return this.stringifyKey(keyChordOrShorcut)
 		if (Array.isArray(keyChordOrShorcut)) {
-			if (keyChordOrShorcut.length === 0) return this.stringifyChord(keyChordOrShorcut as Key[])
+			if (keyChordOrShorcut.length === 0) return this.stringifyChord([] as Key[])
 			if (Array.isArray(keyChordOrShorcut[0])) return this.stringifyChain(keyChordOrShorcut as Key[][])
 			return this.stringifyChord(keyChordOrShorcut as Key[])
 		}

@@ -1,18 +1,14 @@
-import { AnyClass, crop, Err, Ok } from "@alanscodelog/utils"
-
-import type { Condition } from "./Condition"
-
 import { HookableCollection } from "@/bases"
-import { castType, KnownError } from "@/helpers"
+import { KnownError } from "@/helpers"
 import { CommandsHooks, ERROR, RawCommand, RecordFromArray } from "@/types"
-
+import { AnyClass, crop, Err, Ok, Result } from "@alanscodelog/utils"
 import { Command } from "."
 
 
 export class Commands<
 	TCommand extends
-		Command<any, Condition> =
-		Command<any, Condition>,
+		Command =
+		Command,
 	TRawCommands extends
 		RawCommand[] =
 		RawCommand[],
@@ -41,18 +37,17 @@ export class Commands<
 		super()
 		this.entries = {} as TEntries
 
-		for (let entry of commands) {
-			entry = this._basePrototype.create(entry)
+		for (let rawEntry of commands) {
+			const entry = this.create(rawEntry)
 			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
 	}
-	protected override _add(entry: Command | RawCommand): void {
-		entry = this._basePrototype.create(entry)
-		castType<Command>(entry)
+	protected override _add(rawEntry: RawCommand): void {
+		const entry = this.create(rawEntry)
 		entry.addHook("allows", (type, value, old) => {
 			if (type === "name") {
 				const existing = this.entries[value as keyof TEntries]
-				if (existing !== undefined && existing !== entry) {
+				if (existing !== undefined && existing !== rawEntry) {
 					return Err(new KnownError(ERROR.DUPLICATE_COMMAND, crop`
 						Command name "${old}" cannot be changed to "${value}" because it would create a duplicate command in a "Commands" instance that this command was added to.
 					`, { existing, self: this }))
@@ -68,7 +63,7 @@ export class Commands<
 			}
 		})
 		const entries = this.entries as any
-		entries[entry.name] = entry
+		entries[rawEntry.name] = rawEntry
 	}
 	protected override _remove(entry: Command): void {
 		const entries = this.entries as any
@@ -84,5 +79,35 @@ export class Commands<
 		return all
 			? Object.values(this.entries).filter(filter as any)
 			: Object.values(this.entries).find(filter as any)!
+	}
+	export(): Record<string, ReturnType<Command["export"]>> {
+		const commands: Record<string, any> = {}
+		for (let id in this.entries) {
+			commands[id] = (this.entries[id] as Command).export()
+		}
+		return commands
+	}
+	/**
+	 * Creates a base instance that conforms to the class.
+	 */
+	override create<T extends Command = Command>(rawEntry: Command | RawCommand): T {
+		if (rawEntry instanceof Command) return rawEntry as T
+		return this._basePrototype.create(rawEntry) as T
+	}
+	/**
+	 * Checks if all commands can be removed, if they can, removes them all, otherwise does nothing and returns the error.
+	 *
+	 * Useful for "emptying" out commands when importing configs.
+	 */
+	safeRemoveAll(): Result<true, Error> {
+		let res :Result<true, Error>
+		for (let command of Object.values(this.entries as Record<string, Command>)) {
+			res = this.allows("remove", command)
+			if (res.isError) return res
+		}
+		for (let command of Object.values(this.entries as Record<string, Command>)) {
+			this.remove(command)
+		}
+		return Ok(true)
 	}
 }

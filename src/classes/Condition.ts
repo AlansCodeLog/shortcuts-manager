@@ -1,3 +1,4 @@
+import type { RawCondition } from "@/types/condition"
 import type { Context } from "./Context"
 
 
@@ -46,5 +47,8 @@ export class Condition {
 	equals(condition: Condition): boolean {
 		if (this === condition) return true
 		return this.text === condition.text
+	}
+	export(): RawCondition {
+		return this.text
 	}
 }

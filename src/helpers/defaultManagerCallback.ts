@@ -1,11 +1,11 @@
-import type { ERROR, ManagerErrorCallback } from "@/types"
+import type { Manager } from "@/classes"
 
 /**
- * The default callback for the manager which logs the error and return true to clear the chain.
+ * The default callback for the manager which logs the error and clears the chain.
  *
  * @internal
  */
-export const defaultManagerCallback: ManagerErrorCallback<ERROR.MULTIPLE_MATCHING_SHORTCUTS | ERROR.NO_MATCHING_SHORTCUT> = (error, manager): void => {
+export const defaultManagerCallback: Manager["cb"] = (error, manager): void => {
 	// eslint-disable-next-line no-console
 	console.log(error)
 	manager.clearChain()

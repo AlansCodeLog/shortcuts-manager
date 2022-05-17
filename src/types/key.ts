@@ -1,27 +1,29 @@
-import type { DeepPartial, MakeRequired } from "@alanscodelog/utils"
-
+import type { Key, Keys, KeysStringifier } from "@/classes"
+import type { KnownError } from "@/helpers"
+import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, Keys, KeysStringifier } from "@/classes"
-import type { KnownError } from "@/helpers"
 
 
-// import type{ KnownError } from "@/helpers"
 
 /**
  * Same as {@link KeyOptions} except you're allowed to just pass true to toggle.
  */
-export type RawKey = Pick<Key, "id"> & {
-	opts?: DeepPartial<Omit<KeyOptions, "is">>
+export type RawKey = {
+	id: Key["id"]
+	opts?: Mutable<DeepPartial<Omit<KeyOptions, "is">>>
 	& {
-		is?: DeepPartial<Omit<KeyOptions["is"], "toggle" | "modifier">>
-		& {
-			toggle?: DeepPartial<KeyOptions["is"]["toggle"]> | true
-			modifier?: DeepPartial<KeyOptions["is"]["modifier"]> | true
+		is?: {
+			toggle?: true | Mutable<KeyOptions["is"]["toggle"]>
+			modifier?: true | Mutable<KeyOptions["is"]["modifier"]>
 		}
 	}
 }
+
+export type ExportedKey =
+	Pick<Key, "id">
+	& Omit<KeyOptions, "stringifier">
 
 /**
  * The toggle version of a key.
@@ -44,9 +46,9 @@ export type KeyOptions = {
 	/**
 	 * The label to use for the key when stringifying it. If no label is specified, it's left blank.
 	 *
-	 * It can also be a function. You could, for example, use the experimental {@link https://developer.mozilla.org/en-US/docs/Web/API/KeyboardLayoutMap/get KeyboardLayoutMap.get()} or cache the user's keys as they press them.
+	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
-	label: string | ((key: Key) => string)
+	readonly label: string
 	/**
 	 * See {@link KeysStringifier}
 	 */
@@ -54,50 +56,75 @@ export type KeyOptions = {
 	/**
 	 * Variants are a list of fallback codes that will also trigger a key.
 	 *
-	 * For example, without variants, there's no way to have a shortcut like `[[Ctrl, A]]` where Ctrl can be either of the right/lefts Ctrl keys. One could create two shortcuts for both keys, but only one key would be considered triggered at a time on the layout.
+	 * For example, without variants, there's no way to have native modifier keys or have a shortcut like `[[Ctrl, A]]` where Ctrl can be either of the right/lefts Ctrl keys. One could create two shortcuts for both keys, but only one key would be considered triggered at a time on the layout.
 	 *
-	 * Variants can solve this by allowing us to create a key that's only labeled as `Ctrl`. The `id` can be set to an invalid key code like (we still need an id for the {@link Keys} class), preferably one that indicates what's happening (e.g. `VirtualCtrl`). The variants can be set to `["ControlLeft", "ControlRight"]`. Now you can have shortcuts like `[[VirtualCtrl, A]]` and either control key will trigger them.
+	 * Variants can solve this by allowing us to create a key that's only labeled as `Ctrl`. The `id` can be set to an invalid key code (we still need an id for the {@link Keys} class), preferably one that indicates what's happening (e.g. `VirtualCtrl`). The variants can be set to `["ControlLeft", "ControlRight", "Control"]`. Now you can have shortcuts like `[[VirtualCtrl, A]]` and either control key will trigger them.
 	 *
 	 * ```ts
-	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl", variants: ["ControlLeft", "ControlRight"] })
+	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"] })
 	 * ```
 	 *
 	 * If you still need the keys to be labeled or styled different, you can register multiple keys with different invalid ids but the same variants.
 	 *
 	 * ```ts
 	 * // different labels for the layout
-	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl Left", variants: ["ControlLeft", "ControlRight"] })
-	 * const virtualCtrl2 = new Key("VirtualCtrl2" {label: "Ctrl Right", variants: ["ControlLeft", "ControlRight"] })
+	 * const virtualCtrl = new Key("VirtualCtrl" {label: "Ctrl Left", variants: ["ControlLeft", "ControlRight", "Control"] })
+	 * const virtualCtrl2 = new Key("VirtualCtrl2" {label: "Ctrl Right", variants: ["ControlLeft", "ControlRight", "Control"] })
 	 *
 	 * // same labels, different sizes
 	 * const virtualCtrl = new Key("VirtualCtrl"
-	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"], layout: {width: 1.5} },
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], layout: {width: 1.5} },
 	 * )
 	 * const virtualCtrl2 = new Key("VirtualCtrl2"
-	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight"], layout: {width: 2}},
+	 * 	{ label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], layout: {width: 2}},
 	 * )
 	 *
 	 * ```
 	 *
 	 * They can also be use to treat any set of keys as the exact same keys. This can be useful for allowing users to remap keys only within the application.
 	 *
-	 * For example, to use CapsLock as an extra Control key (e.g. `Ctrl(variants: ["ControlLeft", "ControlRight", "Capslock"])`). You could even "remap" it to multiple modifiers, just add "Capslock" to the variants list of those modifiers (e.g. Ctrl, Alt, Shift). This would cause all those keys to be considered pressed when Capslock is pressed.
+	 * For example, to use CapsLock as an extra Control key (e.g. `id: Ctrl, variants: ["ControlLeft", "ControlRight", "Control", "Capslock"]`). You could even "remap" it to multiple modifiers, just add "Capslock" to the variants list of those modifiers (e.g. Ctrl, Alt, Shift). This would cause all those keys to be considered pressed when Capslock is pressed.
 	 *
 	 * Also unlike `id`, which is readonly, variants are not, they can be added and removed as needed.
 	 *
+	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
-	variants: string[] | undefined
+	readonly variants: string[] | undefined
 	/**
-	 * Describes the physical size and position of the key.
+	 * Whether the key should be rendered. See {@link Manager.layout}.
 	 *
-	 * See {@link KeyOptions.variants} for how to create two of the same key with different sizes.
+	 * Toggle on/off keys are automatically created with this set to false.
 	 *
-	 * If the layout is undefined the key should not be rendered. The default size is `1` for everything except toggle on/off keys (which are set to `undefined` automatically since you do not usually want to render them).
-	 *
-	 * The `svg` prop provides a standardized way of providing a custom shape. {@link Manager.render} will use it's built-in beveled square shape if no other is provided.
+	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
-	layout: { width: number, height: number, x: number, y: number, svg?: string } | undefined
-	is: {
+	readonly render: boolean
+	/**
+	 * The width of the key. See {@link Manager.layout}.
+	 *
+	 * @RequiresSet @AllowsHookable @SetHookable
+	 */
+	readonly width: number
+	/**
+	 * The height of the key. See {@link Manager.layout}.
+	 *
+	 * @RequiresSet @AllowsHookable @SetHookable
+	 */
+	readonly height: number
+	/**
+	 * The x position of the key. See {@link Manager.layout}.
+	 *
+	 * @RequiresSet @AllowsHookable @SetHookable
+	 */
+	readonly x: number
+	/**
+	 * The y position of the key. See {@link Manager.layout}.
+	 *
+	 * @RequiresSet @AllowsHookable @SetHookable
+	 */
+	readonly y: number
+	/** A list of css classes the key should be rendered with. */
+	classes: string[]
+	readonly is: {
 		/**
 		 * Whether the key is a modifier. A modifier can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"`.
 		 *
@@ -105,9 +132,10 @@ export type KeyOptions = {
 		 *
 		 * ### Notes
 		 * - event.getModifierState does not check the validity of the key code, and will just return false for keys that don't exist.
-		 * 	 - If the modifier is native and the state is seen to change without a key press (i.e. when the element is not in focus), a key release is emulated.
+		 * - You will probably need to specify a {@link KeysOptions.variants variant} because, for example, to get the state of the Control keys, you need to pass `Control` not `ControlLeft/Right`
+		 * - If the modifier is native and the state is seen to change without a key press (i.e. when the element is not in focus), a key release is emulated.
 		 */
-		modifier: false | "emulated" | "native"
+		readonly modifier: false | "emulated" | "native"
 		/**
 		 * Whether it's a toggle key. A toggle can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"` (state starts off false and is toggle with every keydown registered).
 		 *
@@ -119,7 +147,7 @@ export type KeyOptions = {
 		 * let off = new Shortcut([keys.ScrollLock.off], commands.toggle_off_x)
 		 * ```
 		 *
-		 * The way this works is the class creates two new keys,with the corresponding suffix (`On`/`Off`) added to the id, then takes care of correctly assigning things to create the relevant properties (`"on", "off"` on the base key and `"root"` on the toggles).
+		 * The way this works is the class creates two new keys, with the corresponding suffix (`On`/`Off`) added to the id, then takes care of correctly assigning things to create the relevant properties (`"on", "off"` on the base key and `"root"` on the toggles). It also does a `set` (if allowed) on the labels of the keys to set them to `KeyName (On/Off)` and adds a hook to the root key to update the labels every time the root label is changed.
 		 *
 		 * These new instances don't do much of anything. Their main purpose is prevent the references to the instance from equaling each other, allowing their states to be set separately, and allowing the on/off keys to provide proper access to the base key and vice versa (so from the layout we don't have to handle 3 different keys).
 		 *
@@ -140,9 +168,6 @@ export type KeyOptions = {
 		 * key.off.id // aOff
 		 * ```
 		 *
-		 * opts.label is NOT modified. You can pass a function for `label` to customize the suffix on the toggles. See Other Notes below for how you might tell they key apart.
-		 *
-		 * Note that while `on` and `off` are enumerable properties, `root` is not, since it contains a recursive structure (`key.on.root.on....`).
 		 *
 		 * ### State
 		 *
@@ -196,7 +221,7 @@ export type KeyOptions = {
 		 * ### Notes
 		 * - If the toggle is native and the state is seen to change without a key press (i.e. when the element is not in focus), a key release is **NOT** emulated.
 		 */
-		toggle: "native" | "emulated" | false
+		readonly toggle: "native" | "emulated" | false
 	}
 }
 
@@ -205,6 +230,12 @@ export type KeysOptions = {
 	 * See {@link KeysStringifier}
 	 */
 	stringifier?: KeysStringifier
+	/**
+	 * Whether the instance automatically calculates the layout size ({@link Keys.layout}) from it's keys and adjusts to size/position changes using {@link Keys.recalculateLayout}.
+	 *
+	 * Setting this to true will trigger a recalculation.
+	 */
+	manageLayout: boolean
 }
 
 export type KeysSorterOptions = {
@@ -218,11 +249,15 @@ export type KeysSorterOptions = {
 export type KeyHooks = {
 	"label": BaseHookType<Key, string, never>
 	"variants": BaseHookType<Key, string[], ERROR.INVALID_VARIANT>
+	"x": BaseHookType<Key, KeyOptions["x"], never>
+	"y": BaseHookType<Key, KeyOptions["y"], never>
+	"width": BaseHookType<Key, KeyOptions["width"], never>
+	"height": BaseHookType<Key, KeyOptions["height"], never>
 	// cannot be allows hooked
 	"pressed": BaseHookType<Key, boolean, never, boolean, true>
 }
 
-export type KeysHooks = CollectionHookType<
+export type KeysCollectionHooks = CollectionHookType<
 	Keys,
 	Key,
 	Key | RawKey,
@@ -231,3 +266,7 @@ export type KeysHooks = CollectionHookType<
 	KnownError<ERROR.KEY_IN_USE | ERROR.MISSING>,
 	Key
 >
+
+export type KeysBaseHooks = {
+	"layout": BaseHookType<Key, {rows:number, columns:number}, never>
+}

@@ -1,12 +1,12 @@
+import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
+import { ERROR } from "@/types"
 import { Err, Ok, Result } from "@alanscodelog/utils"
 import { crop, findDuplicates, indent } from "@utils/utils"
-
 import { isNormalKey } from "./isNormalKey"
 import { isWheelKey } from "./isWheelKey"
 import { KnownError } from "./KnownError"
 
-import type { Key, KeysStringifier, Shortcut } from "@/classes"
-import { ERROR } from "@/types"
+
 
 
 /**
@@ -15,14 +15,14 @@ import { ERROR } from "@/types"
  * @internal
  */
 export function isValidChord(
-	self: Pick<Shortcut, "chain">,
+	self: Shortcut | Manager,
+	chain: Key[][],
 	chord: Key[],
 	i: number,
-	stringifier: KeysStringifier
+	stringifier: KeysStringifier,
 ): Result<true, KnownError<ERROR.CHORD_W_DUPLICATE_KEY | ERROR.CHORD_W_ONLY_MODIFIERS | ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS | ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS>> {
-	const shortcut = self.chain
 	const prettyChord = stringifier.stringifyChord(chord)
-	const prettyShortut = stringifier.stringifyChain(shortcut)
+	const prettyShortut = stringifier.stringifyChain(chain)
 
 	const repeated = findDuplicates(chord, { equals: (key, other) => {
 		if (key === other || key.id === other.id) {
@@ -44,30 +44,30 @@ export function isValidChord(
 		const prettyRepeated = stringifier.stringifyKeys(repeated)
 
 		return Err(new KnownError(ERROR.CHORD_W_DUPLICATE_KEY, crop`
-			Chord "${prettyChord}" in shortcut "${prettyShortut}" contains duplicate or incompatible keys:
+			Chord "${prettyChord}" in chain "${prettyShortut}" contains duplicate or incompatible keys:
 				${indent(prettyRepeated, 4)}
-			Shortcut chords cannot contain duplicate keys. This includes more than one of the same toggle, regardless of the state.
-		`, { shortcut: self, chord, i, keys: repeated }))
+			Chords cannot contain duplicate keys. This includes more than one of the same toggle, regardless of the state.
+		`, { self, chord, i, keys: repeated }))
 	}
 
 	const onlyModifiers = chord.filter(key => key.is.modifier)
 	const containsOnlyModifiers = onlyModifiers.length === chord.length
-	if (i < shortcut.length - 1 && containsOnlyModifiers) {
+	if (i < chain.length - 1 && containsOnlyModifiers) {
 		return Err(new KnownError(ERROR.CHORD_W_ONLY_MODIFIERS, crop`
-			Shortcut "${prettyShortut}" is impossible.
+			Chain "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" cannot contain only modifiers if it is followed by another chord.
-			A chord can only consist of only modifiers if it's the last chord in a shortcut.
-		`, { shortcut: self, chord, i, keys: onlyModifiers }))
+			A chord can only consist of only modifiers if it's the last chord in a chain.
+		`, { self, chord, i, keys: onlyModifiers }))
 	}
 
 	const normalKeys = chord.filter(isNormalKey)
 	const prettyNormalKeys = stringifier.stringifyKeys(normalKeys)
 	if (normalKeys.length > 1) {
 		return Err(new KnownError(ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS, crop`
-			Shortcut "${prettyShortut}" is impossible.
+			CHain "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" contains multiple normal (non-modifier/mouse/wheel/toggle) keys: ${prettyNormalKeys}
 			Chords can only contain one.
-		`, { shortcut: self, chord, i, keys: normalKeys }))
+		`, { self, chord, i, keys: normalKeys }))
 	}
 
 	/* It might actually be possible to allow this, similar to how emulated toggle keys are handled but it would be a pain for such an odd use case (even I don't have such weird shortcuts). */
@@ -75,10 +75,10 @@ export function isValidChord(
 	const prettyWheelKeys = stringifier.stringifyKeys(wheelKeys)
 	if (wheelKeys.length > 1) {
 		return Err(new KnownError(ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS, crop`
-			Shortcut "${prettyShortut}" is impossible.
+			Chain "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" contains multiple wheel keys: ${prettyWheelKeys}
 			Chords can only contain one.
-		`, { shortcut: self, chord, i, keys: wheelKeys }))
+		`, { self, chord, i, keys: wheelKeys }))
 	}
 	return Ok(true)
 }

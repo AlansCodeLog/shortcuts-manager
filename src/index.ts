@@ -3,4 +3,4 @@
 export * as bases from "./bases"
 export * as classes from "./classes"
 export * as helpers from "./helpers"
-export { en_layout } from "./keys"
+export { createLayout } from "./layouts"

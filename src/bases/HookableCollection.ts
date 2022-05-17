@@ -1,60 +1,95 @@
+import { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
+import { isToggleKey, isToggleRootKey, KnownError, mapKeys } from "@/helpers"
+import { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "@/types"
 import { Err, Ok, Result } from "@alanscodelog/utils"
 import { crop, indent, pretty, unreachable } from "@utils/utils"
-
 import { Hookable } from "./Hookable"
 
-import { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
-import { isToggleKey, isToggleRootKey, KnownError } from "@/helpers"
-import { CollectionHook, CollectionHookType, ERROR } from "@/types"
+
 
 
 export class HookableCollection<
-	THook extends CollectionHookType<any, any, any, any>,
-	TAddListener extends
-		CollectionHook<"add", THook> =
-		CollectionHook<"add", THook>,
-	TRemoveListener extends
-		CollectionHook<"remove", THook> =
-		CollectionHook<"remove", THook>,
-	TAllowsAddListener extends
-		CollectionHook<"allowsAdd", THook> =
-		CollectionHook<"allowsAdd", THook>,
-	TAllowsRemoveListener extends
-		CollectionHook<"allowsRemove", THook> =
-		CollectionHook<"allowsRemove", THook>,
-	TEntries extends THook["values"] = THook["values"],
-	TListeners extends {
-		add: TAddListener
-		remove: TRemoveListener
-		allowsAdd: TAllowsAddListener
-		allowsRemove: TAllowsRemoveListener
+	TCollectionHook extends CollectionHookType<any, any, any, any>,
+	TBaseHook extends
+		Record<string, BaseHookType<any, any, any, any, any, any>> = {},
+	TSetHook extends
+		BaseHook<"set", TBaseHook> =
+		BaseHook<"set", TBaseHook>,
+	TAddHook extends
+		CollectionHook<"add", TCollectionHook> =
+		CollectionHook<"add", TCollectionHook>,
+	TRemoveHook extends
+		CollectionHook<"remove", TCollectionHook> =
+		CollectionHook<"remove", TCollectionHook>,
+	TAllowsAddHook extends
+		CollectionHook<"allowsAdd", TCollectionHook> =
+		CollectionHook<"allowsAdd", TCollectionHook>,
+	TAllowsRemoveHook extends
+		CollectionHook<"allowsRemove", TCollectionHook> =
+		CollectionHook<"allowsRemove", TCollectionHook>,
+	TEntries extends TCollectionHook["values"] = TCollectionHook["values"],
+	THooks extends {
+		add: TAddHook
+		remove: TRemoveHook
+		allowsAdd: TAllowsAddHook
+		allowsRemove: TAllowsRemoveHook
+		set: TSetHook
 	} =
 	{
-		add: TAddListener
-		remove: TRemoveListener
-		allowsAdd: TAllowsAddListener
-		allowsRemove: TAllowsRemoveListener
+		add: TAddHook
+		remove: TRemoveHook
+		allowsAdd: TAllowsAddHook
+		allowsRemove: TAllowsRemoveHook
+		set: TSetHook
 	},
-> extends Hookable<TListeners> {
+> extends Hookable<THooks> {
 	constructor() {
-		super(["add", "remove", "allowsAdd", "allowsRemove"])
+		super(["add", "remove", "allowsAdd", "allowsRemove", "set"])
 	}
 	entries!: TEntries
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _add(_entry: THook["allowArgs"]): void {
+	protected _add(_entry: TCollectionHook["allowArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _remove(_entry: THook["removeArgs"]): void {
+	protected _remove(_entry: TCollectionHook["removeArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	protected _allows(type: "add" | "remove", entry: THook["allowArgs"]): Result<true, THook["error"] | Error> {
+	protected _allows(type: "add" | "remove", entry: TCollectionHook["allowArgs"]): Result<true, TCollectionHook["error"] | Error> {
 		switch (type) {
 			case "add":
-				return HookableCollection._canAddToDict<any>(this as any, this.entries, entry[0])
+				return HookableCollection._canAddToDict<any>(this as any, this.entries, entry)
 			case "remove":
-				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, entry[0])
+				return HookableCollection._canRemoveFromDict<any>(this as any, this.entries, entry)
+		}
+	}
+	protected _set<
+		TKey extends
+		keyof TBaseHook =
+		keyof TBaseHook,
+	>(
+			key: TKey,
+			value: TBaseHook[TKey]["value"],
+	): void {
+		(this as any)[key] = value
+	}
+	/**
+	 * Sets the property and triggers any hooks on it.
+	 */
+	set<
+		TKey extends
+		keyof TBaseHook =
+		keyof TBaseHook,
+		>(
+			key: TKey,
+			value: TBaseHook[TKey]["excludeSet"] extends true ? never : TBaseHook[TKey]["value"],
+	): void {
+		const self = this as any
+		const oldValue = self[key]
+		self._set(key, value)
+		for (const hook of this.hooks.set) {
+			hook(key, value, oldValue, self)
 		}
 	}
 	/**
@@ -76,13 +111,13 @@ export class HookableCollection<
 	 */
 	allows(
 		type: "add" | "remove",
-		entry: THook["allowArgs"]
-	): Result<true, THook["error"] | Error> {
+		entry: TCollectionHook["allowArgs"]
+	): Result<true, TCollectionHook["error"] | Error> {
 		const self = (this as any)
-		for (const listener of this.listeners[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof TListeners]) {
+		for (const hook of this.hooks[(`allows${type.charAt(0).toUpperCase()}${type.slice(1)}`) as keyof THooks]) {
 			const response = type === "add"
-				? (listener as any as CollectionHook<"allowsAdd">)(self, type, entry)
-				: (listener as any as CollectionHook<"allowsRemove">)(self, self.entries, entry)
+				? (hook as any as CollectionHook<"allowsAdd">)(self, type, entry)
+				: (hook as any as CollectionHook<"allowsRemove">)(self, self.entries, entry)
 			if (response.isError) return response
 		}
 		return self._allows(type, entry)
@@ -95,13 +130,13 @@ export class HookableCollection<
 	 * Note for adding keys to {@link Keys}, you will need to pass `{key, col, row}` as the value. `col`/`row` are optional and default to 0. This is not neccesary when removing a key, just `key` can be passed as the value.
 	 */
 	add(
-		entry: THook["allowArgs"]
+		entry: TCollectionHook["allowArgs"]
 	): void {
 		const self = (this as any)
 		self._add(entry)
 
-		for (const listener of this.listeners.add) {
-			listener(entry, this.entries, self)
+		for (const hook of this.hooks.add) {
+			hook(self, this.entries, entry)
 		}
 	}
 	protected static _canAddToDict<
@@ -123,22 +158,27 @@ export class HookableCollection<
 		>
 	> {
 		let existing: any | undefined
+		let existingIdentifier: string = ""
 
 		if (self instanceof Keys) {
 			if (isToggleKey(entry as Key) && !isToggleRootKey(entry as Key)) {
 				return Err(new KnownError(ERROR.KEYS_CANNOT_ADD_TOGGLE, `Toggle keys are automatically added to the key set when the root key is added, on/off instances cannot be added individually.`, { entry: entry as Key })) as any
 			}
+			existingIdentifier = (entry as any as Key).id
 			existing = (entries as any)[(entry as any as Key).id]
 		} else if (self instanceof Commands) {
+			existingIdentifier = (entry as Command).name
 			existing = (entries as any)[(entry as Command).name]
 		} else if (self instanceof Shortcuts) {
+			existingIdentifier = JSON.stringify(mapKeys((entry as Shortcut).chain))
 			existing = (entries as Shortcut[]).find(item => (entry as Shortcut).equals(item))
 		}
 
 		if (existing) {
-			const type = entry.constructor.name
+			const type = self instanceof Keys ? "key" : self instanceof Commands ? "command":"shortcut"
+
 			const text = crop`
-			${type} ${existing/* .string */} is already registered.
+			${type} ${existingIdentifier} is already registered.
 			Existing ${type}:
 			${indent(pretty(existing), 3)}
 			New ${type}:
@@ -167,13 +207,13 @@ export class HookableCollection<
 	 * This will NOT check if the property is allowed to be set, you should always check using {@link HookableBase.allows allows} first.
 	 */
 	remove(
-		entry: THook["removeArgs"]
+		entry: TCollectionHook["removeArgs"]
 	): void {
 		const self = (this as any)
 		self._remove(entry)
 
-		for (const listener of this.listeners.remove) {
-			listener(self, this.entries, entry)
+		for (const hook of this.hooks.remove) {
+			hook(self, this.entries, entry)
 		}
 	}
 	protected static _canRemoveFromDict<
@@ -205,5 +245,11 @@ export class HookableCollection<
 			`, { entry, collection: self as any }))
 		}
 		return Ok(true)
+	}
+	/**
+	 * Creates a base instance that conforms to the class. If passed an existing instance will modify it to conform to the class.
+	 */
+	create(_rawEntry: any): any {
+		unreachable("Should be implemented by extending class.")
 	}
 }

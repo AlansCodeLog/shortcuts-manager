@@ -1,21 +1,29 @@
-import type { Result } from "@alanscodelog/utils"
-
 import type { Manager } from "@/classes"
-
+import type { Result } from "@alanscodelog/utils"
 import type { Bases, Collections } from "."
 
 
-export type BaseHookType<TInstance extends Bases | Manager, TValue, TError, TOld = TValue, TExclude extends boolean = false> = {
+
+
+export type BaseHookType<
+	TInstance extends Bases | Manager,
+	TValue,
+	TError,
+	TOld = TValue,
+	TExclude extends boolean = false,
+	TExcludeExternalSet extends boolean = false
+> = {
 	value: TValue
 	error: TError
 	old: TOld
 	self: TInstance
-	exclude: TExclude
+	excludeAllows: TExclude
+	excludeSet: TExcludeExternalSet
 }
 
 export type CollectionHookType<TInstance extends Collections, TSetArgs, TAllowArgs, TValues, TAddError = Error | never, TRemoveError = Error | never, TRemoveArgs = TSetArgs> = {
-	// this is only for the listeners
-	// internally we receive allowValue entries which each class turns to setValue for set (set/add/remove) listeners
+	// this is only for the hooks
+	// internally we receive allowValue entries which each class turns to setValue for set (set/add/remove) hooks
 	setArgs: TSetArgs
 	removeArgs: TRemoveArgs
 	allowArgs: TAllowArgs
@@ -29,8 +37,8 @@ export type CollectionHookType<TInstance extends Collections, TSetArgs, TAllowAr
 export type BaseHook<
 	TType extends "allows" | "set" = "allows" | "set",
 	THooks extends
-		Record<string, BaseHookType<any, any, any>> =
-		Record<string, BaseHookType<any, any, any>>,
+		Record<string, BaseHookType<any, any, any, any, any, any>> =
+		Record<string, BaseHookType<any, any, any, any, any, any>>,
 	TKey extends
 		keyof THooks =
 		keyof THooks,
@@ -47,8 +55,8 @@ export type BaseHook<
 		Error | never =
 		Error | never,
 	TExclude extends
-		THooks[TKey]["exclude"] =
-		THooks[TKey]["exclude"],
+		THooks[TKey]["excludeAllows"] =
+		THooks[TKey]["excludeAllows"],
 > =
 TType extends "allows"
 ? (

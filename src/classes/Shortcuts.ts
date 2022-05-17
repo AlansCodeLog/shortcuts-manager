@@ -1,15 +1,14 @@
-import { AnyClass, crop, indent, pretty } from "@alanscodelog/utils"
+import { HookableCollection } from "@/bases"
+import { equalsKeys, KnownError } from "@/helpers"
+import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
+import { AnyClass, crop, Err, indent, Ok, pretty } from "@alanscodelog/utils"
 import type { Result } from "@alanscodelog/utils/dist/utils"
-import { Err, Ok } from "@alanscodelog/utils/dist/utils"
-
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import { Shortcut } from "./Shortcut"
 
-import { HookableCollection } from "@/bases"
-import { castType, KnownError } from "@/helpers"
-import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
+
 
 
 export class Shortcuts<
@@ -55,16 +54,13 @@ export class Shortcuts<
 		if (opts.sorter) this.sorter = opts.sorter
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
-		for (let entry of shortcuts) {
-			entry = this._basePrototype.create(entry)
-			if (this.allows("add", entry).unwrap()) this.add(entry)
+		for (let rawEntry of shortcuts) {
+			const properEntry = this.create(rawEntry)
+			if (this.allows("add", properEntry).unwrap()) this.add(properEntry)
 		}
 	}
-	protected override _add(entry: Shortcut | RawShortcut): void {
-		if (this.stringifier) entry.stringifier = this.stringifier
-		if (this.sorter) entry.sorter = this.sorter
-		entry = this._basePrototype.create(entry)
-		castType<Shortcut>(entry)
+	protected override _add(rawEntry: Shortcut | RawShortcut): void {
+		const entry = this.create(rawEntry)
 
 		entry.addHook("allows", this._boundAllowsHook)
 
@@ -213,8 +209,8 @@ export class Shortcuts<
 		const canB = this._assertChordsNotEmpty(chordsB)
 		if (canB.isError) { return canB }
 
-		if (Shortcut.equalsKeys(chordsA, chordsB, chordsB.length)
-			|| Shortcut.equalsKeys(chordsB, chordsA, chordsA.length)
+		if (equalsKeys(chordsA, chordsB, chordsB.length)
+			|| equalsKeys(chordsB, chordsA, chordsA.length)
 		) {
 			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, crop`
 			The chords to swap cannot share starting chords.
@@ -301,5 +297,41 @@ export class Shortcuts<
 		}
 
 		return can
+	}
+	export(): ReturnType<Shortcut["export"]>[] {
+		return this.entries.map(shortcut => shortcut.export())
+	}
+	/**
+	 * @inheritdoc
+	 */
+	override create<T extends Shortcut = Shortcut>(rawEntry: T | RawShortcut): T {
+		if (rawEntry instanceof Shortcut) {
+			rawEntry.sorter = this.sorter
+			rawEntry.stringifier = this.stringifier
+			return rawEntry as T
+		}
+		return this._basePrototype.create({
+			...rawEntry,
+			opts: {
+				...rawEntry.opts,
+				sorter: this.sorter ?? rawEntry.opts?.sorter,
+				stringifier: this.stringifier ?? rawEntry.opts?.stringifier
+			}
+		}) as T
+	}
+	/**
+	 * Checks if all shortcuts can be removed, if they can, removes them all, otherwise does nothing and returns the error.
+	 *
+	 * Useful for "emptying" out shortcuts when importing configs.
+	 */
+	safeRemoveAll():Result<true, Error> {
+		const res = this.entries.map(shortcut => this.allows("remove", shortcut)).find(res => res.isError) ?? Ok(true)
+		if (res.isError) return res
+		else {
+			for (let shortcut of this.entries) {
+				this.remove(shortcut)
+			}
+		}
+		return Ok(true)
 	}
 }

@@ -119,3 +119,22 @@ Shortcuts are the exception to the above because there is not a single key they 
 So unlike other collection classes, they must be stored in an array and the class's methods differ from other collections.
 
 \* In general, checking if shortcuts are duplicates is a bad idea if using boolean conditions. See <!-- Todo -->
+
+-------------
+
+
+
+
+
+
+draft
+
+
+		type ExtendedHooks = CommandHooks & {a:BaseHookType<Bases, string, never>}
+		class Test extends Command {
+			override set<T extends keyof ExtendedHooks>(key: T, val: ExtendedHooks[T]["excludeSet"] extends true ? never : ExtendedHooks[T]["value"]): void {
+
+			}
+		}
+		new Test("jhlkjh").set("execute", ()=>{})
+		new Test("jhlkjh").set("a", "jg")

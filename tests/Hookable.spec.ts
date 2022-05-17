@@ -1,12 +1,10 @@
-import { catchError, testName } from "@alanscodelog/utils"
-import type { Result } from "@alanscodelog/utils/dist/utils"
-import { Err, Ok } from "@alanscodelog/utils/dist/utils"
-
+import { Shortcut, Shortcuts } from "@/classes"
+import { TYPE_ERROR } from "@/types"
+import { catchError, Err, Ok, Result, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
-import { Shortcut, Shortcuts } from "@/classes"
-import { TYPE_ERROR } from "@/types"
+
 
 
 describe(testName(), () => {
@@ -16,31 +14,31 @@ describe(testName(), () => {
 			const listener: any = jest.fn(() => true)
 			shortcut.addHook("allows", listener)
 			shortcut.addHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(1)
-			expect(shortcut.listeners.set.length).to.equal(1)
+			expect(shortcut.hooks.allows.length).to.equal(1)
+			expect(shortcut.hooks.set.length).to.equal(1)
 			shortcut.allows("chain", [[]])
 			shortcut.set("chain", [[]])
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(2)
 			shortcut.removeHook("allows", listener)
 			shortcut.removeHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(0)
-			expect(shortcut.listeners.set.length).to.equal(0)
+			expect(shortcut.hooks.allows.length).to.equal(0)
+			expect(shortcut.hooks.set.length).to.equal(0)
 		})
 		it("throw if removing invalid listener", () => {
 			const shortcut = new Shortcut([[k.a]])
 			const listener: any = () => {}
 			shortcut.addHook("allows", listener)
 			shortcut.addHook("set", listener)
-			expect(shortcut.listeners.allows.length).to.equal(1)
-			expect(shortcut.listeners.set.length).to.equal(1)
+			expect(shortcut.hooks.allows.length).to.equal(1)
+			expect(shortcut.hooks.set.length).to.equal(1)
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcut.removeHook("allows", listener2)
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				const listener3: any = () => {}
 				shortcut.removeHook("set", listener3)
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 		})
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
@@ -76,10 +74,10 @@ describe(testName(), () => {
 			shortcuts.addHook("add", listener)
 			shortcuts.addHook("allowsRemove", listener)
 			shortcuts.addHook("remove", listener)
-			expect(shortcuts.listeners.allowsAdd.length).to.equal(1)
-			expect(shortcuts.listeners.add.length).to.equal(1)
-			expect(shortcuts.listeners.allowsRemove.length).to.equal(1)
-			expect(shortcuts.listeners.remove.length).to.equal(1)
+			expect(shortcuts.hooks.allowsAdd.length).to.equal(1)
+			expect(shortcuts.hooks.add.length).to.equal(1)
+			expect(shortcuts.hooks.allowsRemove.length).to.equal(1)
+			expect(shortcuts.hooks.remove.length).to.equal(1)
 			shortcuts.allows("add", { chain: [[]]})
 			expect((listener as jest.Mock<any, any>).mock.calls.length).to.equal(1)
 			shortcuts.add(new Shortcut([[]]))
@@ -92,10 +90,10 @@ describe(testName(), () => {
 			shortcuts.removeHook("add", listener)
 			shortcuts.removeHook("allowsRemove", listener)
 			shortcuts.removeHook("remove", listener)
-			expect(shortcuts.listeners.allowsAdd.length).to.equal(0)
-			expect(shortcuts.listeners.add.length).to.equal(0)
-			expect(shortcuts.listeners.allowsRemove.length).to.equal(0)
-			expect(shortcuts.listeners.remove.length).to.equal(0)
+			expect(shortcuts.hooks.allowsAdd.length).to.equal(0)
+			expect(shortcuts.hooks.add.length).to.equal(0)
+			expect(shortcuts.hooks.allowsRemove.length).to.equal(0)
+			expect(shortcuts.hooks.remove.length).to.equal(0)
 		})
 		it("throw if removing invalid listener", () => {
 			const shortcuts = new Shortcuts([])
@@ -104,24 +102,24 @@ describe(testName(), () => {
 			shortcuts.addHook("add", listener)
 			shortcuts.addHook("allowsRemove", listener)
 			shortcuts.addHook("remove", listener)
-			expect(shortcuts.listeners.allowsAdd.length).to.equal(1)
-			expect(shortcuts.listeners.add.length).to.equal(1)
-			expect(shortcuts.listeners.allowsRemove.length).to.equal(1)
-			expect(shortcuts.listeners.remove.length).to.equal(1)
+			expect(shortcuts.hooks.allowsAdd.length).to.equal(1)
+			expect(shortcuts.hooks.add.length).to.equal(1)
+			expect(shortcuts.hooks.allowsRemove.length).to.equal(1)
+			expect(shortcuts.hooks.remove.length).to.equal(1)
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcuts.removeHook("allowsAdd", listener2)
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				shortcuts.removeHook("add", () => { })
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcuts.removeHook("allowsRemove", listener2)
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				shortcuts.removeHook("remove", () => { })
-			}).code).to.equal(TYPE_ERROR.LISTENER_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
 		})
 		it("throw if allow listener returns error", () => {
 			const shortcuts = new Shortcuts([])

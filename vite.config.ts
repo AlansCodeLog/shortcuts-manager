@@ -1,10 +1,7 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
 import vue from "@vitejs/plugin-vue"
 import path from "path"
 import { fileURLToPath } from "url"
-// eslint-disable-next-line import/no-extraneous-dependencies
 import { defineConfig } from "vite"
-
 
 const rootPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
 
@@ -12,13 +9,30 @@ const rootPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
 // https://vitejs.dev/config/
 // eslint-disable-next-line import/no-default-export
 export default defineConfig({
-	root: "src-demo",
-	plugins: [vue()],
+	root: "demo",
+	plugins: [
+		vue(),
+	],
 	resolve: {
 		alias: {
 			"@utils": "@alanscodelog/utils/dist",
-			"@lib": path.resolve(rootPath, "./src"),
-			"@": path.resolve(rootPath, "./src-demo/src"),
+			// "@lib": "shortcuts-visualizer/dist",
+			"@": path.resolve(rootPath, "./demo/src"),
 		},
 	},
+	server: {
+		fs: {
+			strict: false,
+		}
+	},
+	optimizeDeps: {
+		include: ["shortcuts-visualizer"],
+	},
+	build: {
+		outDir: path.resolve(rootPath, "./demo/dist"),
+		commonjsOptions: {
+			include: [/shortcuts-visualizer/, /node_modules/]
+		},
+		minify:false
+	}
 })

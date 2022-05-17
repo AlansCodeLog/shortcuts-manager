@@ -1,6 +1,7 @@
 import type { AnyFunction } from "@alanscodelog/utils"
-
+import type { Keys } from "."
 import { EmulatedEvent } from "./EmulatedEvent"
+
 
 
 const mouseButtons = ["0", "1", "2", "3", "4", "5"]
@@ -20,23 +21,32 @@ const wheelKeys = ["wheelUp", "wheelDown"]
  * ```
  */
 export class Emulator {
+	validKeys?:Keys
+	constructor(keys?: Keys) {
+		this.validKeys = keys
+	}
 	listeners: {
-		keydown?: AnyFunction
-		keyup?: AnyFunction
-		wheel?: AnyFunction
-		mousedown?: AnyFunction
-		mouseup?: AnyFunction
+		keydown: AnyFunction[]
+		keyup: AnyFunction[]
+		wheel: AnyFunction[]
+		mousedown: AnyFunction[]
+		mouseup: AnyFunction[]
 	} = {
-			keydown: undefined,
-			keyup: undefined,
-			wheel: undefined,
-			mousedown: undefined,
-			mouseup: undefined,
+			keydown: [],
+			keyup: [],
+			wheel: [],
+			mousedown: [],
+			mouseup: [],
 		}
 	initiated: boolean = false
 	addEventListener(type: string, func: AnyFunction): void {
-		this.listeners[type as keyof Emulator["listeners"]] = func
+		this.listeners[type as keyof Emulator["listeners"]].push(func)
 		this.initiated = true
+	}
+	removeEventListener(type: string, func: AnyFunction): void {
+		const i = this.listeners[type as keyof Emulator["listeners"]].indexOf(func)
+		if (i === -1) throw "Listener could not be found."
+		this.listeners[type as keyof Emulator["listeners"]].splice(i, 1)
 	}
 	/**
 	 *
@@ -78,57 +88,73 @@ export class Emulator {
 	 *
 	 * Note: While the emulator is aware of correct mouse/wheel names, it does not check key names are valid.
 	 */
-	fire(str: string, modifiers: string[] = []): void {
+	fire(str: string, modifiers: string[] = [], validKeys?:Keys): void {
 		if (!this.initiated) {
-			throw new Error("Emulator not initiated.")
+			console.warn("No manager attached to the emulator.")
+			return
 		}
 		const keys = str.split(/(\s+)/).filter(part => part.trim() !== "")
 		for (const key of keys) {
 			if (mouseButtons.includes(key)) {
-				this.press("mouse", key, modifiers)
-				this.release("mouse", key, modifiers)
+				this.press("mouse", key, modifiers, validKeys)
+				this.release("mouse", key, modifiers, validKeys)
 			} else if (mouseButtonsDown.includes(key)) {
-				this.press("mouse", key[1], modifiers)
+				this.press("mouse", key[0], modifiers, validKeys)
 			} else if (mouseButtonsUp.includes(key)) {
-				this.release("mouse", key[1], modifiers)
+				this.release("mouse", key[0], modifiers, validKeys)
 			} else if (wheelKeys.includes(key)) {
-				this.press("wheel", key, modifiers)
+				this.press("wheel", key, modifiers, validKeys)
 			} else if (key.endsWith("+")) {
-				this.press("key", key.slice(0, key.length - 1), modifiers)
+				this.press("key", key.slice(0, key.length - 1), modifiers, validKeys)
 			} else if (key.endsWith("-")) {
-				this.release("key", key.slice(0, key.length - 1), modifiers)
+				this.release("key", key.slice(0, key.length - 1), modifiers, validKeys)
 			} else {
-				this.press("key", key, modifiers)
-				this.release("key", key, modifiers)
+				this.press("key", key, modifiers, validKeys)
+				this.release("key", key, modifiers, validKeys)
 			}
 		}
 	}
-	press(type: "mouse" | "wheel" | "key", key: string, modifiers: string[] = []): void {
+	press(type: "mouse" | "wheel" | "key", key: string, modifiers: string[] = [], validKeys?: Keys): void {
+		this._checkIsValidKey(key, validKeys)
 		switch (type) {
 			case "mouse": {
 				const event = new EmulatedEvent("mousedown", { button: parseInt(key, 10) }, modifiers)
-				this.listeners.mousedown!(event)
+				this._dispatch("mousedown", event)
 			} break
 			case "wheel": {
 				const event = new EmulatedEvent("wheel", { deltaY: key === "wheelDown" ? 1 : 0 }, modifiers)
-				this.listeners.wheel!(event)
+				this._dispatch("wheel", event)
 			} break
 			case "key": {
 				const event = new EmulatedEvent("keydown", { code: key }, modifiers)
-				this.listeners.keydown!(event)
+				this._dispatch("keydown", event)
 			} break
 		}
 	}
-	release(type: "mouse" | "key", key: string, modifiers: string[] = []): void {
+	release(type: "mouse" | "key", key: string, modifiers: string[] = [], validKeys?: Keys): void {
+		this._checkIsValidKey(key, validKeys)
 		switch (type) {
 			case "mouse": {
 				const event = new EmulatedEvent("mousedown", { button: parseInt(key, 10) }, modifiers)
-				this.listeners.mouseup!(event)
+				this._dispatch("mouseup", event)
 			} break
 			case "key": {
 				const event = new EmulatedEvent("keydown", { code: key }, modifiers)
-				this.listeners.keyup!(event)
+				this._dispatch("keyup", event)
 			} break
+		}
+	}
+	private _checkIsValidKey(key: string, validKeys?: Keys): void {
+		const valid = validKeys ?? this.validKeys
+		if (valid) {
+			if (valid.query(k => k.id === key || k.variants?.includes(key), false) === undefined) {
+				throw new Error(`Emulator was asked to fire key not in valid keys array. ${key}`)
+			}
+		}
+	}
+	private _dispatch<T extends keyof Emulator["listeners"]>(type: T, event: EmulatedEvent<T>) {
+		for (let listener of this.listeners[type]) {
+			listener(event)
 		}
 	}
 }
