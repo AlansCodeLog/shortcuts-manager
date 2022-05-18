@@ -14,12 +14,11 @@ on:
 
 jobs:
   build-only:
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        #TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
-        node-version: [10.x, 14.x]
+        #TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [latest]
+        node-version: [14.x, 17.x]
 
     steps:
 
@@ -30,22 +29,24 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v2.0.1
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
     # regionend
 
     # region Steps
-    - run: yarn install --frozen-lockfile
+    - run: pnpm install
       if: "env.USE_LOCKFILE == 'true'"
 
-    # awaiting --ignore engines is temporary because of "typedoc-plugin-param-names" having engines >=12
-    # only this command needs it because I only use no lockfile for libs and only libs need typedoc
-    - run: yarn install --no-lockfile --ignore-engines
+    - run: pnpm install --no-frozen-lockfile
       if: "env.USE_LOCKFILE == 'false'"
 
-    - run: yarn build
+    - run: pnpm build
 
-    - run: yarn lint:eslint # test command will lint types
+    - run: pnpm lint:eslint # test command will lint types
 
-    - run: yarn test
-
-    - run: yarn doc
+    - run: pnpm test
     # regionend

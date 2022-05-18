@@ -131,12 +131,10 @@
 	"engines": { "node": ">=14.0.0" },
 	"@comments": {
 		"scripts": {
-			"test": "Runs `lint:types` before (so that flags can be passed to the test command) so that we can test type assertions. See expect_type function in @alanscodelog/utils.",
+			"test": "Runs `lint:types` before (so that flags can be passed to the test command) so that we can test type assertions. See expectType function in @alanscodelog/utils.",
 			"lint:commits": "Lints all unpushed commits in the active branch.",
-			"test:inspectErrors": "For use with my inspectError utility function from @alanscodelog/utils",
 			"prepare": "Needed so that if we pull the package from git it will get built and installed properly.",
-			"actions:debug": "For debugging github build action locally with nektos/act. Requires act and docker. Note: Cache will never work locally because of https://github.com/nektos/act/issues/285",
-			"demo:lint": "Linting is hit or miss on VS Code."
+			"actions:debug": "For debugging github build action locally with nektos/act. Requires act and docker. Note: Cache will never work locally because of https://github.com/nektos/act/issues/285"
 		}
 	},
 	"private": true

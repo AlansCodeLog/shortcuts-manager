@@ -14,43 +14,49 @@ jobs:
     strategy:
       matrix:
         # TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
-        node-version: [10.x, 14.x]
+        node-version: [14.x, 17.x]
 
     steps:
 
     # region Setup
     - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Get Yarn Cache Path
-      id: yarn-cache-dir-path
-      run: echo "::set-output name=dir::$(yarn cache dir)"
-
-    - uses: actions/cache@v2
-      id: yarn-cache
-      with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: ${{ runner.os }}-node-${{ matrix.node }}-yarn-
-
-    - run: "echo Cache Key: ${{ runner.os }}-node-${{ matrix.node }}-yarn-${{ hashFiles('**/yarn.lock') }}"
-    - run: "echo Cache Restore-Keys: ${{ runner.os }}-node-${{ matrix.node }}-yarn-"
-    - run: "echo Yarn Cache Hit: ${{ steps.yarn-cache.outputs.cache-hit }}"
 
     - name: Setting Up Node.js (${{ matrix.node-version }})
       uses: actions/setup-node@v1
       with:
         node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v2.0.1
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
+
+    - name: Get Pnpm Cache Path
+      if: "env.USE_LOCKFILE == 'true'"
+      id: pnpm-cache
+      run: |
+        echo "::set-output name=dir::$(pnpm store path)"
+
+    - uses: actions/cache@v3
+      if: "env.USE_LOCKFILE == 'true'"
+      name: pnpm cache
+      with:
+        path: ${{ steps.pnpm-cache.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
+    - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
+    - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
     # regionend
 
     # region Steps
-    - run: yarn install --frozen-lockfile
+    - run: pnpm install
       if: "env.USE_LOCKFILE == 'true'"
 
-    # awaiting --ignore engines is temporary because of "typedoc-plugin-param-names" having engines >=12
-    # only this command needs it because I only use no lockfile for libs and only libs need typedoc
-    - run: yarn install --no-lockfile --ignore-engines
+    - run: pnpm install --no-frozen-lockfile
       if: "env.USE_LOCKFILE == 'false'"
 
     - name: Commits to Lint
@@ -59,11 +65,11 @@ jobs:
     - name: Lint Commits
       run: yarn commitlint --from ${{github.event.pull_request.base.sha}} --to ${{github.event.pull_request.head.sha}}
 
-    - run: yarn build
+    - run: pnpm build
 
-    - run: yarn lint:eslint # test command will lint types (coverage runs test script)
+    - run: pnpm lint:eslint # test command will lint types (coverage runs test script)
 
-    - run: yarn coverage
+    - run: pnpm coverage
 
     - name: Coverage
       uses: romeovs/lcov-reporter-action@v0.2.16

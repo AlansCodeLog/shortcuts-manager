@@ -1,0 +1,78 @@
+name: Build
+# not technically necessary because release also runs tests but this way the build badge is separate
+
+env:
+  USE_LOCKFILE: false
+
+on:
+  #TOCONFIGURE
+  schedule:
+    # every first of the month at 12:00 noon GMT-3
+    # https://crontab.guru/#0_12_1_*_*
+    - cron:  '0 15 1 * *'
+  push:
+    branches: [ master ]
+  repository_dispatch:
+    types: [ build ]
+    # to trigger: curl -v -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/alanscodelog/TOREPONAME/dispatches -d '{ "event_type": "build" }'
+
+jobs:
+  build:
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        #TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
+        node-version: [14.x, 17.x]
+
+    steps:
+
+    # region Setup
+    - uses: actions/checkout@v2
+
+    - name: Setting Up Node.js (${{ matrix.node-version }})
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v2.0.1
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
+
+    - name: Get Pnpm Cache Path
+      if: "env.USE_LOCKFILE == 'true'"
+      id: pnpm-cache
+      run: |
+        echo "::set-output name=dir::$(pnpm store path)"
+
+    - uses: actions/cache@v3
+      if: "env.USE_LOCKFILE == 'true'"
+      name: pnpm cache
+      with:
+        path: ${{ steps.pnpm-cache.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
+    - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
+    - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
+    # regionend
+
+    # region Steps
+    - run: pnpm install
+      if: "env.USE_LOCKFILE == 'true'"
+
+    - run: pnpm install --no-frozen-lockfile
+      if: "env.USE_LOCKFILE == 'false'"
+
+    - run: pnpm install
+
+    - run: pnpm build
+
+    - run: pnpm lint:eslint # test command will lint types
+
+    - run: pnpm test
+    # regionend
