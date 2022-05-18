@@ -1,10 +1,14 @@
+/* eslint-disable max-lines */
+import { castType, crop, Err, indent, multisplice, Ok, pretty, Result, setReadOnly, unreachable } from "@alanscodelog/utils"
+
+import { defaultSorter } from "./KeysSorter"
+import { defaultStringifier } from "./KeysStringifier"
+
 import { HookableBase } from "@/bases"
 import { Command, Commands, Condition, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
 import { checkManagerShortcuts, checkShortcutCommands, checkShortcutKeys, defaultManagerCallback, isModifierKey, isToggleRootKey, isTriggerKey, isValidChain, KnownError, mapKeys } from "@/helpers"
 import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "@/types"
-import { castType, crop, Err, indent, multisplice, Ok, Result, setReadOnly } from "@alanscodelog/utils"
-import { defaultSorter } from "./KeysSorter"
-import { defaultStringifier } from "./KeysStringifier"
+
 
 const defaultLabelFilter = (): boolean => true
 
@@ -75,7 +79,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	keyboardMap?: KeyboardLayoutMap
 	private _selfKeyboardMap: Map<Key, boolean> = new Map()
-	private _timers: Map<Key, number | NodeJS.Timeout> = new Map()
+	private readonly _timers: Map<Key, number | NodeJS.Timeout> = new Map()
 	private _labelPromise!: Promise<void>
 	/**
 	 * Filters the auto labeling.
@@ -129,18 +133,18 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _untrigger: false | TriggerableShortcut = false
 	private _nativeToggleKeys: ToggleRootKey[] = []
 	private _nativeModifierKeys: Key[] = []
-	private _boundKeydown: Manager["_keydown"]
-	private _boundKeyup: Manager["_keyup"]
-	private _boundMousedown: Manager["_mousedown"]
-	private _boundMouseup: Manager["_mouseup"]
-	private _boundWheel: Manager["_wheel"]
-	private _boundKeysAddHook: CollectionHook<"add", KeysCollectionHooks>
-	private _boundKeysRemoveHook: CollectionHook<"remove", KeysCollectionHooks>
-	private _boundKeysAllowsRemoveHook: CollectionHook<"allowsRemove", KeysCollectionHooks>
-	private _boundCommandsAllowsRemoveHook: CollectionHook<"allowsRemove", CommandsHooks>
-	private _boundShortcutAddHook: CollectionHook<"add", ShortcutsHooks>
-	private _boundShortcutRemoveHook: CollectionHook<"remove", ShortcutsHooks>
-	private _boundShortcutAllowsHook: BaseHook<"allows", ShortcutHooks>
+	private readonly _boundKeydown: Manager["_keydown"]
+	private readonly _boundKeyup: Manager["_keyup"]
+	private readonly _boundMousedown: Manager["_mousedown"]
+	private readonly _boundMouseup: Manager["_mouseup"]
+	private readonly _boundWheel: Manager["_wheel"]
+	private readonly _boundKeysAddHook: CollectionHook<"add", KeysCollectionHooks>
+	private readonly _boundKeysRemoveHook: CollectionHook<"remove", KeysCollectionHooks>
+	private readonly _boundKeysAllowsRemoveHook: CollectionHook<"allowsRemove", KeysCollectionHooks>
+	private readonly _boundCommandsAllowsRemoveHook: CollectionHook<"allowsRemove", CommandsHooks>
+	private readonly _boundShortcutAddHook: CollectionHook<"add", ShortcutsHooks>
+	private readonly _boundShortcutRemoveHook: CollectionHook<"remove", ShortcutsHooks>
+	private readonly _boundShortcutAllowsHook: BaseHook<"allows", ShortcutHooks>
 	/**
 	 * Create a manager which can track key states, layouts, and trigger shortcuts. Basically the brains of the operation.
 	 *
@@ -204,15 +208,15 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		{
 			stringifier,
 			sorter,
-			autoReleaseDelay =  500,
+			autoReleaseDelay = 500,
 			labelStrategy = true,
 			labelFilter,
 		}: {
 			stringifier?: KeysStringifier
 			sorter?: KeysSorter
 			autoReleaseDelay?: number
-			labelStrategy?: Manager["labelStrategy"],
-			labelFilter?:Manager["labelFilter"]
+			labelStrategy?: Manager["labelStrategy"]
+			labelFilter?: Manager["labelFilter"]
 		} = {},
 	) {
 		super()
@@ -239,10 +243,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this.set("labelStrategy", labelStrategy)
 		this.safeSet("replace", { shortcuts, keys, commands }).unwrap()
 	}
-	private get _labelWNavigator():boolean {
+	private get _labelWNavigator(): boolean {
 		return [true, "both", "navigator"].includes(this.labelStrategy as string)
 	}
-	private get _labelWPress():boolean {
+	private get _labelWPress(): boolean {
 		return [true, "both", "press"].includes(this.labelStrategy as string)
 	}
 	private async _labelStrategyStatus(): Promise<void> {
@@ -259,14 +263,14 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		}
 	}
-	private _keyboardMapLabel(map: KeyboardLayoutMap, key: Key) {
+	private _keyboardMapLabel(map: KeyboardLayoutMap, key: Key): void {
 		if (this._labelWNavigator && map && this.keys.entries[key.id] === key) { // just in case
 			const codes = [key.id, ...(key.variants ?? [])]
 
 			for (const code of codes) {
 				const label = map.get(code)
 				if (label) {
-					if (this.labelFilter({key: label}, key)) {
+					if (this.labelFilter({ key: label }, key)) {
 						key.set("label", label)
 						this._selfKeyboardMap.set(key, true)
 					}
@@ -274,9 +278,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		}
 	}
-	private _checkLabel<T extends AnyInputEvent>(e: T, prop: keyof T, keys: Key[]) {
+	private _checkLabel<T extends AnyInputEvent>(e: T, prop: keyof T, keys: Key[]): void {
 		if (this._labelWPress) {
-			for (let key of keys) {
+			for (const key of keys) {
 				if (!this._selfKeyboardMap.has(key)) {
 					if (this.labelFilter(e, key)) {
 						// we don't use instanceof so that we can still be compatible with emulated events
@@ -290,6 +294,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 							case "key":
 								key.set("label", (e as KeyboardEvent).key)
 								return
+							default:
+								unreachable()
 						}
 					}
 				}
@@ -374,14 +380,14 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * ```
 	 * You will also probably want to `preventDefault` all events while recording with {@link Manager.eventListener}.
 	 */
-	startRecording() {
+	startRecording(): void {
 		this.clearChain()
 		setReadOnly(this, "isRecording", true)
 	}
 	/**
 	 * Clears the chain and stops recording.
 	 */
-	stopRecording() {
+	stopRecording(): void {
 		this.clearChain()
 		setReadOnly(this, "isRecording", false)
 	}
@@ -415,10 +421,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * Used internally so that `set("chain")` always sets fresh arrays.
 	 */
 	static cloneChain(chain: Key[][]): Key[][] {
-		const clone:Key[][] = []
-		for (let chord of chain) {
+		const clone: Key[][] = []
+		for (const chord of chain) {
 			const cloneChord = []
-			for (let key of chord) cloneChord.push(key)
+			for (const key of chord) cloneChord.push(key)
 			clone.push(cloneChord)
 		}
 		return clone
@@ -478,17 +484,17 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	/**
 	 * Sets the chain but bypasses `set` logic while still triggering hooks.
 	 */
-	private _setChain(chain: Key[][]) {
+	private _setChain(chain: Key[][]): void {
 		this._bypassChainSet = true
 		this.set("chain", chain)
 		this._bypassChainSet = false
 	}
-	private _checkUntrigger(e?: AnyInputEvent):void {
+	private _checkUntrigger(e?: AnyInputEvent): void {
 		if (this._untrigger) {
-			const untrigger: TriggerableShortcut = this._untrigger as TriggerableShortcut
+			const untrigger: TriggerableShortcut = this._untrigger
 			// MUST be set to false first or we can get into an infinite loop if the user uses `set(chain)` from inside the command execute function
 			this._untrigger = false
-			untrigger.command.execute?.({isKeydown:false,command: untrigger.command, shortcut: untrigger, manager:this, event:e})
+			untrigger.command.execute?.({ isKeydown: false, command: untrigger.command, shortcut: untrigger, manager: this, event: e })
 		}
 	}
 	private _checkTrigger(e?: AnyInputEvent): void {
@@ -500,7 +506,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		} else if (res.value) {
 			this._untrigger = res.value
-			res.value.command.execute?.({isKeydown:true, command:res.value.command, shortcut:res.value, manager: this, event: e})
+			res.value.command.execute?.({ isKeydown: true, command: res.value.command, shortcut: res.value, manager: this, event: e })
 		}
 		if (this.lastChord()?.find(key => isTriggerKey(key))) {
 			if (this.inChain() || this.isRecording) {
@@ -512,7 +518,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		}
 	}
-	private _getTriggerableShortcut(): Result<false | TriggerableShortcut, KnownError<ERROR.RECORDING|ERROR.MULTIPLE_MATCHING_SHORTCUTS>> {
+	private _getTriggerableShortcut(): Result<false | TriggerableShortcut, KnownError<ERROR.RECORDING | ERROR.MULTIPLE_MATCHING_SHORTCUTS>> {
 		if (this.isRecording) return Err(new KnownError(ERROR.RECORDING, "", undefined))
 		const shortcuts = this.shortcuts.query(shortcut => shortcut.triggerableBy(this.chain, this.context))
 		if (shortcuts.length === 0) return Ok(false)
@@ -612,7 +618,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		}
 	}
 	private _getModifierState(key: Key, e: AnyInputEvent): boolean {
-		for (let code of [key.id, ...key.variants ?? []]) {
+		for (const code of [key.id, ...key.variants ?? []]) {
 			if (e.getModifierState(code)) return true
 		}
 		return false
@@ -651,7 +657,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const added: Key[] = []
 		const removed: Key[] = []
 		for (const key of this._nativeModifierKeys) {
-
 			if (this._getModifierState(key, e)) {
 				if (!key.pressed) {
 					key.set("pressed", true)
@@ -679,13 +684,12 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			const indexes = keys.map(key => added.indexOf(key)).filter(i => i > -1)
 			multisplice(keys, indexes)
 		}
-
 	}
-	private _unknownKey(e: KeyboardEvent):void {
-		this.cb(new KnownError(ERROR.UNKNOWN_KEY_EVENT, `An unknown key (code: ${e.code} key:${e.key}) was pressed.`, {e}), this)
+	private _unknownKey(e: KeyboardEvent): void {
+		this.cb(new KnownError(ERROR.UNKNOWN_KEY_EVENT, `An unknown key (code: ${e.code} key:${e.key}) was pressed.`, { e }), this)
 	}
 	private _keydown(e: KeyboardEvent): void {
-		let keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
+		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
 		this.eventListener?.({ event: e, keys, isKeydown: true })
 
 		if (keys.length === 0) { this._unknownKey(e); return }
@@ -695,8 +699,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this._addToChain(keys, e)
 	}
 	private _keyup(e: KeyboardEvent): void {
-		let keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
-		this.eventListener?.({event:e, keys, isKeydown:false})
+		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
+		this.eventListener?.({ event: e, keys, isKeydown: false })
 		if (keys.length === 0) {this._unknownKey(e); return}
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e, keys)
@@ -707,7 +711,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const dir = e.deltaY < 0 ? "Up" : "Down"
 		const code = `Wheel${dir}`
 		const keys = this.keys.query(key => (key.id === code || key.variants?.includes(code)) && !key.pressed)!
-		this.eventListener?.({event:e, keys, isKeydown:true})
+		this.eventListener?.({ event: e, keys, isKeydown: true })
 		this._setKeyState(keys, true)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "deltaY", keys)
@@ -718,7 +722,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _mousedown(e: MouseEvent): void {
 		const button = e.button.toString()
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
-		this.eventListener?.({event:e, keys, isKeydown:true})
+		this.eventListener?.({ event: e, keys, isKeydown: true })
 		this._setKeyState(keys, true)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "button", keys)
@@ -727,7 +731,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _mouseup(e: MouseEvent): void {
 		const button = e.button.toString()
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
-		this.eventListener?.({event:e, keys, isKeydown:false})
+		this.eventListener?.({ event: e, keys, isKeydown: false })
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "button", keys)
@@ -744,6 +748,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			this._nativeModifierKeys.push(entry)
 		}
 		if ([true, "both", "navigator"].includes(this.labelStrategy)) {
+			// eslint-disable-next-line @typescript-eslint/no-floating-promises
 			this._labelPromise.then(() => {
 				if (this.keyboardMap) this._keyboardMapLabel(this.keyboardMap, entry)
 			})
@@ -868,7 +873,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 					this.keys.addHook("remove", this._boundKeysRemoveHook)
 					this.keys.addHook("allowsRemove", this._boundKeysAllowsRemoveHook)
 
-					for (let key of this._selfKeyboardMap.keys()) {
+					// eslint-disable-next-line @typescript-eslint/no-shadow
+					for (const key of this._selfKeyboardMap.keys()) {
 						if (this.keys.entries[key.id] !== key) {
 							this._selfKeyboardMap.delete(key)
 						}
@@ -888,13 +894,13 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 				break
 		}
 	}
-	protected override _allows<TKey extends keyof ManagerHook>(key: TKey, value: ManagerHook[TKey]["value"]): Result<true, ManagerHook[TKey]["error"]>  {
+	protected override _allows<TKey extends keyof ManagerHook>(key: TKey, value: ManagerHook[TKey]["value"]): Result<true, ManagerHook[TKey]["error"]> {
 		switch (key) {
 			case "chain":
 				castType<Key[][]>(value)
 				// bypass checks for empty chords
 				if (value.length === 1 && value[0].length === 0) return Ok(true)
-				return isValidChain(this, value as Key[][], this.stringifier, this.sorter)
+				return isValidChain(this, value, this.stringifier, this.sorter)
 			case "replace":
 				castType<ManagerReplaceValue>(value)
 				return checkManagerShortcuts(value.shortcuts ?? this.shortcuts, value.keys ?? this.keys, value.commands ?? this.commands, this.stringifier)
@@ -916,7 +922,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	export(): ExportedManager {
 		return {
 			shortcuts: this.shortcuts.export(),
-			commands:this.commands.export(),
+			commands: this.commands.export(),
 			keys: this.keys.export(),
 		}
 	}
@@ -937,26 +943,26 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	import(
 		input: ExportedManager,
-		parseCondition: (input: string) => Condition = (input => new Condition(input)),
+		parseCondition: (condition: string) => Condition = (condition => new Condition(condition)),
 		{
 			fallbackToManagerKeys = false,
-			fallbackToManagerCommands = false
+			fallbackToManagerCommands = false,
 		}: {
-			fallbackToManagerKeys?: boolean,
+			fallbackToManagerKeys?: boolean
 			fallbackToManagerCommands?: boolean
 		} = {}
-	): Result<{keys:Key[], commands: Command[], shortcuts: Shortcut[]}, KnownError<ERROR.IMPORT_COMMAND | ERROR.IMPORT_SHORTCUT_COMMAND |
-		ERROR.IMPORT_SHORTCUT_KEY> | Error> {
-		const generated: { keys: Record<string, Key>, commands: Record<string, Command>, shortcuts: Shortcut[] } = { keys: {}, commands: {}, shortcuts:[]}
+	): Result<{ keys: Key[], commands: Command[], shortcuts: Shortcut[] }, KnownError<ERROR.IMPORT_COMMAND | ERROR.IMPORT_SHORTCUT_COMMAND |
+	ERROR.IMPORT_SHORTCUT_KEY> | Error> {
+		const generated: { keys: Record<string, Key>, commands: Record<string, Command>, shortcuts: Shortcut[] } = { keys: {}, commands: {}, shortcuts: []}
 		if (input.keys) {
-			for (let _key of Object.values(input.keys)) {
-				const key = this.keys.create({id: _key.id, opts: {..._key as any}})
+			for (const _key of Object.values(input.keys)) {
+				const key = this.keys.create({ id: _key.id, opts: { ..._key as any } })
 				generated.keys[key.id] = key
 			}
 		}
 		if (input.commands) {
-			for (let _command of Object.values(input.commands)) {
-				const rawEntry: RawCommand = {..._command, opts:{ ..._command, condition: undefined}}
+			for (const _command of Object.values(input.commands)) {
+				const rawEntry: RawCommand = { ..._command, opts: { ..._command, condition: undefined } }
 				if (_command.condition) {
 					rawEntry.opts!.condition = parseCondition(_command.condition)
 				}
@@ -965,29 +971,28 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		}
 		if (input.shortcuts) {
-			for (let _shortcut of input.shortcuts) {
-				for (let chord of _shortcut.chain) {
-					for (let id of chord) {
+			for (const _shortcut of input.shortcuts) {
+				for (const chord of _shortcut.chain) {
+					for (const id of chord) {
 						const key = generated.keys[id]
 							?? (fallbackToManagerKeys ? this.keys.get(id) : undefined)
 						if (key === undefined) {
-							return Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_KEY, `Unknown key ${id} for shortcut ${_shortcut.chain}`, { id, shortcut: _shortcut}))
+							return Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_KEY, `Unknown key ${id} for shortcut ${pretty(_shortcut.chain, { oneline: true })}`, { id, shortcut: _shortcut }))
 						}
-
 					}
 				}
 				const rawEntry: RawShortcut = {
-					chain: mapKeys(_shortcut.chain, (id) => this.keys.get(id)),
+					chain: mapKeys(_shortcut.chain, id => this.keys.get(id)),
 					opts: {
 						..._shortcut,
 						command: undefined,
-						condition: undefined
-					}
+						condition: undefined,
+					},
 				}
 				if (_shortcut.command) {
 					const found = generated.commands[_shortcut.command] ?? (fallbackToManagerCommands ? this.commands.get(_shortcut.command) : undefined)
 					if (!found) {
-						Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_COMMAND, `Unknown command ${_shortcut.command} for shortcut ${_shortcut.chain}`, { command: _shortcut.command, shortcut: _shortcut }))
+						Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_COMMAND, `Unknown command ${_shortcut.command} for shortcut ${pretty(_shortcut.chain, { oneline: true })}`, { command: _shortcut.command, shortcut: _shortcut }))
 					} else {
 						rawEntry.opts!.command = found
 					}
@@ -1002,7 +1007,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		return Ok({
 			keys: Object.values(generated.keys),
 			commands: Object.values(generated.commands),
-			shortcuts: generated.shortcuts
+			shortcuts: generated.shortcuts,
 		})
 	}
 }

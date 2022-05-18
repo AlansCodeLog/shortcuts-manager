@@ -1,4 +1,4 @@
-import { isArray } from "@alanscodelog/utils";
+import { isArray } from "@alanscodelog/utils"
 
 /**
  * Map keys of a chain or chord\* by the given function.
@@ -11,10 +11,10 @@ import { isArray } from "@alanscodelog/utils";
  */
 export function mapKeys<
 	TType extends any[] | any[][],
-	TReturn = string
+	TReturn = string,
 >(
 	chainOrChord: TType,
-	func: (key: TType extends any[][] ? TType[number][number] : TType[number]) => TReturn = key => (key as any)?.id as any
+	func: (key: TType extends any[][] ? TType[number][number] : TType[number]) => TReturn = key => (key as any)?.id
 ): TType extends any[][] ? TReturn[][] : TReturn[] {
 	if (chainOrChord.length === 0) return []
 	return isArray(chainOrChord[0])

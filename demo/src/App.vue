@@ -1,28 +1,25 @@
 <template>
 	<div id="root">
-		<contexts :contexts="contexts" @add-context="contexts.push($event)"></contexts>
-		<keyboard></keyboard>
-  </div>
+		<contexts :contexts="contexts" @add-context="contexts.push($event)"/>
+		<keyboard/>
+	</div>
 </template>
 
 <script lang="ts">
-import { castType } from "@utils/utils"
-import { Manager,Keys, Key, Commands, Shortcuts, Context, Shortcut, Command} from "shortcuts-visualizer/dist/classes"
-import { createLayout } from "shortcuts-visualizer/dist/layouts"
-import { defineComponent, reactive,ref, onMounted, Ref, computed, onUnmounted, toRef} from "vue"
-import { ManagerListener } from "shortcuts-visualizer/dist/types"
-import keyboard from "@/components/Keyboard.vue"
-import contexts from "@/components/Contexts.vue"
+import contexts from "@demo/components/Contexts.vue"
+import keyboard from "@demo/components/Keyboard.vue"
+import { defineComponent } from "vue"
+
 
 export default defineComponent({
 	name: "app",
 	components: {
 		keyboard,
-		contexts
+		contexts,
 	},
 	setup() {
 		return {
-			contexts: ["context"]
+			contexts: ["context"],
 		}
 	},
 })

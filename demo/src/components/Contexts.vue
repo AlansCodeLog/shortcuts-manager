@@ -1,30 +1,27 @@
 <template>
-<div class="contexts">
-	<div>
-		<input v-model="addVal">
-		<button @click="$emit('addContext', addVal); addVal=''">Add</button>
+	<div class="contexts">
+		<div>
+			<input v-model="addVal">
+			<button type="button" @click="$emit('addContext', addVal); addVal = ''">Add Context</button>
+		</div>
+		<div v-for="context in contexts" :key="context">{{ context }}</div>
 	</div>
-	<div v-for="context in contexts">{{context}}</div>
-</div>
 </template>
 
 <script lang="ts">
-import { castType } from "@utils/utils"
-import { Manager,Keys, Key, Commands, Shortcuts, Context, Shortcut, Command} from "shortcuts-visualizer/dist/classes"
-import { createLayout } from "shortcuts-visualizer/dist/layouts"
-import { defineComponent, reactive,ref, onMounted, Ref, computed, onUnmounted, toRef} from "vue"
-import { ManagerListener } from "shortcuts-visualizer/dist/types"
+import { defineComponent, PropType, ref } from "vue"
 
 
 export default defineComponent({
-	name: "contexts",
+	name: "contexts-component",
 	components: {
 	},
-	emits: ["addContext"],
 	props: {
-		contexts: Array
+		contexts: { type: Array as PropType<string[]>, required: true, default: () => [] },
 	},
-	setup(props) {
+	// eslint-disable-next-line vue/require-emit-validator
+	emits: ["addContext"],
+	setup() {
 		const addVal = ref("")
 		return { addVal }
 	},

@@ -1,6 +1,6 @@
 import { unreachable } from "@alanscodelog/utils"
-import { Key } from "./Key"
 
+import { Key } from "./Key"
 
 
 type KeysStringifierOptions = {

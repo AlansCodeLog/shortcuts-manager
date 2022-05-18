@@ -1,12 +1,12 @@
-import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
-import { ERROR } from "@/types"
 import { Err, Ok, Result } from "@alanscodelog/utils"
 import { crop, findDuplicates, indent } from "@utils/utils"
+
 import { isNormalKey } from "./isNormalKey"
 import { isWheelKey } from "./isWheelKey"
 import { KnownError } from "./KnownError"
 
-
+import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
+import { ERROR } from "@/types"
 
 
 /**
@@ -40,7 +40,6 @@ export function isValidChord(
 		return false
 	} })
 	if (repeated.length > 0) {
-		// eslint-disable-next-line no-shadow
 		const prettyRepeated = stringifier.stringifyKeys(repeated)
 
 		return Err(new KnownError(ERROR.CHORD_W_DUPLICATE_KEY, crop`

@@ -4,7 +4,8 @@ export type VisualizerInfo = {
 	/** List of classes to add to the key. */
 	classes: /* string[] |  */ VIS_KEYCLASSES[]
 	/** List of classes to add to the label. */
-	label_classes: /* string[] | */ VIS_LABELCLASSES[]
+	// eslint-disable-next-line @typescript-eslint/naming-convention
+	label_classes: /* string[] | */ VIS_LABELCLASSES[] // todo
 }
 
 /* List of key classes the provided css recognizes. */

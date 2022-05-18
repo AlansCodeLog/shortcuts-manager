@@ -1,12 +1,12 @@
-import { Condition, Shortcut, Shortcuts } from "@/classes"
-import type { KnownError } from "@/helpers"
-import { ERROR } from "@/types"
 import { testName } from "@alanscodelog/utils"
 import type { Result } from "@alanscodelog/utils/dist/utils"
+
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
-
+import { Condition, Shortcut, Shortcuts } from "@/classes"
+import type { KnownError } from "@/helpers"
+import { ERROR } from "@/types"
 
 
 const shortcut1 = new Shortcut([[k.a]])

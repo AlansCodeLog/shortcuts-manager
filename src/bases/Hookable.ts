@@ -1,7 +1,7 @@
-import { KnownError } from "@/helpers"
-import { TYPE_ERROR } from "@/types"
 import { crop, indent, pretty } from "@utils/utils"
 
+import { KnownError } from "@/helpers"
+import { TYPE_ERROR } from "@/types"
 
 
 export class Hookable<

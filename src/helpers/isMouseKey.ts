@@ -19,6 +19,6 @@ export function isMouseKey(key: Key): boolean {
 		"1Off",
 		"2Off",
 		"3Off",
-		"4Off"
+		"4Off",
 	].includes(key.id)
 }

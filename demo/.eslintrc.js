@@ -23,7 +23,9 @@ module.exports = {
 		extraFileExtensions: [".vue"],
 		sourceType: "module",
 	},
-	rules: {},
+	rules: {
+		"import/no-extraneous-dependencies": "off",
+	},
 	// 🟠 - I like to toggle these on occasionally, but otherwise keep off
 	overrides: [
 		// Eslint: https://eslint.org/docs/rules/
@@ -33,7 +35,8 @@ module.exports = {
 				// "import/no-unused-modules": [ "warn", { unusedExports: true, missingExports: false }] // 🟠
 				// CAREFUL: the auto fix for this one is dangerous and can remove documentation if just added to a project that has errors for it
 				// "jsdoc/empty-tags": "warn", // 🟠
-				"import/no-extraneous-dependencies": ["warn", { devDependencies: true }],
+				// "import/no-extraneous-dependencies": ["warn", { devDependencies: false }],
+				"import/no-extraneous-dependencies": "off",
 			},
 		},
 		// Typescript: https://github.com/typescript-eslint/typescript-eslint/master/packages/eslint-plugin#supported-rules

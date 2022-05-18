@@ -1,11 +1,11 @@
-import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "@/classes"
-import type { KeysStringifier } from "@/classes/KeysStringifier"
-import type { KnownError } from "@/helpers"
 import type { RawCondition } from "./condition"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { Optional } from "./utils"
 
+import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "@/classes"
+import type { KeysStringifier } from "@/classes/KeysStringifier"
+import type { KnownError } from "@/helpers"
 
 
 /**

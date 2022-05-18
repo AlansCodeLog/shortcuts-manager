@@ -1,14 +1,14 @@
-import { HookableCollection } from "@/bases"
-import { equalsKeys, KnownError } from "@/helpers"
-import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
 import { AnyClass, crop, Err, indent, Ok, pretty } from "@alanscodelog/utils"
 import type { Result } from "@alanscodelog/utils/dist/utils"
+
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 import { Shortcut } from "./Shortcut"
 
-
+import { HookableCollection } from "@/bases"
+import { equalsKeys, KnownError } from "@/helpers"
+import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
 
 
 export class Shortcuts<
@@ -54,7 +54,7 @@ export class Shortcuts<
 		if (opts.sorter) this.sorter = opts.sorter
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
-		for (let rawEntry of shortcuts) {
+		for (const rawEntry of shortcuts) {
 			const properEntry = this.create(rawEntry)
 			if (this.allows("add", properEntry).unwrap()) this.add(properEntry)
 		}
@@ -308,15 +308,15 @@ export class Shortcuts<
 		if (rawEntry instanceof Shortcut) {
 			rawEntry.sorter = this.sorter
 			rawEntry.stringifier = this.stringifier
-			return rawEntry as T
+			return rawEntry
 		}
 		return this._basePrototype.create({
 			...rawEntry,
 			opts: {
 				...rawEntry.opts,
 				sorter: this.sorter ?? rawEntry.opts?.sorter,
-				stringifier: this.stringifier ?? rawEntry.opts?.stringifier
-			}
+				stringifier: this.stringifier ?? rawEntry.opts?.stringifier,
+			},
 		}) as T
 	}
 	/**
@@ -324,11 +324,11 @@ export class Shortcuts<
 	 *
 	 * Useful for "emptying" out shortcuts when importing configs.
 	 */
-	safeRemoveAll():Result<true, Error> {
-		const res = this.entries.map(shortcut => this.allows("remove", shortcut)).find(res => res.isError) ?? Ok(true)
+	safeRemoveAll(): Result<true, Error> {
+		const res = this.entries.map(shortcut => this.allows("remove", shortcut)).find(res2 => res2.isError) ?? Ok(true)
 		if (res.isError) return res
 		else {
-			for (let shortcut of this.entries) {
+			for (const shortcut of this.entries) {
 				this.remove(shortcut)
 			}
 		}

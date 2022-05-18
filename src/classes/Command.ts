@@ -1,8 +1,8 @@
+import { Condition } from "./Condition"
+
 import { HookableBase } from "@/bases"
 import { createInstance } from "@/helpers/createInstance"
 import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "@/types"
-import { Condition } from "./Condition"
-
 
 
 export class Command<
@@ -87,7 +87,7 @@ export class Command<
 		return {
 			name: this.name,
 			description: this.description,
-			condition: this.condition.export()
+			condition: this.condition.export(),
 		}
 	}
 }

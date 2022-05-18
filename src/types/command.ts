@@ -1,12 +1,13 @@
-import type { Command, Commands, Condition, Shortcut } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
 import type { Mutable } from "@alanscodelog/utils"
+
 import type { RawCondition } from "./condition"
 import type { ERROR } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { AnyInputEvent } from "./manager"
 
+import type { Command, Commands, Condition, Shortcut } from "@/classes"
+import type { Manager } from "@/classes/Manager"
+import type { KnownError } from "@/helpers"
 
 
 export type RawCommand = {
@@ -15,12 +16,12 @@ export type RawCommand = {
 }
 
 export type ExportedCommand = {
-	name: string,
-	description ?: string,
+	name: string
+	description?: string
 	condition: RawCondition
 }
 
-export type CommandFunction = ({isKeydown, command, shortcut, manager, event}:{isKeydown: boolean, command: Command, shortcut?: Shortcut | undefined, manager?: Manager, event?: AnyInputEvent}) => void
+export type CommandFunction = ({ isKeydown, command, shortcut, manager, event }: { isKeydown: boolean, command: Command, shortcut?: Shortcut | undefined, manager?: Manager, event?: AnyInputEvent }) => void
 
 export type CommandOptions<
 	TExec extends CommandFunction | undefined = CommandFunction,

@@ -1,18 +1,20 @@
 <template>
-	<div ref="keyboard" class="keyboard" :style="`height:${height}px; width:100%;`">
+	<div class="keyboard" :style="`height:${height}px; width:100%;`" ref="keyboard">
 		<div class="keyboard-width">
-			<template v-for="key of l">
-			<div :class="['key-container',...key.classes, key.pressed ? 'pressed' :'']" :style="`
+			<template v-for="key of l" :key="key">
+				<div :class="['key-container',...key.classes, key.pressed ? 'pressed' :'']"
+					:style="`
 				width:${key.width * keyW }px;
 				height:${key.height * keyW}px;
 				top:${key.y * keyW}px;
 				left:${key.x * keyW}px;
-			`">
-			<div class="key" :title="key.id">
-				<div class="label">
-					{{key.label}}
-				</div>
-			</div>
+			`"
+				>
+					<div class="key" :title="key.id">
+						<div class="label">
+							{{ key.label }}
+						</div>
+					</div>
 				</div>
 			</template>
 		</div>
@@ -20,28 +22,28 @@
 </template>
 
 <script lang="ts">
+import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "@lib/classes"
+import { createLayout } from "@lib/layouts"
+import { ManagerListener } from "@lib/types"
 import { castType } from "@utils/utils"
-import { classes } from "shortcuts-visualizer"
-import { Manager,Keys, Key, Commands, Shortcuts, Context, Shortcut, Command} from "shortcuts-visualizer/dist/classes"
-import { createLayout } from "shortcuts-visualizer/dist/layouts"
-import { defineComponent, reactive,ref, onMounted, Ref, computed, onUnmounted, toRef} from "vue"
-import { ManagerListener } from "shortcuts-visualizer/dist/types"
+import { computed, defineComponent, onMounted, onUnmounted, reactive, Ref, ref } from "vue"
 
 
 export default defineComponent({
-	name: "keyboard",
+	name: "keyboard-component",
 	components: {
 	},
 	setup() {
-		const layout:Key[]  = [...createLayout("iso")].map(raw => {
+		const layout: Key[] = [...createLayout("iso")].map(raw =>
 			// raw.opts.label = "";
-			return reactive(Key.create(raw)) as Key
-		})
+			// @ts-expect-error todo
+			reactive(Key.create(raw)) as Key,
+		)
 
 		const m = reactive({
 			chain: [] as Key[][],
-			rows:0,
-			columns:0
+			rows: 0,
+			columns: 0,
 		})
 
 		const manager = new Manager(new Keys(layout),
@@ -52,23 +54,26 @@ export default defineComponent({
 			{
 				labelStrategy: true,
 				labelFilter: (e, key) => {
+					// @ts-expect-error todo
 					if (e?.key.length === 1) {
+						// @ts-expect-error todo
 						key.set("label", e.key.toUpperCase())
 						return false
 					}
+					// @ts-expect-error todo
 					if (["ScrollLock", "NumLock", "Pause", "PageDown", "PageUp", "PrintScreen", "ContextMenu"].includes(e.key)) {
 						return false
 					}
 					return true
-				}
-			}
+				},
+			},
 		)
 		;(manager as any).addHook("set", (prop: any) => {
 			if (prop === "chain") {
 				m.chain = manager.chain
 			}
 		})
-		;(manager.keys).addHook("set", (prop:string, val:any) => {
+		;(manager.keys).addHook("set", (prop: string, val: any) => {
 			if (prop === "layout") {
 				castType<Keys["layout"]>(val)
 				m.rows = val.rows
@@ -78,36 +83,34 @@ export default defineComponent({
 		manager.keys.recalculateLayout()
 		const k = manager.keys.entries
 		manager.commands.add(new Command("Test"))
-		manager.shortcuts.add(new Shortcut([[k.KeyA]], {command: manager.commands.entries.Test}))
+		manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test }))
 
 
 		const keyboard = ref<HTMLElement | null>(null)
 		const recorder = ref<HTMLInputElement | null>(null)
 		const width = ref(0)
-		const height = computed(() => width.value / ratio.value)
 		const keyW = computed(() => width.value / m.columns)
-		const ratio = computed(() => {
-			return m.columns / m.rows
-		})
+		const ratio = computed(() => m.columns / m.rows)
+		const height = computed(() => width.value / ratio.value)
 
-		const updateSize = () => {
+		const updateSize = (): void => {
 			castType<Ref<HTMLElement>>(keyboard)
 			// const rounded = (Math.round(keyboard.value.offsetWidth / m.columns) * m.columns) - m.columns
 			width.value = keyboard.value.offsetWidth
 		}
-		let observer: ResizeObserver | undefined = undefined
-		const eventListener: ManagerListener =  ({event, isKeydown, keys}) => {
-		 	if (
+		let observer: ResizeObserver | undefined
+		const eventListener: ManagerListener = ({ event/* , isKeydown, keys */ }) => {
+			if (
 				(manager.isRecording && event.target === recorder.value) ||
 				(event.target !== recorder.value && !manager.isRecording &&
 					(
-	 					m.chain.length > 1 ||
-	 					(manager.pressedModifierKeys().length > 0 && manager.pressedNonModifierKeys().length > 0)
+						m.chain.length > 1 ||
+						(manager.pressedModifierKeys().length > 0 && manager.pressedNonModifierKeys().length > 0)
 					)
 				)
-		 	) {
-		 		event.preventDefault()
-		 	}
+			) {
+				event.preventDefault()
+			}
 		}
 		onMounted(() => {
 			castType<Ref<HTMLElement>>(keyboard)
@@ -116,14 +119,14 @@ export default defineComponent({
 			observer.observe(keyboard.value)
 			manager.attach(document)
 			manager.eventListener = eventListener
-      })
-		onUnmounted(()=> {
+		})
+		onUnmounted(() => {
 			observer!.disconnect()
 			manager.eventListener = undefined
 			manager.detach(document)
 		})
 
-		return {keyboard: keyboard, l: layout, width, height, keyW}
+		return { keyboard, l: layout, width, height, keyW }
 	},
 })
 </script>

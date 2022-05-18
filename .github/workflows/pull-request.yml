@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
+        # awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
         node-version: [14.x, 17.x]
 
     steps:

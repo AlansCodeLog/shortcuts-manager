@@ -1,10 +1,11 @@
-import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
-import type { ManagerListener } from "."
 import type { BaseHook } from "./hooks"
 import type { AnyInputEvent } from "./manager"
 
+import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
+import type { Manager } from "@/classes/Manager"
+import type { KnownError } from "@/helpers"
+
+import type { ManagerListener } from "."
 
 
 /**
@@ -48,7 +49,7 @@ export enum ERROR {
 	RECORDING = "RECORDING",
 	IMPORT_COMMAND = "IMPORT_KEY",
 	IMPORT_SHORTCUT_COMMAND = "IMPORT_SHORTCUT_COMMAND",
-	IMPORT_SHORTCUT_KEY = "IMPORT_SHORTCUT_KEY"
+	IMPORT_SHORTCUT_KEY = "IMPORT_SHORTCUT_KEY",
 }
 
 export type ChainErrors =
@@ -194,10 +195,12 @@ type ERROR_Info = {
 	[ERROR.UNKNOWN_KEY_EVENT]: {
 		e: KeyboardEvent
 	}
-	[ERROR.IMPORT_COMMAND]: { command: ReturnType<Command["export"]>, commands: Commands}
-	[ERROR.IMPORT_SHORTCUT_COMMAND]: { command: string, shortcut: ReturnType<Shortcut["export"]>
-}
-	[ERROR.IMPORT_SHORTCUT_KEY]: { id: string, shortcut: ReturnType<Shortcut["export"]>}
+	[ERROR.IMPORT_COMMAND]: { command: ReturnType<Command["export"]>, commands: Commands }
+	[ERROR.IMPORT_SHORTCUT_COMMAND]: {
+		command: string
+		shortcut: ReturnType<Shortcut["export"]>
+	}
+	[ERROR.IMPORT_SHORTCUT_KEY]: { id: string, shortcut: ReturnType<Shortcut["export"]> }
 	// internal
 	[ERROR.RECORDING]: undefined
 }

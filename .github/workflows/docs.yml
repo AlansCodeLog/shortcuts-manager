@@ -8,7 +8,6 @@ on:
     branches: [ master ]
   repository_dispatch:
     types: [ docs ]
-    # to trigger: curl -v -H "Accept: application/vnd.github.everest-preview+json" -H "Authorization: token $GH_TOKEN" https://api.github.com/repos/alanscodelog/TOREPONAME/dispatches -d '{ "event_type": "docs" }'
 
 jobs:
   docs:
@@ -16,8 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        #TOCONFIGURE awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [latest]
-        node-version: [17.x]
+        node-version: ["latest"]
 
     steps:
 
@@ -25,7 +23,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Setting Up Node.js (${{ matrix.node-version }})
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
 
@@ -56,11 +54,10 @@ jobs:
     # regionend
 
     # region Steps
-    - run: pnpm install
+    - run: pnpm install --frozen-lockfile
       if: "env.USE_LOCKFILE == 'true'"
 
-    - run: pnpm install --no-frozen-lockfile
-      if: "env.USE_LOCKFILE == 'false'"
+    - run: pnpm install
 
     - run: pnpm build
 

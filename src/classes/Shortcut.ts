@@ -1,19 +1,19 @@
-import { HookableBase } from "@/bases"
-import { equalsKeys, mapKeys } from "@/helpers"
-import { chainContainsKey } from "@/helpers/chainContainsKey"
-import { createInstance } from "@/helpers/createInstance"
-import { isValidChain } from "@/helpers/isValidChain"
-import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 import { Ok, Result, setReadOnly } from "@alanscodelog/utils"
-import type { Context } from "."
+
 import type { Command } from "./Command"
 import { Condition } from "./Condition"
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
 import { defaultStringifier } from "./KeysStringifier"
 
+import { HookableBase } from "@/bases"
+import { equalsKeys, mapKeys } from "@/helpers"
+import { chainContainsKey } from "@/helpers/chainContainsKey"
+import { createInstance } from "@/helpers/createInstance"
+import { isValidChain } from "@/helpers/isValidChain"
+import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
 
-
+import type { Context } from "."
 
 
 export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOptions {
@@ -121,9 +121,9 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		return createInstance<Shortcut, "chain">(Shortcut, "chain", entry) as T
 	}
 	export(): {
-		chain: string[][],
-		command?: ReturnType<Command["export"]>["name"],
-		condition: ReturnType<Condition["export"]>,
+		chain: string[][]
+		command?: ReturnType<Command["export"]>["name"]
+		condition: ReturnType<Condition["export"]>
 		enabled: boolean
 	} {
 		return {

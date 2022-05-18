@@ -37,4 +37,4 @@ export type RecordFromArray<
  * Expand a record type. By default expands the record to accept any string key.
  * See any "collection" class's `add` method for example.
  */
-export type ExpandRecord<T, TKey extends string | number = keyof T & string, TValue = T[keyof T]> = T & { [ Key in TKey ]: TValue }
+export type ExpandRecord<T, TKey extends string | number = keyof T & string, TValue = T[keyof T]> = T & {[ Key in TKey ]: TValue }

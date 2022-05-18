@@ -14,13 +14,24 @@ module.exports = {
 		"coverage",
 		"dist",
 		"docs",
+		"demo",
 	],
 	rules: {
-		"no-unused-private-class-members": undefined, // TODO
+		// "no-unused-private-class-members": undefined, // TODO
+		"jsdoc/check-tag-names": "off",
 	},
 	parserOptions: { project: "tsconfig.json" },
 	// 🟠 - I like to toggle these on occasionally, but otherwise keep off
 	overrides: [
+		{
+			files: ["**/*.js", "**/*.ts", "**/.vue"],
+			rules: {
+				// "import/no-unused-modules": [ "warn", { unusedExports: true, missingExports: false }] // 🟠
+				// CAREFUL: the auto fix for this one is dangerous and can remove documentation if just added to a project that has errors for it
+				// "jsdoc/empty-tags": "warn", // 🟠
+				"import/no-extraneous-dependencies": ["warn", { devDependencies: false }],
+			},
+		},
 		// Eslint: https://eslint.org/docs/rules/
 		{
 			files: ["**/*.js", "**/*.ts"],

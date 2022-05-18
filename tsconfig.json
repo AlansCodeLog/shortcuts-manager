@@ -20,8 +20,8 @@
     "noImplicitOverride": true
   },
   "include": [
+    "*.ts",
     "src/**/*.ts",
-    "src/**/*.ts",
-    "tests/**/*.spec.ts",
+    "tests/**/*.ts",
   ],
 }

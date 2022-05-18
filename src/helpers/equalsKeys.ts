@@ -15,7 +15,7 @@ import type { Key } from "@/classes"
  * ```
  *
  */
-export function equalsKeys(keys: Key[][], base: Key[][], length ?: number): boolean {
+export function equalsKeys(keys: Key[][], base: Key[][], length?: number): boolean {
 	// Since they're pre-sorted this should be quite fast
 	if (
 		(length === undefined && base.length !== keys.length) ||

@@ -1,12 +1,12 @@
-import type { Commands, Keys, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
-import { ERROR } from "@/types"
 import { crop, Err, indent, Ok, Result } from "@alanscodelog/utils"
-import { KnownError } from "."
+
 import { checkShortcutCommands } from "./checkShortcutCommands"
 import { checkShortcutKeys } from "./checkShortcutKeys"
 
+import type { Commands, Keys, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
+import { ERROR } from "@/types"
 
-
+import { KnownError } from "."
 
 
 /**

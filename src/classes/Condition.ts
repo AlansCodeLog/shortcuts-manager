@@ -1,5 +1,6 @@
-import type { RawCondition } from "@/types/condition"
 import type { Context } from "./Context"
+
+import type { RawCondition } from "@/types/condition"
 
 
 export class Condition {

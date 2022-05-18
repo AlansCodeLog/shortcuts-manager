@@ -1,10 +1,10 @@
-import type { Key, Keys, KeysStringifier } from "@/classes"
-import type { KnownError } from "@/helpers"
 import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
+
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-
+import type { Key, Keys, KeysStringifier } from "@/classes"
+import type { KnownError } from "@/helpers"
 
 
 /**
@@ -268,5 +268,5 @@ export type KeysCollectionHooks = CollectionHookType<
 >
 
 export type KeysBaseHooks = {
-	"layout": BaseHookType<Key, {rows:number, columns:number}, never>
+	"layout": BaseHookType<Key, { rows: number, columns: number }, never>
 }

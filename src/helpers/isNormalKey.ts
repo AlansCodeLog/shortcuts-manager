@@ -1,8 +1,9 @@
-import type { Key } from "@/classes"
-import { isMouseKey } from "."
 import { isToggleKey } from "./isToggleKey"
 import { isWheelKey } from "./isWheelKey"
 
+import type { Key } from "@/classes"
+
+import { isMouseKey } from "."
 
 
 /**

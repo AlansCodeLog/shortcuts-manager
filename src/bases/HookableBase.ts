@@ -1,8 +1,8 @@
-import type { BaseHook, BaseHookType } from "@/types"
 import { Ok, Result } from "@utils/utils"
+
 import { Hookable } from "./Hookable"
 
-
+import type { BaseHook, BaseHookType } from "@/types"
 
 
 export class HookableBase<
@@ -123,8 +123,8 @@ export class HookableBase<
 		keyof THooks =
 		keyof THooks,
 	>(
-			key: TKey,
-			value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
+		key: TKey,
+		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
 		const res = this.allows(key, value)
 		if (res.isError) return res

@@ -1,9 +1,9 @@
-import { Command, Condition } from "@/classes"
-import type { CommandOptions } from "@/types"
 import { testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 
-
+import { Command, Condition } from "@/classes"
+import type { CommandOptions } from "@/types"
 
 
 describe(testName(), () => {
@@ -27,7 +27,7 @@ describe(testName(), () => {
 		expect(command.name).to.equal("command")
 		expect(command.description).to.equal(opts.description)
 		expect(command.condition).to.equal(opts.condition)
-		expect(command.execute!({isKeydown:true, command})).to.equal(undefined)
+		expect(command.execute!({ isKeydown: true, command })).to.equal(undefined)
 		expect(command.condition).to.equal(opts.condition)
 	})
 	describe("checks equality from", () => {

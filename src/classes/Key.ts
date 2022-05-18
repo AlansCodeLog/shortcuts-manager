@@ -1,11 +1,15 @@
+import { Result, setReadOnly } from "@alanscodelog/utils"
+import { castType, Err, Ok } from "@utils/utils"
+
+import { defaultStringifier } from "./KeysStringifier"
+
 import { HookableBase } from "@/bases"
 import { KnownError } from "@/helpers"
 import { createInstance } from "@/helpers/createInstance"
 import { ERROR, KeyHooks, KeyOptions, RawKey, ToggleKey } from "@/types"
-import { Result, setReadOnly } from "@alanscodelog/utils"
-import { Err, Ok } from "@utils/utils"
+
 import type { KeysStringifier } from "."
-import { defaultStringifier } from "./KeysStringifier"
+
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
@@ -93,6 +97,7 @@ export class Key<
 			setReadOnly(this.is, "toggle", opts.is.toggle === true
 				? "native"
 				: opts.is.toggle)
+			// eslint-disable-next-line prefer-rest-params
 			if (arguments[2] !== BYPASS_TOGGLE_CREATION) {
 				// arguments might be shorter and we need to be sure the bypass is the fourth argument
 				this._keyCreateToggle(opts)
@@ -113,10 +118,10 @@ export class Key<
 	 * See {@link KeyOptions.is.toggle} for how this works.
 	 */
 	private _keyCreateToggle(opts: RawKey["opts"] = {}): void {
-		//@ts-expect-error
-		this.on = new Key(`${this.id}On`, {...opts, render: false}, BYPASS_TOGGLE_CREATION) as ToggleKey
-		//@ts-expect-error
-		this.off = new Key(`${this.id}Off`, {...opts, render: false}, BYPASS_TOGGLE_CREATION) as ToggleKey
+		// @ts-expect-error .
+		this.on = new Key(`${this.id}On`, { ...opts, render: false }, BYPASS_TOGGLE_CREATION) as ToggleKey
+		// @ts-expect-error .
+		this.off = new Key(`${this.id}Off`, { ...opts, render: false }, BYPASS_TOGGLE_CREATION) as ToggleKey
 		if (this.label) {
 			const val = this.label
 			if (this.on.allows("label", `${val} (On)`).isOk) this.on.set("label", `${val} (On)`)
@@ -125,7 +130,8 @@ export class Key<
 		this.on.root = this as any
 		this.off.root = this as any
 		this.addHook("set", (prop, val) => {
-			if (prop == "label") {
+			if (prop === "label") {
+				castType<string>(val)
 				if (this.on!.allows("label", `${val} (On)`).isOk) this.on!.set("label", `${val} (On)`)
 				if (this.off!.allows("label", `${val} (Off)`).isOk) this.off!.set("label", `${val} (Off)`)
 			}
@@ -162,7 +168,7 @@ export class Key<
 		return this === key || this.id === key.id
 	}
 	get opts(): KeyOptions {
-		return { is: this.is, variants: this.variants, x:this.x, y:this.y, width:this.width, height:this.height, stringifier: this.stringifier, label: this.label, render:this.render, classes:this.classes }
+		return { is: this.is, variants: this.variants, x: this.x, y: this.y, width: this.width, height: this.height, stringifier: this.stringifier, label: this.label, render: this.render, classes: this.classes }
 	}
 	/** Create an instance from a raw entry. */
 	static create<T extends Key = Key>(entry: RawKey): T {
@@ -171,10 +177,10 @@ export class Key<
 	export(): RawKey {
 		const opts: any = { ...this.opts }
 		delete opts.stringifier
-		opts.is = {...opts.is}
+		opts.is = { ...opts.is }
 		return {
 			id: this.id,
-			...opts
+			...opts,
 		}
 	}
 }

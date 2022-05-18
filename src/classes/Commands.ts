@@ -1,7 +1,9 @@
+import { AnyClass, crop, Err, Ok, Result } from "@alanscodelog/utils"
+
 import { HookableCollection } from "@/bases"
 import { KnownError } from "@/helpers"
 import { CommandsHooks, ERROR, RawCommand, RecordFromArray } from "@/types"
-import { AnyClass, crop, Err, Ok, Result } from "@alanscodelog/utils"
+
 import { Command } from "."
 
 
@@ -37,7 +39,7 @@ export class Commands<
 		super()
 		this.entries = {} as TEntries
 
-		for (let rawEntry of commands) {
+		for (const rawEntry of commands) {
 			const entry = this.create(rawEntry)
 			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
@@ -82,8 +84,8 @@ export class Commands<
 	}
 	export(): Record<string, ReturnType<Command["export"]>> {
 		const commands: Record<string, any> = {}
-		for (let id in this.entries) {
-			commands[id] = (this.entries[id] as Command).export()
+		for (const id of Object.keys(this.entries)) {
+			commands[id] = (this.entries[id as keyof TEntries] as Command).export()
 		}
 		return commands
 	}
@@ -100,12 +102,12 @@ export class Commands<
 	 * Useful for "emptying" out commands when importing configs.
 	 */
 	safeRemoveAll(): Result<true, Error> {
-		let res :Result<true, Error>
-		for (let command of Object.values(this.entries as Record<string, Command>)) {
+		let res: Result<true, Error>
+		for (const command of Object.values(this.entries as Record<string, Command>)) {
 			res = this.allows("remove", command)
 			if (res.isError) return res
 		}
-		for (let command of Object.values(this.entries as Record<string, Command>)) {
+		for (const command of Object.values(this.entries as Record<string, Command>)) {
 			this.remove(command)
 		}
 		return Ok(true)

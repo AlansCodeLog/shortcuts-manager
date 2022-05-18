@@ -1,6 +1,6 @@
-import type { RecursiveRecord } from "@/types"
 import type { Condition } from "./Condition"
 
+import type { RecursiveRecord } from "@/types"
 
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {

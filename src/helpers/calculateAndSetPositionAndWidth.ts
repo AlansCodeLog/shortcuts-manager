@@ -7,13 +7,13 @@ export function calculateAndSetPositionAndWidth(row: RawKey[]): RawKey & { opts:
 	let x = 0
 	for (const key of row) {
 		key.opts = key.opts ?? {} as any
-		key.opts! = key.opts! ?? {} as any
-		if (key.opts!!.x) x = key.opts!!.x
-		key.opts!.x = x
+		key.opts = key.opts! ?? {} as any
+		if (key.opts.x) x = key.opts.x
+		key.opts.x = x
 		if (key.opts?.width) {
 			x += key.opts.width
 		} else {
-			key.opts!.width = 1
+			key.opts.width = 1
 			x++
 		}
 	}

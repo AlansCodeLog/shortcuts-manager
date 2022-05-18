@@ -1,8 +1,11 @@
+import { Ok, Result } from "@alanscodelog/utils"
+
+import type { KnownError } from "./KnownError"
+
 import type { Key, KeysSorter, KeysStringifier, Manager, Shortcut } from "@/classes"
 import type { ERROR } from "@/types"
-import { Ok, Result } from "@alanscodelog/utils"
+
 import { containsPossibleToggleChords, isValidChord } from "."
-import type { KnownError } from "./KnownError"
 
 
 /**

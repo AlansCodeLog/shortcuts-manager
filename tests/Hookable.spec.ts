@@ -1,10 +1,10 @@
-import { Shortcut, Shortcuts } from "@/classes"
-import { TYPE_ERROR } from "@/types"
 import { catchError, Err, Ok, Result, testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 import { k } from "./helpers.keys"
 
-
+import { Shortcut, Shortcuts } from "@/classes"
+import { TYPE_ERROR } from "@/types"
 
 
 describe(testName(), () => {

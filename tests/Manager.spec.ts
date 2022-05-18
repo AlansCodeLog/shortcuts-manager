@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-shadow */
+import { testName } from "@alanscodelog/utils"
+
+import { expect } from "./chai"
+
 import { Command, Commands, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
 import { Emulator } from "@/classes/Emulator"
 import { Manager } from "@/classes/Manager"
 import { ERROR } from "@/types"
-import { testName } from "@alanscodelog/utils"
-import { expect } from "./chai"
+
 
 jest.useFakeTimers()
 
@@ -110,7 +113,6 @@ describe(testName(), () => {
 				)
 			}).to.not.throw()
 		})
-
 	})
 	describe("basic functions", () => {
 		describe("should correctly add/remove from chain state", () => {
@@ -119,7 +121,7 @@ describe(testName(), () => {
 				if (e.code === ERROR.UNKNOWN_KEY_EVENT) throw e
 			}) as Manager["cb"])
 			const execute1 = jest.fn((() => {}) as Command["execute"])
-			const execute2 = jest.fn((({isKeydown, manager}) => {
+			const execute2 = jest.fn((({ isKeydown, manager }) => {
 				if (isKeydown) {
 					manager?.clearChain()
 				}
@@ -146,7 +148,7 @@ describe(testName(), () => {
 					sl,
 					shift,
 					// this checks that even though this is the same as shift, shortcuts with only shift or both shift and alt trigger
-					shiftAlt
+					shiftAlt,
 				]),
 				new Commands([command1, command2]),
 				new Shortcuts([
@@ -219,7 +221,7 @@ describe(testName(), () => {
 				expect(manager.chain).to.deep.equal([[ctrl, c]])
 				emulator.fire("ControlLeft+ KeyA+", ["ControlLeft"])
 				expect(execute1.mock.calls.length).to.equal(1)
-				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl,a]])
+				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl, a]])
 				emulator.fire("KeyA- ControlLeft-")
 				expect(execute1.mock.calls.length).to.equal(2)
 			})
@@ -277,7 +279,7 @@ describe(testName(), () => {
 				expect(execute1.mock.calls.length).to.equal(0)
 				expect(execute2.mock.calls.length).to.equal(0)
 			})
-			it("out of focus simulated keyup",  () => {
+			it("out of focus simulated keyup", () => {
 				emulator.fire("ControlLeft+ KeyA+", ["ControlLeft"])
 				jest.advanceTimersByTime(250)
 				expect(ctrl.pressed).to.equal(true)
@@ -290,7 +292,7 @@ describe(testName(), () => {
 				expect(manager.chain).to.deep.equal([])
 				expect(execute1.mock.calls.length).to.equal(2)
 			})
-			it("hooks only fire on initial press and on final release",  () => {
+			it("hooks only fire on initial press and on final release", () => {
 				const hook = jest.fn(prop => {
 					if (prop === "pressed") { return true }
 					return false
@@ -416,7 +418,7 @@ describe(testName(), () => {
 			indicator: false,
 			multiSelected: false,
 			madeBold: false,
-			madeItalic: false
+			madeItalic: false,
 		}
 		const selectIndicator = jest.fn((({ isKeydown }) => {
 			state.indicator = isKeydown
@@ -445,7 +447,7 @@ describe(testName(), () => {
 				state.madeBold = true
 			}
 		}) as Command["execute"])
-		const makeItalic = jest.fn((({ isKeydown,  manager }) => {
+		const makeItalic = jest.fn((({ isKeydown, manager }) => {
 			if (isKeydown) {
 				state.madeItalic = true
 			} else {
@@ -461,7 +463,7 @@ describe(testName(), () => {
 		const rb = new Key("0")
 		const b = new Key("KeyB")
 		const x = new Key("KeyX")
-		const ctrl = new Key("Control", { is: { modifier: "emulated" }, variants: ["ControlLeft", "ControlRight"] })
+		const ctrl = new Key("Control", { is: { modifier: "emulated" }, variants: ["ControlLeft", "ControlRight"]})
 		const commandSelectIndicator = new Command("selectIndicator", { execute: selectIndicator })
 		const commandMultiSelect = new Command("multiSelect", { execute: multiSelect })
 		const commandMakeBold = new Command("makeBold", { execute: makeBold })
@@ -505,7 +507,7 @@ describe(testName(), () => {
 				indicator: false,
 				multiSelected: false,
 				madeBold: false,
-				madeItalic: false
+				madeItalic: false,
 			}
 		})
 		it("multi select without releasing ctrl", () => {
@@ -529,7 +531,7 @@ describe(testName(), () => {
 			expect(multiSelect.mock.calls.length).to.equal(2)
 			emulator.fire("ControlLeft-")
 		})
-		it("makeBold then makeItalic without releasing ctrl", async () => {
+		it("makeBold then makeItalic without releasing ctrl", () => {
 			emulator.fire("ControlLeft+", ["ControlLeft"])
 			expect(state.indicator).to.equal(true)
 			expect(selectIndicator.mock.calls.length).to.equal(1)
@@ -550,7 +552,7 @@ describe(testName(), () => {
 			emulator.fire("ControlLeft-")
 			expect(state.indicator).to.equal(false)
 		})
-		it("makeBold chain clears", async () => {
+		it("makeBold chain clears", () => {
 			emulator.fire("ControlLeft+ KeyX ControlLeft-")
 			expect(state.indicator).to.equal(false)
 			expect(selectIndicator.mock.calls.length).to.equal(2)
@@ -558,7 +560,7 @@ describe(testName(), () => {
 			expect(state.indicator).to.equal(false)
 			expect(manager.chain).to.deep.equal([])
 		})
-		it("makeBold semi clearing allows triggering of make italic", async () => {
+		it("makeBold semi clearing allows triggering of make italic", () => {
 			commandMakeBold.execute = makeBoldSemiClearing
 			emulator.fire("ControlLeft+ KeyX ControlLeft-")
 			expect(state.indicator).to.equal(false)
@@ -578,7 +580,7 @@ describe(testName(), () => {
 			commandMakeBold.execute = makeBold
 		})
 		// probably not a good idea to actually implement this
-		it("non clearing makeBold then makeItalic on a chain", async () => {
+		it("non clearing makeBold then makeItalic on a chain", () => {
 			commandMakeBold.execute = makeBoldNonClearing
 			commandMakeItalic.execute = makeItalicNonClearing
 			emulator.fire("ControlLeft+ KeyX ControlLeft-")

@@ -2,9 +2,9 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "*":["../node_modules"],
-      "@/*": ["src/*"],
-      "@lib/*": ["../src/*"],
+      "@demo/*": ["src/*"],
+      "@/*": ["../src/*"],
+      "@lib/*": ["../dist/*"],
       "@utils/*": [ "../node_modules/@alanscodelog/utils/dist/*"],
     },
     "target": "esnext",
@@ -19,5 +19,8 @@
     "lib": ["esnext", "dom"],
     "typeRoots": ["src/types"]
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "global.d.ts"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+  ]
 }

@@ -1,5 +1,6 @@
-import type { Key } from "@/classes";
-import { isModifierKey, isToggleStateKey } from ".";
+import type { Key } from "@/classes"
+
+import { isModifierKey, isToggleStateKey } from "."
 
 /**
  * See {@link Manager} and {@link Manager.pressedNonModifierKeys}.

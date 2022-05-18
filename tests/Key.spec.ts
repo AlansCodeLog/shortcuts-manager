@@ -1,9 +1,9 @@
-import { Key, KeysStringifier } from "@/classes"
-import { ERROR } from "@/types"
 import { catchError, testName } from "@alanscodelog/utils"
+
 import { expect } from "./chai"
 
-
+import { Key, KeysStringifier } from "@/classes"
+import { ERROR } from "@/types"
 
 
 describe(testName(), () => {
@@ -23,7 +23,7 @@ describe(testName(), () => {
 	it("should create toggle key properly", () => {
 		const key2 = new Key("a", { is: { toggle: false } })
 		expect(key2.on).to.not.exist
-		const key = new Key("a", { is: { toggle: true} })
+		const key = new Key("a", { is: { toggle: true } })
 		const on = key.on!
 		const off = key.off!
 

@@ -1,8 +1,8 @@
-import type { Manager } from "@/classes"
 import type { Result } from "@alanscodelog/utils"
+
+import type { Manager } from "@/classes"
+
 import type { Bases, Collections } from "."
-
-
 
 
 export type BaseHookType<
@@ -11,7 +11,7 @@ export type BaseHookType<
 	TError,
 	TOld = TValue,
 	TExclude extends boolean = false,
-	TExcludeExternalSet extends boolean = false
+	TExcludeExternalSet extends boolean = false,
 > = {
 	value: TValue
 	error: TError

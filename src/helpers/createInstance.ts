@@ -10,7 +10,6 @@ export function createInstance<
 	TClass extends new (...args: any[]) => T = new (...args: any[]) => T,
 	TEntry extends RawCommand | RawKey | RawShortcut = RawCommand | RawKey | RawShortcut,
 >(type: TClass, key: TKey, entry: TEntry): T {
-
 	const arg = entry[key as keyof TEntry]
 
 	const opts = (entry as any).opts

@@ -1,7 +1,8 @@
-import { calculateAndSetPositionAndWidth } from "./helpers/calculateAndSetPositionAndWidth";
+import { calculateAndSetPositionAndWidth } from "./helpers/calculateAndSetPositionAndWidth"
+
 
 const start = 0
-const mediaKey = { height: 0.5, width: 4/3 }
+const mediaKey = { height: 0.5, width: 4 / 3 }
 
 /**
  * Creates the given keyboard layout, assiging the correct sizes and positions to keys.
@@ -32,8 +33,8 @@ export function createLayout(
 		mediaKeys = true,
 		fn = true,
 		navigation = true,
-		arrowKeys = true
-	} :
+		arrowKeys = true,
+	}:
 	Partial<Record<"numpad" | "mediaKeys" | "fn" | "navigation" | "arrowKeys", boolean>> = {}
 ): ReturnType<typeof calculateAndSetPositionAndWidth> {
 	return [
@@ -55,7 +56,7 @@ export function createLayout(
 					{ id: "F12" },
 				]
 				: []
-			)
+			),
 		]).map(key => { key.opts.y = start + 0; return key }),
 		...calculateAndSetPositionAndWidth([
 			{ id: "Backquote", opts: { label: "`" } },
@@ -90,8 +91,8 @@ export function createLayout(
 			type === "ansi"
 			? { id: "Backslash", opts: { label: "\\", width: 1.5 } }
 			: type === "iso"
-			? { id: "Enter", opts: { width: 1.5, height: 2, classes:["iso-enter"] } }
-			: {} as never
+			? { id: "Enter", opts: { width: 1.5, height: 2, classes: ["iso-enter"]} }
+			: {} as never,
 		]).map(key => { key.opts.y = start + 3; return key }),
 		...calculateAndSetPositionAndWidth([
 			{ id: "CapsLock", opts: { width: 1.75, is: { toggle: true } } },
@@ -110,17 +111,17 @@ export function createLayout(
 			? { id: "Enter", opts: { width: 2.25 } }
 			: type === "iso"
 			? { id: "Backslash", opts: { label: "#", width: 1 } }
-			: {} as never
+			: {} as never,
 		]).map(key => { key.opts.y = start + 4; return key }),
 		...calculateAndSetPositionAndWidth([
 			...(type === "ansi"
 			? [
-					{ id: "VirtualShiftLeft", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.25 } }
+				{ id: "VirtualShiftLeft", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.25 } },
 			]
 			: type === "iso"
 			? [
 				{ id: "VirtualShiftLeft", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 1.25 } },
-				{ id: "IntlBackslash", opts: { label: "\\", width: 1 } }
+				{ id: "IntlBackslash", opts: { label: "\\", width: 1 } },
 			]
 			: [] as never),
 			{ id: "KeyZ", opts: { label: "z" } },
@@ -147,7 +148,7 @@ export function createLayout(
 		]).map(key => { key.opts.y = start + 6; return key }),
 		...calculateAndSetPositionAndWidth([
 			{ id: "PrintScreen", opts: { label: "PrtScn", x: 15.5 } },
-			{ id: "ScrollLock", opts: { label: "Scroll\nLock", is: { toggle: true }  } },
+			{ id: "ScrollLock", opts: { label: "Scroll\nLock", is: { toggle: true } } },
 			{ id: "Pause", opts: { label: "Pause\nBreak" } },
 		]).map(key => { key.opts.y = start; return key }),
 		...(navigation
@@ -162,17 +163,17 @@ export function createLayout(
 					{ id: "End" },
 					{ id: "PageDown", opts: { label: "Pg\nDown" } },
 				]).map(key => { key.opts.y = start + 3; return key }),
-				{ id: "ArrowUp", opts: { label: "▲", x: 16.5, y: start + 5, classes: ["center-label"] } },
+				{ id: "ArrowUp", opts: { label: "▲", x: 16.5, y: start + 5, classes: ["center-label"]} },
 			]
 			: []
 		),
 		...(arrowKeys
 			? [
 				...calculateAndSetPositionAndWidth([
-				{ id: "ArrowLeft", opts: { label: "◄", x: 15.5, classes: ["center-label"] } },
-				{ id: "ArrowDown", opts: { label: "▼", classes: ["center-label"] } },
-				{ id: "ArrowRight", opts: { label: "►", classes: ["center-label"] } },
-				]).map(key => { key.opts.y = start + 6; return key })
+					{ id: "ArrowLeft", opts: { label: "◄", x: 15.5, classes: ["center-label"]} },
+					{ id: "ArrowDown", opts: { label: "▼", classes: ["center-label"]} },
+					{ id: "ArrowRight", opts: { label: "►", classes: ["center-label"]} },
+				]).map(key => { key.opts.y = start + 6; return key }),
 			]
 			: []
 		),
@@ -180,22 +181,22 @@ export function createLayout(
 			mediaKeys
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "AudioVolumeMute", opts: { label: "🔇", x: 19, ...mediaKey, classes: ["center-label"] } },
-					{ id: "AudioVolumeDown", opts: { label: "🔉", ...mediaKey, classes: ["center-label"] } },
-					{ id: "AudioVolumeUp", opts: { label: "🔊", ...mediaKey, classes: ["center-label"] } },
+					{ id: "AudioVolumeMute", opts: { label: "🔇", x: 19, ...mediaKey, classes: ["center-label"]} },
+					{ id: "AudioVolumeDown", opts: { label: "🔉", ...mediaKey, classes: ["center-label"]} },
+					{ id: "AudioVolumeUp", opts: { label: "🔊", ...mediaKey, classes: ["center-label"]} },
 				]).map(key => { key.opts.y = start; return key }),
 				...calculateAndSetPositionAndWidth([
-					{ id: "MediaTrackPrevious", opts: { label: "⏮️", x: 19, ...mediaKey, classes: ["center-label"] } },
-					{ id: "MediaTrackPause", opts: { label: "⏯️", ...mediaKey, classes: ["center-label"] } },
-					{ id: "MediaTrackNext", opts: { label: "⏭️", ...mediaKey, classes: ["center-label"] } },
-				]).map(key => { key.opts.y = start + 0.5; return key })
+					{ id: "MediaTrackPrevious", opts: { label: "⏮️", x: 19, ...mediaKey, classes: ["center-label"]} },
+					{ id: "MediaTrackPause", opts: { label: "⏯️", ...mediaKey, classes: ["center-label"]} },
+					{ id: "MediaTrackNext", opts: { label: "⏭️", ...mediaKey, classes: ["center-label"]} },
+				]).map(key => { key.opts.y = start + 0.5; return key }),
 			]
 			: []
 		),
 		...(numpad
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "NumLock", opts: { label: "Num\nLock", x: 19 , is: { toggle: true  }} },
+					{ id: "NumLock", opts: { label: "Num\nLock", x: 19, is: { toggle: true } } },
 					{ id: "NumpadDivide", opts: { label: "/" } },
 					{ id: "NumpadMultiply", opts: { label: "*" } },
 					{ id: "NumpadSubtract", opts: { label: "-" } },
@@ -221,8 +222,8 @@ export function createLayout(
 					{ id: "Numpad0", opts: { label: "0", x: 19, width: 2 } },
 					{ id: "NumpadDecimal", opts: { label: "." } },
 				]).map(key => { key.opts.y = start + 6; return key }),
-					]
+			]
 			: []
-		)
+		),
 	] as any
 }

@@ -1,7 +1,8 @@
 import type { AnyFunction } from "@alanscodelog/utils"
-import type { Keys } from "."
+
 import { EmulatedEvent } from "./EmulatedEvent"
 
+import type { Keys } from "."
 
 
 const mouseButtons = ["0", "1", "2", "3", "4", "5"]
@@ -21,7 +22,7 @@ const wheelKeys = ["wheelUp", "wheelDown"]
  * ```
  */
 export class Emulator {
-	validKeys?:Keys
+	validKeys?: Keys
 	constructor(keys?: Keys) {
 		this.validKeys = keys
 	}
@@ -45,7 +46,7 @@ export class Emulator {
 	}
 	removeEventListener(type: string, func: AnyFunction): void {
 		const i = this.listeners[type as keyof Emulator["listeners"]].indexOf(func)
-		if (i === -1) throw "Listener could not be found."
+		if (i === -1) throw new Error("Listener could not be found.")
 		this.listeners[type as keyof Emulator["listeners"]].splice(i, 1)
 	}
 	/**
@@ -88,8 +89,9 @@ export class Emulator {
 	 *
 	 * Note: While the emulator is aware of correct mouse/wheel names, it does not check key names are valid.
 	 */
-	fire(str: string, modifiers: string[] = [], validKeys?:Keys): void {
+	fire(str: string, modifiers: string[] = [], validKeys?: Keys): void {
 		if (!this.initiated) {
+			// eslint-disable-next-line no-console
 			console.warn("No manager attached to the emulator.")
 			return
 		}
@@ -152,8 +154,8 @@ export class Emulator {
 			}
 		}
 	}
-	private _dispatch<T extends keyof Emulator["listeners"]>(type: T, event: EmulatedEvent<T>) {
-		for (let listener of this.listeners[type]) {
+	private _dispatch<T extends keyof Emulator["listeners"]>(type: T, event: EmulatedEvent<T>): void {
+		for (const listener of this.listeners[type]) {
 			listener(event)
 		}
 	}

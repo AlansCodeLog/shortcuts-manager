@@ -24,16 +24,14 @@ tests
 
 Run `pnpm run build` to build the library and the types. If you don't need to build the types you can use the `build:babel` or `build:babel:watch` commands.
 
-# Building the Demo
+## Demo
 
-The demo is mostly WIP, hardly demo. Am currently checking everything is ergnomic, etc.
+The demo is mostly WIP, hardly demo. Am currently using it as a playground to check everything is ergnomic, etc.
 
-Currently the `demo:dev` script is broken because of something related to [vite and linked dependencies](https://vitejs.dev/guide/dep-pre-bundling.html#monorepos-and-linked-dependencies) and the package not being ESM. Hoping this [PR](https://github.com/vitejs/vite/pull/7094) might fix things in the future.
+It uses vite and compiles the src of the library also, so changes in both the library and the demo should be instantaneous.
 
-To build the demo, the package must be linked to itself. I forget how to do this with npm. With pnpm which is what I use locally, just `pnpm link .`
+Note that the out dir is `docs/demo` so that it can be seen from the docs site in the future.
 
-Now you can build then serve the demo: `pnpm demo:build && pnpm demo:serve`.
-
-# Other
+## Other
 
 `@utils/*` imports are an alias to my utils library [`@alanscodelog/utils`](https://github.com/AlansCodeLog/my-utils).

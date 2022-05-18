@@ -1,11 +1,11 @@
+import { Err, Ok, Result } from "@alanscodelog/utils"
+import { crop, indent, pretty, unreachable } from "@utils/utils"
+
+import { Hookable } from "./Hookable"
+
 import { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
 import { isToggleKey, isToggleRootKey, KnownError, mapKeys } from "@/helpers"
 import { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "@/types"
-import { Err, Ok, Result } from "@alanscodelog/utils"
-import { crop, indent, pretty, unreachable } from "@utils/utils"
-import { Hookable } from "./Hookable"
-
-
 
 
 export class HookableCollection<
@@ -55,7 +55,7 @@ export class HookableCollection<
 	protected _remove(_entry: TCollectionHook["removeArgs"]): void {
 		unreachable("Should be implemented by extending class.")
 	}
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 	protected _allows(type: "add" | "remove", entry: TCollectionHook["allowArgs"]): Result<true, TCollectionHook["error"] | Error> {
 		switch (type) {
 			case "add":
@@ -69,8 +69,8 @@ export class HookableCollection<
 		keyof TBaseHook =
 		keyof TBaseHook,
 	>(
-			key: TKey,
-			value: TBaseHook[TKey]["value"],
+		key: TKey,
+		value: TBaseHook[TKey]["value"],
 	): void {
 		(this as any)[key] = value
 	}
@@ -81,9 +81,9 @@ export class HookableCollection<
 		TKey extends
 		keyof TBaseHook =
 		keyof TBaseHook,
-		>(
-			key: TKey,
-			value: TBaseHook[TKey]["excludeSet"] extends true ? never : TBaseHook[TKey]["value"],
+	>(
+		key: TKey,
+		value: TBaseHook[TKey]["excludeSet"] extends true ? never : TBaseHook[TKey]["value"],
 	): void {
 		const self = this as any
 		const oldValue = self[key]
@@ -158,7 +158,7 @@ export class HookableCollection<
 		>
 	> {
 		let existing: any | undefined
-		let existingIdentifier: string = ""
+		let existingIdentifier = ""
 
 		if (self instanceof Keys) {
 			if (isToggleKey(entry as Key) && !isToggleRootKey(entry as Key)) {
@@ -175,7 +175,7 @@ export class HookableCollection<
 		}
 
 		if (existing) {
-			const type = self instanceof Keys ? "key" : self instanceof Commands ? "command":"shortcut"
+			const type = self instanceof Keys ? "key" : self instanceof Commands ? "command" : "shortcut"
 
 			const text = crop`
 			${type} ${existingIdentifier} is already registered.
@@ -249,6 +249,7 @@ export class HookableCollection<
 	/**
 	 * Creates a base instance that conforms to the class. If passed an existing instance will modify it to conform to the class.
 	 */
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	create(_rawEntry: any): any {
 		unreachable("Should be implemented by extending class.")
 	}

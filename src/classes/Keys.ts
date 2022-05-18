@@ -1,10 +1,12 @@
+import { AnyClass, Ok, Result } from "@alanscodelog/utils"
+
+import { defaultStringifier } from "./KeysStringifier"
+
 import { HookableCollection } from "@/bases"
 import { isToggleKey } from "@/helpers"
 import type { BaseHook, KeyHooks, KeyOptions, KeysBaseHooks, KeysCollectionHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
-import { AnyClass, Ok, Result } from "@alanscodelog/utils"
-import { Key } from "."
-import { defaultStringifier } from "./KeysStringifier"
 
+import { Key } from "."
 
 
 export class Keys<
@@ -19,17 +21,17 @@ export class Keys<
 		RecordFromArray<TRawKeys, "id", TKey>,
 > extends HookableCollection<KeysCollectionHooks, KeysBaseHooks> implements Pick<KeyOptions, "stringifier">, KeysOptions {
 	protected _basePrototype: AnyClass<Key> & { create(...args: any[]): Key } = Key
-	private _boundKeyManageLayoutHook: BaseHook<"set", KeyHooks>
+	private readonly _boundKeyManageLayoutHook: BaseHook<"set", KeyHooks>
 	override readonly entries: TEntries
 	/** @inheritdoc */
 	stringifier: KeyOptions["stringifier"] = defaultStringifier
-	private _manageLayout:boolean = true
+	private _manageLayout: boolean = true
 	/** @inheritdoc */
 	set manageLayout(val: boolean) {
 		this._manageLayout = val
 		if (val) this.recalculateLayout()
 	}
-	get manageLayout() {
+	get manageLayout(): boolean {
 		return this._manageLayout
 	}
 	/**
@@ -77,7 +79,7 @@ export class Keys<
 		if (opts?.stringifier) this.stringifier = opts.stringifier
 		this.manageLayout = opts?.manageLayout ?? true
 
-		for (let rawEntry of keys) {
+		for (const rawEntry of keys) {
 			const entry = this.create(rawEntry)
 			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
@@ -111,10 +113,10 @@ export class Keys<
 	 *
 	 * You should not need to call this directly if manageLayout is true.
 	 */
-	recalculateLayout() {
+	recalculateLayout(): void {
 		let rows = 0
 		let columns = 0
-		for (let key of Object.values<Key>(this.entries)) {
+		for (const key of Object.values<Key>(this.entries)) {
 			if (key.render) {
 				const xLimit = key.x + key.width
 				columns = xLimit > columns ? xLimit : columns
@@ -124,6 +126,7 @@ export class Keys<
 		}
 		this.set("layout", { rows, columns })
 	}
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	private _keyManageLayoutHook(prop: string, _value: any, _old: any, _self: Key): Result<true, never> {
 		if (this.manageLayout && ["x", "y", "width", "height", "render"].includes(prop)) {
 			this.recalculateLayout()
@@ -147,20 +150,20 @@ export class Keys<
 	override create<T extends Key = Key>(rawEntry: T | RawKey): T {
 		if (rawEntry instanceof Key) {
 			rawEntry.stringifier = this.stringifier
-			return rawEntry as T
+			return rawEntry
 		}
 		return this._basePrototype.create({
 			...rawEntry,
 			opts: {
 				...rawEntry.opts,
-				stringifier: this.stringifier ?? rawEntry.opts?.stringifier
-			}
+				stringifier: this.stringifier ?? rawEntry.opts?.stringifier,
+			},
 		}) as T
 	}
 	export(): Record<string, ReturnType<Key["export"]>> {
 		const keys: Record<string, ReturnType<Key["export"]>> = {}
-		for (let id in this.entries) {
-			keys[id] = (this.entries[id] as Key).export()
+		for (const id of Object.keys(this.entries)) {
+			keys[id] = (this.entries[id as keyof TEntries] as Key).export()
 		}
 		return keys
 	}
@@ -171,11 +174,11 @@ export class Keys<
 	 */
 	safeRemoveAll(): Result<true, Error> {
 		let res: Result<true, Error>
-		for (let key of Object.values(this.entries as Record<string, Key>)) {
+		for (const key of Object.values(this.entries as Record<string, Key>)) {
 			res = this.allows("remove", key)
 			if (res.isError) return res
 		}
-		for (let command of Object.values(this.entries as Record<string, Key>)) {
+		for (const command of Object.values(this.entries as Record<string, Key>)) {
 			this.remove(command)
 		}
 		return Ok(true)

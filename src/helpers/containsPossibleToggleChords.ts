@@ -1,9 +1,9 @@
-import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
-import { ERROR } from "@/types"
 import { crop, Err, Ok, Result } from "@alanscodelog/utils"
+
 import { KnownError } from "./KnownError"
 
-
+import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
+import { ERROR } from "@/types"
 
 
 /**

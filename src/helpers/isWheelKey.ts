@@ -10,6 +10,6 @@ export function isWheelKey(key: Key): boolean {
 		"WheelUpOn",
 		"WheelDownOn",
 		"WheelUpOff",
-		"WheelDownOff"
+		"WheelDownOff",
 	].includes(key.id)
 }
