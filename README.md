@@ -30,6 +30,8 @@ This is a shortcut manager library for handling ALL the shortcut needs of an app
 todo
 ```
 
+# [Development](./docs-src/DEVELOPMENT.md)
+
 ## Related
 
 [Expressit (boolean parser)](https://github.com/alanscodelog/expressit)
