@@ -14,15 +14,15 @@ This is a shortcut manager library for handling ALL the shortcut needs of an app
 # [Demo (very WIP, am currently using as testing playground)](https://alanscodelog.github.io/shortcuts-manager/demo)
 
 # Features
-	- Supports shortcuts chains (e.g. `Ctrl+A B C`).
-		- Has methods for swapping/moving the chain base.
-	- Has ability to check if shortcuts can be set, if they interfere with existing ones.
-		- Custom hooks can be added to prevent certain shortcuts.
-	- Manages layouts.
-	- Manages keys.
-	- Handles all input.
-	- Plugable and highly flexible.
-	- Lots more... #todo
+- Supports shortcuts chains (e.g. `Ctrl+A B C`).
+	- Has methods for swapping/moving the chain base.
+- Has ability to check if shortcuts can be set, if they interfere with existing ones.
+	- Custom hooks can be added to prevent certain shortcuts.
+- Manages layouts.
+- Manages keys.
+- Handles all input.
+- Plugable and highly flexible.
+- Lots more... #todo
 
 # Usage
 
