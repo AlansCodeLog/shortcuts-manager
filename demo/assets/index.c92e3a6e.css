@@ -1,0 +1,81 @@
+.keyboard[data-v-007abe5c] {
+  --padding: calc(var(--5bca4cae) * 0.05px);
+  --shadow: calc(var(--padding) - 1px);
+  overflow: hidden;
+  font-size: calc(var(--5bca4cae) * 0.25px);
+  width: 100%;
+  position: relative;
+}
+.keyboard .key-container[data-v-007abe5c] {
+  position: absolute;
+  word-break: break-all;
+  padding: var(--padding);
+  overflow: hidden;
+}
+.keyboard .key-container.center-label .key[data-v-007abe5c] {
+  align-items: center;
+  justify-content: center;
+}
+.keyboard .key-container.pressed .key[data-v-007abe5c] {
+  background: gray;
+}
+.keyboard .key-container.pressed .key[data-v-007abe5c]::before {
+  background: gray !important;
+}
+.keyboard .key-container .key[data-v-007abe5c] {
+  display: flex;
+  border: 1px solid black;
+  box-shadow: 0 var(--shadow) var(--padding) rgba(0, 0, 0, 0.5);
+  border-radius: var(--padding);
+  height: 100%;
+  white-space: pre;
+}
+.keyboard .key-container .key .label[data-v-007abe5c] {
+  overflow: hidden;
+  padding-left: calc(var(--padding) * 2);
+  padding-top: calc(var(--padding) * 1.5);
+}
+.keyboard .key-container.iso-enter .key[data-v-007abe5c] {
+  box-shadow: none;
+  border: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.keyboard .key-container.iso-enter .key .label[data-v-007abe5c] {
+  position: absolute;
+}
+.keyboard .key-container.iso-enter .key[data-v-007abe5c]::before {
+  height: calc(1px * var(--5bca4cae) - var(--padding) * 2 - 2px);
+  border: 1px solid black;
+  content: "";
+  border-radius: var(--padding) var(--padding) 0 var(--padding);
+  box-shadow: 0 var(--shadow) var(--padding) rgba(0, 0, 0, 0.5);
+}
+.keyboard .key-container.iso-enter .key[data-v-007abe5c]::after {
+  content: "";
+  flex: 1 1 auto;
+  z-index: 1;
+  background: white;
+  border: 1px solid black;
+  width: calc(83.3% - var(--padding));
+  align-self: flex-end;
+  margin-top: -1px;
+  border-top: 0 solid white;
+  border-radius: 0 0 var(--padding) var(--padding);
+  box-shadow: 0 var(--shadow) var(--padding) rgba(0, 0, 0, 0.5);
+}* {
+  box-sizing: border-box;
+}
+body {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  margin: 0;
+  font-size: 1.1rem;
+}
+#root {
+  overflow: auto-scroll;
+  min-height: 100vh;
+  margin: 0;
+}
