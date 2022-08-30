@@ -19,7 +19,7 @@ function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
 }
 
 export class Context<
-	TValue = RecursiveRecord,
+	TValue extends {} = RecursiveRecord,
 > {
 	/** Where the context object is stored. */
 	value: TValue

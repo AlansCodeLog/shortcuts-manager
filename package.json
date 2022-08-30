@@ -78,14 +78,14 @@
 		"babel-plugin-module-resolver": "^4.1.0",
 		"@alanscodelog/babel-preset": "^2.0.0",
 
-		"eslint": "^8.15.0",
-		"eslint-import-resolver-typescript": "^2.7.1",
+		"eslint": "^8.19.0",
+		"@typescript-eslint/eslint-plugin": "5.30.5",
+		"@typescript-eslint/parser": "5.30.5",
+		"eslint-import-resolver-typescript": "^3.2.4",
 		"eslint-plugin-import": "^2.26.0",
+		"eslint-plugin-jsdoc": "^39.3.3",
 		"eslint-plugin-simple-import-sort": "^7.0.0",
-		"eslint-plugin-jsdoc": "^39.3.0",
-		"@typescript-eslint/eslint-plugin": "^5.25.0",
-		"@typescript-eslint/parser": "^5.25.0",
-		"@alanscodelog/eslint-config": "^3.0.1",
+		"@alanscodelog/eslint-config": "^3.0.2",
 
 		"chai": "^4.3.6",
 		"jest": "^28.1.0",
@@ -94,7 +94,7 @@
 		"@types/jest": "^27.5.1",
 		"typedoc": "^0.22.15",
 
-		"typescript": "^4.6.4",
+		"typescript": "^4.7.4",
 		"@alanscodelog/tsconfigs": "^3.0.0",
 		"dts-alias": "^1.0.5",
 
@@ -111,8 +111,12 @@
 
 		"sass": "^1.51.0",
 
-		"@vue/eslint-config-typescript": "^10.0.0",
-		"eslint-plugin-vue": "^9.0.1"
+		"@vue/eslint-config-typescript": "^11.0.0",
+		"eslint-plugin-vue": "^9.2.0",
+		"@fortawesome/fontawesome-svg-core": "latest",
+		"@fortawesome/free-solid-svg-icons":"latest",
+		"@fortawesome/free-regular-svg-icons":"latest",
+		"@fortawesome/vue-fontawesome": "2.0.8"
 	},
 	"author": "Alan <alanscodelog@gmail.com>",
 	"repository": "https://github.com/alanscodelog/shortcuts-visualizer",

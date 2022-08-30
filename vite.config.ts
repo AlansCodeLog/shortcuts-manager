@@ -15,10 +15,19 @@ const rootPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
 // eslint-disable-next-line import/no-default-export
 export default defineConfig({
 	root: "demo",
-	base: process.env.CI ? `${pkg.name}/demo` : "demo",
+	base: process.env.CI ? `/${pkg.name}/demo` : "/demo",
 	plugins: [
 		vue(),
 	],
+	server: {
+		fs: {
+			// temporarily, for vue-component lib symlink #todo
+			allow: ["../../"],
+		},
+		watch: {
+			ignored: ["!**/node_modules/@alanscodelog/**"],
+		},
+	},
 	resolve: {
 		alias: {
 			/*

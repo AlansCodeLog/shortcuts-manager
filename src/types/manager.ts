@@ -4,7 +4,7 @@ import type { KnownError } from "@/helpers"
 import type { BaseHookType, ChainErrors, ERROR } from "."
 
 
-export type AnyInputEvent = KeyboardEvent | MouseEvent | WheelEvent
+export type AnyInputEvent = (KeyboardEvent | MouseEvent | WheelEvent)
 
 
 export type ManagerReplaceValue = Partial<Pick<Manager, "shortcuts" | "keys" | "commands">>

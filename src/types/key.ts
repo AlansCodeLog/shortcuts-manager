@@ -11,7 +11,7 @@ import type { KnownError } from "@/helpers"
  * Same as {@link KeyOptions} except you're allowed to just pass true to toggle.
  */
 export type RawKey = {
-	id: Key["id"]
+	id: string
 	opts?: Mutable<DeepPartial<Omit<KeyOptions, "is">>>
 	& {
 		is?: {

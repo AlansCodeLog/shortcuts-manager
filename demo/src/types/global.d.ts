@@ -5,6 +5,7 @@ declare module "*.vue" {
 	export default component
 }
 export { }
+import { LibInput, LibTable } from "@alanscodelog/vue-components/dist/components"
 import { NavigatorWKeyboard } from "@lib/types"
 import { DefineComponent } from "vue"
 
@@ -14,5 +15,14 @@ declare global {
 	interface Navigator {
 		keyboard: NavigatorWKeyboard["keyboard"]
 		shared: boolean
+	}
+}
+
+
+
+declare module '@vue/runtime-core' {
+	export interface GlobalComponents {
+		LibInput: typeof LibInput
+		LibTable: typeof LibTable
 	}
 }

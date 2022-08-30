@@ -94,7 +94,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * Note the event is not always a real event because if it's the navigator labeling the key or you're using the {@link Emulator} class, there isn't a real event.
 	 */
-	labelFilter: (e: AnyInputEvent | { key: string } | { button: number } | { deltaY: number }, key: Key) => boolean = defaultLabelFilter
+	labelFilter: (e: Partial<AnyInputEvent> & { key?: string, button?: number, deltaY?: number }, key: Key) => boolean = defaultLabelFilter
 	/**
 	 * An event listener for all events the manager handles.
 	 *
