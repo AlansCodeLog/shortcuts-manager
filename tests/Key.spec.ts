@@ -2,7 +2,7 @@ import { catchError, testName } from "@alanscodelog/utils"
 
 import { expect } from "./chai"
 
-import { Key, KeysStringifier } from "@/classes"
+import { Key, Stringifier } from "@/classes"
 import { ERROR } from "@/types"
 
 
@@ -105,7 +105,7 @@ describe(testName(), () => {
 	})
 	it("stringify works", () => {
 		const key1 = new Key("a")
-		const key2 = new Key("a", { stringifier: new KeysStringifier({ key: _key => "Bla" }) })
+		const key2 = new Key("a", { stringifier: new Stringifier({ key: _key => "Bla" }) })
 		expect(key1.stringifier?.stringify(key1)).to.equal("a")
 		expect(key2.stringifier?.stringify(key2)).to.equal("Bla")
 	})

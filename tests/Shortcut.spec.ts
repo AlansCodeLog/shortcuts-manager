@@ -129,6 +129,7 @@ describe(testName(), () => {
 	})
 	it("equalsKeys", () => {
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.a]])).to.equal(true)
+		// expect((new Shortcut([[k.a]])).equalsKeys([[k.aVariant]])).to.equal(true) ???
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a], [k.b]])).to.equal(true)
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.b]])).to.equal(false)
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.a, k.b]])).to.equal(false)

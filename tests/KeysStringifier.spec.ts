@@ -3,7 +3,7 @@ import { crop, testName } from "@alanscodelog/utils"
 import { expect } from "./chai"
 
 import { Key, Shortcut, Shortcuts } from "@/classes"
-import { defaultStringifier, KeysStringifier } from "@/classes/KeysStringifier"
+import { defaultStringifier, Stringifier } from "@/classes/Stringifier"
 
 
 describe(testName(), () => {
@@ -29,7 +29,7 @@ describe(testName(), () => {
 		]
 
 		/* eslint-disable @typescript-eslint/typedef */
-		const stringifier = new KeysStringifier({
+		const stringifier = new Stringifier({
 			key(key) {return `"${key.label}"`},
 			keys(keys) {return keys.join("!")},
 			chord(chord) {return chord.join("~")},

@@ -2,7 +2,7 @@ import { crop, Err, Ok, Result } from "@alanscodelog/utils"
 
 import { KnownError } from "./KnownError"
 
-import type { Key, KeysStringifier, Manager, Shortcut } from "@/classes"
+import type { Key, Manager, Shortcut, Stringifier } from "@/classes"
 import { ERROR } from "@/types"
 
 
@@ -15,7 +15,7 @@ import { ERROR } from "@/types"
 export function containsPossibleToggleChords(
 	self: Shortcut | Manager | undefined,
 	chain: Key[][],
-	stringifier: KeysStringifier
+	stringifier: Stringifier
 ): Result<true, KnownError<ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE>> {
 	const prevToggles: [Key, number][] = []
 	let num = 0

@@ -20,7 +20,7 @@ module.exports = {
 		// "no-unused-private-class-members": undefined, // TODO
 		"jsdoc/check-tag-names": "off",
 	},
-	parserOptions: { project: "tsconfig.json" },
+	parserOptions: { project: "tsconfig.eslint.json" },
 	// 🟠 - I like to toggle these on occasionally, but otherwise keep off
 	overrides: [
 		{

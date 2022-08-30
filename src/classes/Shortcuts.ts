@@ -1,10 +1,10 @@
-import { AnyClass, crop, Err, indent, Ok, pretty } from "@alanscodelog/utils"
+import { AnyClass, crop, Err, Ok } from "@alanscodelog/utils"
 import type { Result } from "@alanscodelog/utils/dist/utils"
 
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
-import { defaultStringifier } from "./KeysStringifier"
 import { Shortcut } from "./Shortcut"
+import { defaultStringifier } from "./Stringifier"
 
 import { HookableCollection } from "@/bases"
 import { equalsKeys, KnownError } from "@/helpers"
@@ -25,8 +25,6 @@ export class Shortcuts<
 	protected _basePrototype: AnyClass<Shortcut> & { create(...args: any[]): Shortcut } = Shortcut
 	override entries: TEntries
 	private readonly _boundAllowsHook: any
-	/** @inheritdoc */
-	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
 	/**
@@ -50,7 +48,7 @@ export class Shortcuts<
 		opts: Partial<ShortcutsOptions> = {},
 	) {
 		super()
-		if (opts.stringifier) this.stringifier = opts.stringifier
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		if (opts.sorter) this.sorter = opts.sorter
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
@@ -77,17 +75,12 @@ export class Shortcuts<
 		const existing = this.query(entry => entry.equals(proxy.proxy) && entry !== instance, false)
 		proxy.revoke()
 		if (existing !== undefined) {
-			return Err(new KnownError(ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${value}.
-			Existing:
-			${indent(pretty(existing), 4)}
+			return Err(new KnownError(ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${this.stringifier.stringifyPropertyValue(value)}.
 
-			Instance:
-			${indent(pretty(instance), 4)}
+			Existing: ${this.stringifier.stringify(existing)}
+			Instance: ${this.stringifier.stringify(instance)}
 
-			Change:
-			${indent(pretty({ key, value }), 4)}
-
-			`, { existing, self: instance as any }))
+			`, { existing, self: instance as any, key, value }))
 		}
 		return Ok(true)
 	}
@@ -215,8 +208,8 @@ export class Shortcuts<
 			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, crop`
 			The chords to swap cannot share starting chords.
 			Chords:
-			${indent(pretty(chordsA.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
-			${indent(pretty(chordsB.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true }), 4)}
+			${this.stringifier.stringify(chordsA)}
+			${this.stringifier.stringify(chordsB)}
 			`, { chordsA, chordsB }))
 		}
 		return Ok(true)
@@ -227,7 +220,7 @@ export class Shortcuts<
 			found = chord
 		}
 		if (found) {
-			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${pretty(chord.map(keys => keys.map(key => this.stringifier.stringify(key))), { oneline: true })} contains an empty chord.`, { chord }))
+			return Err(new KnownError(ERROR.INVALID_SWAP_CHORDS, `Cannot swap with empty chord, but ${this.stringifier.stringify(chord)} contains an empty chord.`, { chord }))
 		}
 		return Ok(true)
 	}

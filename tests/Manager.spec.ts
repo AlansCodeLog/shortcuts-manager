@@ -3,7 +3,7 @@ import { testName } from "@alanscodelog/utils"
 
 import { expect } from "./chai"
 
-import { Command, Commands, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
+import { Command, Commands, Context, Key, Keys, KeysSorter, Shortcut, Shortcuts, Stringifier } from "@/classes"
 import { Emulator } from "@/classes/Emulator"
 import { Manager } from "@/classes/Manager"
 import { ERROR } from "@/types"
@@ -17,14 +17,14 @@ describe(testName(), () => {
 	})
 	it("should override options of keys/commands/shortcuts", () => {
 		const sorter = new KeysSorter()
-		const stringifier = new KeysStringifier()
+		const stringifier = new Stringifier()
 		const manager = new Manager(
 			new Keys([], {
-				stringifier: new KeysStringifier(/* ignored */),
+				stringifier: new Stringifier(/* ignored */),
 			}),
 			new Commands([]),
 			new Shortcuts([], {
-				stringifier: new KeysStringifier(/* ignored */),
+				stringifier: new Stringifier(/* ignored */),
 				sorter: new KeysSorter(/* ignored */),
 			}),
 			new Context({}),

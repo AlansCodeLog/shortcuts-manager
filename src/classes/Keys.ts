@@ -1,6 +1,6 @@
 import { AnyClass, Ok, Result } from "@alanscodelog/utils"
 
-import { defaultStringifier } from "./KeysStringifier"
+import { defaultStringifier } from "./Stringifier"
 
 import { HookableCollection } from "@/bases"
 import { isToggleKey } from "@/helpers"
@@ -23,8 +23,6 @@ export class Keys<
 	protected _basePrototype: AnyClass<Key> & { create(...args: any[]): Key } = Key
 	private readonly _boundKeyManageLayoutHook: BaseHook<"set", KeyHooks>
 	override readonly entries: TEntries
-	/** @inheritdoc */
-	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	private _manageLayout: boolean = true
 	/** @inheritdoc */
 	set manageLayout(val: boolean) {
@@ -73,10 +71,11 @@ export class Keys<
 	) {
 		super()
 		this._boundKeyManageLayoutHook = this._keyManageLayoutHook.bind(this)
+		this.stringifier = opts?.stringifier ?? defaultStringifier
+
 
 		this.entries = {} as TEntries
 
-		if (opts?.stringifier) this.stringifier = opts.stringifier
 		this.manageLayout = opts?.manageLayout ?? true
 
 		for (const rawEntry of keys) {

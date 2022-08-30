@@ -4,7 +4,7 @@ import type { BaseHookType, CollectionHookType } from "./hooks"
 import type { Optional } from "./utils"
 
 import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "@/classes"
-import type { KeysStringifier } from "@/classes/KeysStringifier"
+import type { Stringifier } from "@/classes/Stringifier"
 import type { KnownError } from "@/helpers"
 
 
@@ -47,15 +47,15 @@ export type ShortcutOptions = {
 	enabled: boolean
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
-	/** See {@link KeysStringifier} */
-	stringifier: KeysStringifier
+	/** See {@link Stringifier} */
+	stringifier: Stringifier
 }
 
 export type ShortcutsOptions = {
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
-	/** See {@link KeysStringifier} */
-	stringifier: KeysStringifier
+	/** See {@link Stringifier} */
+	stringifier: Stringifier
 }
 
 export type TriggerableShortcut = Shortcut & { command: Command & { execute: Command["execute"] } }

@@ -1,5 +1,5 @@
 import { Err, Ok, Result } from "@alanscodelog/utils"
-import { crop, indent, pretty, unreachable } from "@utils/utils"
+import { crop, indent, unreachable } from "@utils/utils"
 
 import { Hookable } from "./Hookable"
 
@@ -176,13 +176,12 @@ export class HookableCollection<
 
 		if (existing) {
 			const type = self instanceof Keys ? "key" : self instanceof Commands ? "command" : "shortcut"
-
 			const text = crop`
 			${type} ${existingIdentifier} is already registered.
 			Existing ${type}:
-			${indent(pretty(existing), 3)}
+			${indent(self.stringifier.stringify(existing), 3)}
 			New ${type}:
-			${indent(pretty(entry), 3)}
+			${indent(self.stringifier.stringify(entry), 3)}
 			`
 
 			const error =
@@ -241,7 +240,7 @@ export class HookableCollection<
 			return Err(new KnownError(ERROR.MISSING, crop`
 			${entry.constructor.name} does not exist in this collection.
 
-			${indent(pretty(entry), 3)}
+			${indent(self.stringifier.stringify(entry), 3)}
 			`, { entry, collection: self as any }))
 		}
 		return Ok(true)

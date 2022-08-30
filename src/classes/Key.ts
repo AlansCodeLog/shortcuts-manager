@@ -1,14 +1,14 @@
 import { Result, setReadOnly } from "@alanscodelog/utils"
 import { castType, Err, Ok } from "@utils/utils"
 
-import { defaultStringifier } from "./KeysStringifier"
+import { defaultStringifier } from "./Stringifier"
 
 import { HookableBase } from "@/bases"
 import { KnownError } from "@/helpers"
 import { createInstance } from "@/helpers/createInstance"
 import { ERROR, KeyHooks, KeyOptions, RawKey, ToggleKey } from "@/types"
 
-import type { KeysStringifier } from "."
+import type { Stringifier } from "."
 
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
@@ -51,8 +51,6 @@ export class Key<
 	declare root: Key & { on: ToggleKey<Key>, off: ToggleKey<Key> }
 	/** @inheritdoc */
 	readonly variants: KeyOptions["variants"]
-	/** @inheritdoc */
-	stringifier: KeyOptions["stringifier"] = defaultStringifier
 	/**
 	 * # Key
 	 * Creates a key.
@@ -71,6 +69,8 @@ export class Key<
 	) {
 		super()
 
+		this.stringifier = opts.stringifier as Stringifier ?? defaultStringifier
+
 		setReadOnly(this, "id", id)
 		if (opts.variants) {
 			this.safeSet("variants", opts.variants).unwrap()
@@ -83,7 +83,7 @@ export class Key<
 		this.width = opts.width ?? this.width
 		this.height = opts.height ?? this.height
 
-		if (opts.stringifier) this.stringifier = opts.stringifier as KeysStringifier
+
 		this.is = {
 			toggle: false,
 			modifier: false,

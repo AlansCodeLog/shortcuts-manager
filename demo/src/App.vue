@@ -6,7 +6,6 @@
 			<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/>
 			<lib-button :label="'Add Command'" @click="addCommand()"/>
 		</lib-group>
-		{{ existingCommands }}
 		<lib-group>
 			<lib-input
 				:suggestions="existingCommands"
@@ -20,19 +19,20 @@
 			</lib-input>
 			<lib-button :label="'Remove Command'" @click="removeCommand()"/>
 		</lib-group>
-		<list :manager="manager"/>
+		<list :manager="manager" :existingCommands="existingCommands"/>
 	</div>
 </template>
 
 <script setup lang="ts">
 /* eslint-disable no-alert */
-import { unreachable } from "@alanscodelog/utils"
+import { castType, unreachable } from "@alanscodelog/utils"
 import { helpers, mixins } from "@alanscodelog/vue-components"
 import keyboard from "@demo/components/Keyboard.vue"
 import list from "@demo/components/List.vue"
 import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "@lib/classes"
 import { createLayout } from "@lib/layouts"
-import { computed, reactive, ref } from "vue"
+import { ManagerListener } from "@lib/types"
+import { computed, onMounted, onUnmounted, reactive, ref, Ref } from "vue"
 
 
 // #region Theme
@@ -50,6 +50,7 @@ const layout: Key[] = [...createLayout("iso")].map(raw =>
 // raw.opts.label = "";
 	reactive(Key.create(raw)) as Key,
 )
+
 
 const classes = computed(() => ({
 	outline: outline.value,
@@ -100,7 +101,9 @@ const addCommand = (): void => {
 	if (exists) {
 		window.alert("Command already exists")
 	} else {
-		manager.commands.add(new Command(name))
+		const command =new Command(name)
+		manager.commands.add(command)
+		command.addHook("set", commandSet)
 		commandToAdd.value = ""
 	}
 }
@@ -118,6 +121,42 @@ const removeCommand = (): void => {
 		manager.commands.remove(existing)
 	}
 }
+const commandSet: Parameters<Command["addHook"]>[1]  = (key, value)=> {
+	console.log(key, value, Object.keys(manager.commands.entries));
+
+	if (key == "name") {
+		existingCommands.value = Object.keys(manager.commands.entries)
+	}
+}
+
+for (const existing of existingCommands.value){
+	manager.commands.entries[existing].addHook("set", commandSet)
+}
+
+const eventListener: ManagerListener = ({ event, isKeydown, keys }) => {
+	if (
+		(manager.isRecording && !(event instanceof MouseEvent)) ||
+		(!manager.isRecording &&
+			(
+				manager.chain.length > 1 ||
+				manager.pressedNonModifierKeys().length > 0
+			)
+		)
+	) {
+		event.preventDefault()
+	}
+}
+onMounted(() => {
+	castType<Ref<HTMLElement>>(keyboard)
+	manager.attach(document)
+	manager.addEventListener(eventListener)
+})
+onUnmounted(() => {
+	manager.removeEventListener(eventListener)
+	manager.detach(document)
+})
+
+
 // #endregion
 
 </script>

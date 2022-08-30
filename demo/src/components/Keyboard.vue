@@ -22,10 +22,9 @@
 </template>
 
 <script setup lang="ts">
-import { Key, Keys, Manager } from "@lib/classes"
-import { ManagerListener } from "@lib/types"
-import { castType } from "@utils/utils"
-import { computed, onMounted, onUnmounted, reactive, Ref, ref } from "vue"
+import { Key, Keys, Manager } from "@lib/classes";
+import { castType } from "@utils/utils";
+import { computed, onMounted, onUnmounted, reactive, Ref, ref } from "vue";
 
 
 const props = defineProps<{
@@ -34,7 +33,6 @@ const props = defineProps<{
 }>()
 
 const keyboard = ref<HTMLElement | null>(null)
-const recorder = ref<HTMLInputElement | null>(null)
 
 const m = reactive({
 	chain: props.manager.chain,
@@ -71,31 +69,14 @@ const updateSize = (): void => {
 	width.value = keyboard.value.offsetWidth
 }
 let observer: ResizeObserver | undefined
-const eventListener: ManagerListener = ({ event/* , isKeydown, keys */ }) => {
-	if (
-		(props.manager.isRecording && event.target === recorder.value) ||
-		(event.target !== recorder.value && !props.manager.isRecording &&
-			(
-				m.chain.length > 1 ||
-				(props.manager.pressedModifierKeys().length > 0 && props.manager.pressedNonModifierKeys().length > 0)
-			)
-		)
-	) {
-		event.preventDefault()
-	}
-}
 onMounted(() => {
 	castType<Ref<HTMLElement>>(keyboard)
 	observer = new ResizeObserver(updateSize)
 	// observer = new ResizeObserver(throttle(updateSize, 50))
 	observer.observe(keyboard.value)
-	props.manager.attach(document)
-	props.manager.eventListener = eventListener
 })
 onUnmounted(() => {
 	observer!.disconnect()
-	props.manager.eventListener = undefined
-	props.manager.detach(document)
 })
 
 </script>
@@ -118,7 +99,7 @@ onUnmounted(() => {
 		position: absolute;
 		word-break: break-all;
 		padding: var(--padding);
-		overflow: hidden;
+		// overflow: hidden;
 
 		&.center-label {
 			.key {
@@ -138,15 +119,29 @@ onUnmounted(() => {
 		.key {
 			display: flex;
 			border: 1px solid black;
-			box-shadow: 0 var(--shadow) var(--padding) rgb(0 0 0 / 50%);
 			border-radius: var(--padding);
 			height: 100%;
 			white-space: pre;
-
+			padding-left: var(--padding);
+			// allows iso enter key to have correct shadow
+			// drop-shadow is different than box-shadow thought, so to look consistent we use it on all keys
+			// filter: drop-shadow(0 var(--shadow) calc(var(--padding)/2) rgb(0 0 0 / 50%));
+			// &::before {
+			// 	position:absolute;
+			// 	top:0;
+			// 	bottom:0;
+			// 	right:0;
+			// 	left:0;
+			// 	content: "";
+			// 	background: white;
+			// 	border-radius: var(--padding);
+			// }
+			box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
 			.label {
+				z-index:1;
 				overflow: hidden;
-				padding-left: calc(var(--padding) * 2);
-				padding-top: calc(var(--padding) * 1.5);
+				// padding-left: calc(var(--padding) * 2);
+				// padding-top: calc(var(--padding) * 1.5);
 			}
 		}
 
@@ -159,16 +154,19 @@ onUnmounted(() => {
 				.label {
 					position: absolute;
 				}
-
 				display:flex;
 				flex-direction: column;
+				// filter: drop-shadow(0 var(--shadow) calc(var(--padding)/2) rgb(0 0 0 / 50%));
 
 				&::before {
-					height: calc(1px * v-bind(keyW) - var(--padding) * 2 - 2px);
+					position: unset;
+					height: calc(1px * v-bind(keyW) - var(--padding) * 2 - 0px);
 					border: 1px solid black;
 					content: "";
 					border-radius: var(--padding) var(--padding) 0 var(--padding);
-					box-shadow: 0 var(--shadow) var(--padding) rgb(0 0 0 / 50%);
+					margin-left: calc(-1 * var(--padding));
+					background: white;
+					box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
 
 				}
 
@@ -178,12 +176,12 @@ onUnmounted(() => {
 					z-index: 1;
 					background: white;
 					border: 1px solid black;
-					width: calc(83.3% - var(--padding));
+					width: calc(83.3%);
 					align-self: flex-end;
 					margin-top: -1px;
 					border-top: 0 solid white; //width must be 0 or we get artifact
 					border-radius: 0 0 var(--padding) var(--padding);
-					box-shadow: 0 var(--shadow) var(--padding) rgb(0 0 0 / 50%);
+					box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
 				}
 			}
 		}

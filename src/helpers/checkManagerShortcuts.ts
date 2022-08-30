@@ -3,7 +3,7 @@ import { crop, Err, indent, Ok, Result } from "@alanscodelog/utils"
 import { checkShortcutCommands } from "./checkShortcutCommands"
 import { checkShortcutKeys } from "./checkShortcutKeys"
 
-import type { Commands, Keys, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
+import type { Commands, Keys, Shortcut, Shortcuts, Stringifier } from "@/classes"
 import { ERROR } from "@/types"
 
 import { KnownError } from "."
@@ -12,10 +12,10 @@ import { KnownError } from "."
 /**
  * Throws if shortcuts contain keys/commands not in the given keys/commands set.
  */
-export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: Commands, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
-export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: undefined, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS>>
-export function checkManagerShortcuts(shortcuts: Shortcuts, keys: undefined, commands: Commands, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
-export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys | undefined, commands: Commands | undefined, s: KeysStringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>> {
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: Commands, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys, commands: undefined, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: undefined, commands: Commands, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>>
+export function checkManagerShortcuts(shortcuts: Shortcuts, keys: Keys | undefined, commands: Commands | undefined, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUTS | ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS>> {
 	if (keys) {
 		const keyErrors: { shortcut: Shortcut, err: KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUT> }[] = []
 		for (const shortcut of shortcuts.entries) {

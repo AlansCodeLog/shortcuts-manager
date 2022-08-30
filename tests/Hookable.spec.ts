@@ -34,11 +34,11 @@ describe(testName(), () => {
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcut.removeHook("allows", listener2)
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				const listener3: any = () => {}
 				shortcut.removeHook("set", listener3)
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 		})
 		it("throw if allow listener returns error", () => {
 			const shortcut = new Shortcut([[k.a]])
@@ -109,17 +109,17 @@ describe(testName(), () => {
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcuts.removeHook("allowsAdd", listener2)
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				shortcuts.removeHook("add", () => { })
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				const listener2: any = () => {}
 				shortcuts.removeHook("allowsRemove", listener2)
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 			expect(catchError(() => {
 				shortcuts.removeHook("remove", () => { })
-			}).code).to.equal(TYPE_ERROR.HOOK_DOES_NOT_EXIST)
+			}).code).to.equal(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST)
 		})
 		it("throw if allow listener returns error", () => {
 			const shortcuts = new Shortcuts([])

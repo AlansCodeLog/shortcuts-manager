@@ -13,6 +13,8 @@ This is a shortcut manager library for handling ALL the shortcut needs of an app
 
 # [Demo (very WIP, am currently using as testing playground)](https://alanscodelog.github.io/shortcuts-manager/demo)
 
+- Will not work locally unless my very WIP, currently private, vue component lib is locally linked.
+
 # Features
 - Supports shortcuts chains (e.g. `Ctrl+A B C`).
 	- Has methods for swapping/moving the chain base.

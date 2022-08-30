@@ -1,7 +1,8 @@
 import { Key } from "@/classes"
 
 
-const a = new Key("a")
+const a = new Key("a", { variants: ["aVariant"]})
+const aVariant = new Key("aVariant", { variants: ["a"]})
 const b = new Key("b")
 const c = new Key("c")
 const d = new Key("d")
@@ -85,6 +86,7 @@ export const k = {
 	modToggleWheelDown,
 	modToggleWheelUp,
 	a,
+	aVariant,
 	b,
 	c,
 	d,

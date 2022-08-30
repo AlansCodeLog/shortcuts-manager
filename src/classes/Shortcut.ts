@@ -4,7 +4,7 @@ import type { Command } from "./Command"
 import { Condition } from "./Condition"
 import type { Key } from "./Key"
 import { defaultSorter } from "./KeysSorter"
-import { defaultStringifier } from "./KeysStringifier"
+import { defaultStringifier } from "./Stringifier"
 
 import { HookableBase } from "@/bases"
 import { equalsKeys, mapKeys } from "@/helpers"
@@ -23,8 +23,6 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
 	readonly chain: Key[][] = []
-	/** @inheritdoc */
-	stringifier: ShortcutOptions["stringifier"] = defaultStringifier
 	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
 	/** @inheritdoc */
@@ -48,7 +46,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		opts: RawShortcut["opts"] = {}
 	) {
 		super()
-		if (opts.stringifier) this.stringifier = opts.stringifier
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
 		if (opts.command) this.command = opts.command

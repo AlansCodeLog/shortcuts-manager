@@ -2,7 +2,7 @@ import { Ok, Result } from "@alanscodelog/utils"
 
 import type { KnownError } from "./KnownError"
 
-import type { Key, KeysSorter, KeysStringifier, Manager, Shortcut } from "@/classes"
+import type { Key, KeysSorter, Manager, Shortcut, Stringifier } from "@/classes"
 import type { ERROR } from "@/types"
 
 import { containsPossibleToggleChords, isValidChord } from "."
@@ -16,7 +16,7 @@ import { containsPossibleToggleChords, isValidChord } from "."
 export function isValidChain(
 	self: Shortcut | Manager,
 	chain: Key[][],
-	stringifier: KeysStringifier,
+	stringifier: Stringifier,
 	sorter: KeysSorter
 ): Result<true, KnownError<
 	| ERROR.CHORD_W_DUPLICATE_KEY

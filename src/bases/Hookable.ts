@@ -1,5 +1,6 @@
 import { crop, indent, pretty } from "@utils/utils"
 
+import type { Stringifier } from "@/classes"
 import { KnownError } from "@/helpers"
 import { TYPE_ERROR } from "@/types"
 
@@ -8,6 +9,7 @@ export class Hookable<
 	THooks extends Record<string, any>,
 	TTypes extends keyof THooks = keyof THooks,
 > {
+	stringifier!: Stringifier
 	hooks: {[K in keyof THooks]: THooks[K][] } = {} as any
 	constructor(keys: TTypes[]) {
 		for (const key of keys) this.hooks[key] = [] as any
@@ -66,13 +68,10 @@ export class Hookable<
 			THooks[TType] =
 			THooks[TType],
 	>(type: TType, hook: THook): void {
-		if (typeof hook !== "function") {
-			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Hook is not a function.", undefined)
-		}
 		const index = this.hooks[type].indexOf(hook)
 		if (index === -1) {
 			const prettyHooks = indent(pretty(this.hooks[type]), 4)
-			throw new KnownError(TYPE_ERROR.HOOK_DOES_NOT_EXIST, crop`
+			throw new KnownError(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST, crop`
 			Could not find hook ${(hook as any).toString()} in hooks list:
 				${prettyHooks}
 			`, {

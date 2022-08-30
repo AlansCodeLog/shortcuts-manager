@@ -3,7 +3,7 @@ import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, Keys, KeysStringifier } from "@/classes"
+import type { Key, Keys, Stringifier } from "@/classes"
 import type { KnownError } from "@/helpers"
 
 
@@ -50,9 +50,9 @@ export type KeyOptions = {
 	 */
 	readonly label: string
 	/**
-	 * See {@link KeysStringifier}
+	 * See {@link Stringifier}
 	 */
-	stringifier: KeysStringifier
+	stringifier: Stringifier
 	/**
 	 * Variants are a list of fallback codes that will also trigger a key.
 	 *
@@ -227,9 +227,9 @@ export type KeyOptions = {
 
 export type KeysOptions = {
 	/**
-	 * See {@link KeysStringifier}
+	 * See {@link Stringifier}
 	 */
-	stringifier?: KeysStringifier
+	stringifier?: Stringifier
 	/**
 	 * Whether the instance automatically calculates the layout size ({@link Keys.layout}) from it's keys and adjusts to size/position changes using {@link Keys.recalculateLayout}.
 	 *

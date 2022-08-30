@@ -1,13 +1,13 @@
 /* eslint-disable max-lines */
-import { castType, crop, Err, indent, multisplice, Ok, pretty, Result, setReadOnly, unreachable } from "@alanscodelog/utils"
+import { castType, crop, Err, indent, last, multisplice, Ok, pretty, Result, setReadOnly, unreachable } from "@alanscodelog/utils"
 
 import { defaultSorter } from "./KeysSorter"
-import { defaultStringifier } from "./KeysStringifier"
+import { defaultStringifier } from "./Stringifier"
 
 import { HookableBase } from "@/bases"
-import { Command, Commands, Condition, Context, Key, Keys, KeysSorter, KeysStringifier, Shortcut, Shortcuts } from "@/classes"
+import { Command, Commands, Condition, Context, Key, Keys, KeysSorter, Shortcut, Shortcuts, Stringifier } from "@/classes"
 import { checkManagerShortcuts, checkShortcutCommands, checkShortcutKeys, defaultManagerCallback, isModifierKey, isToggleRootKey, isTriggerKey, isValidChain, KnownError, mapKeys } from "@/helpers"
-import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "@/types"
+import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut, TYPE_ERROR } from "@/types"
 
 
 const defaultLabelFilter = (): boolean => true
@@ -37,7 +37,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	readonly chain: Key[][] = []
 	context: Context
-	stringifier: KeysStringifier
 	sorter: KeysSorter
 	/**
 	 * The error callback for recoverable errors such as multiple shortcuts matching, no shortcut matching once a chord chain has been "started", or an unknown key event because no matching key was found (only for keyboard events).
@@ -95,32 +94,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * Note the event is not always a real event because if it's the navigator labeling the key or you're using the {@link Emulator} class, there isn't a real event.
 	 */
 	labelFilter: (e: Partial<AnyInputEvent> & { key?: string, button?: number, deltaY?: number }, key: Key) => boolean = defaultLabelFilter
-	/**
-	 * An event listener for all events the manager handles.
-	 *
-	 * This runs right after keys are found so you can have access to the keys as the manager understood them, but before everything else (setting the state, labeling, adding/removing from the chain). Note that `isKeydown` is always true for wheel events since their keyup is emulated withing the same event handler.
-	 *
-	 * This exists because not all events trigger shortcuts (which can access only the event that triggered them) but there are many times when you might still want access to the event to do things like `e.preventdefault()`:
-	 *
-	 * - When recording, we usually always need to do `e.preventDefault()` except in some rare cases:
-	 * 	- For example say you have a div which records while focused, if the manager is attached to a parent element, you will have to allow clicks to the parent so losing focus stops the recording. You do not generally need to allow keys through, see {@link Manager.startRecording} for why.
-	 * - We also need to `e.preventDefault()` for any chords that are also browser shortcuts (though note not all browser shortcuts can be overriden).
-	 *
-	 * Assuming that you only allow chains to start with chords that have modifiers, the following should give you a good starting point:
-	 *
-	 * ```ts
-	 * manager.eventListener = ({event, isKeydown, keys}) => {
-	 * 	if (
-	 * 		manager.isRecording ||
-	 * 		manager.chain.length > 1 ||
-	 * 		manager.pressedNonModifierKeys().length > 0
-	 * 	) {
-	 * 		event.preventDefault()
-	 * 	}
-	 * })
-	 * ```
-	 */
-	eventListener?: ManagerListener
 	/**
 	 * Whether the manager is waiting for non-modifier keys to be release.
 	 *
@@ -212,7 +185,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			labelStrategy = true,
 			labelFilter,
 		}: {
-			stringifier?: KeysStringifier
+			stringifier?: Stringifier
 			sorter?: KeysSorter
 			autoReleaseDelay?: number
 			labelStrategy?: Manager["labelStrategy"]
@@ -284,19 +257,21 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 				if (!this._selfKeyboardMap.has(key)) {
 					if (this.labelFilter(e, key)) {
 						// we don't use instanceof so that we can still be compatible with emulated events
+						let label = ""
 						switch (prop) {
 							case "deltaY":
-								key.set("label", (e as WheelEvent).deltaY < 0 ? "Wheel Up" : "Wheel Down")
-								return
+								label = (e as WheelEvent).deltaY < 0 ? "Wheel Up" : "Wheel Down"
+								break
 							case "button":
-								key.set("label", `Button ${(e as MouseEvent).button}`)
-								return
+								label = `Button ${(e as MouseEvent).button}`
+								break
 							case "key":
-								key.set("label", (e as KeyboardEvent).key)
-								return
+								label = (e as KeyboardEvent).key
+								break
 							default:
 								unreachable()
 						}
+						key.set("label", label)
 					}
 				}
 			}
@@ -327,7 +302,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * A copy of the last chord in the chain if it exists.
 	 */
 	lastChord(): Key[] | undefined {
-		const lastChord = this.chain[this.chain.length - 1]
+		const lastChord = last(this.chain)
 		return lastChord ? [...lastChord] : undefined
 	}
 	/**
@@ -349,6 +324,55 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		el.removeEventListener("wheel", this._boundWheel)
 		el.removeEventListener("mousedown", this._boundMousedown)
 		el.removeEventListener("mouseup", this._boundMouseup)
+	}
+	private readonly _listeners: ManagerListener[] = []
+	/**
+	 * Add an event listener for all events the manager handles.
+	 *
+	 * The listeners are called right after keys are found so you can have access to the keys as the manager understood them, but before everything else (setting the state, labeling, adding/removing from the chain). Note that `isKeydown` is always true for wheel events since their keyup is emulated withing the same event handler.
+	 *
+	 * This exists because not all events trigger shortcuts (which can access only the event that triggered them) but there are many times when you might still want access to the event to do things like `e.preventdefault()`:
+	 *
+	 * - When recording, we usually always need to do `e.preventDefault()` except in some rare cases:
+	 * 	- For example say you have a div which records while focused, if the manager is attached to a parent element, you will have to allow clicks to the parent so losing focus stops the recording. You do not generally need to allow keys through, see {@link Manager.startRecording} for why.
+	 * - We also need to `e.preventDefault()` for any chords that are also browser shortcuts (though note not all browser shortcuts can be overriden).
+	 *
+	 * Assuming that you only allow chains to start with chords that have modifiers, the following should give you a good starting point:
+	 *
+	 * ```ts
+	 * manager.eventListener = ({event, isKeydown, keys}) => {
+	 * 	if (
+	 * 		(manager.isRecording && !(event instanceof MouseEvent)) ||
+	 *   	(!manager.isRecording &&
+	 *   		(
+	 *   			manager.chain.length > 1 ||
+	 *   			manager.pressedNonModifierKeys().length > 0
+	 *   		)
+	 *   	)
+	 * 	) {
+	 * 		event.preventDefault()
+	 * 	}
+	 * })
+	 * ```
+	 */
+	addEventListener(listener: ManagerListener): void {
+		if (typeof listener !== "function") {
+			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Listener is not a function.", undefined)
+		}
+		this._listeners.push(listener)
+	}
+	removeEventListener(listener: ManagerListener): void {
+		const index = this._listeners.indexOf(listener)
+		if (index === -1) {
+			const prettyListeners = indent(pretty(this._listeners), 4)
+			throw new KnownError(TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST, crop`
+			Could not find listener ${(listener as any).toString()} in listeners list:
+				${prettyListeners}
+			`, {
+				listener, listeners: this._listeners,
+			})
+		}
+		this._listeners.splice(index, 1)
 	}
 	/**
 	 * Puts the manager into recording mode.
@@ -425,6 +449,22 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		for (const chord of chain) {
 			const cloneChord = []
 			for (const key of chord) cloneChord.push(key)
+			clone.push(cloneChord)
+		}
+		return clone
+	}
+	/** Returns a clone of the chain with duplicate keys in chords deduped by their labels. The first instance in the chain is left, the others removed. */
+	// TODO
+	// not sure if this is a good idea. should shortcuts contain duplicate keys and just be displayed different?
+	static dedupeChain(chain: Key[][]): Key[][] {
+		const clone: Key[][] = []
+		for (const chord of chain) {
+			const cloneChord = []
+			for (const key of chord) {
+				if (cloneChord.find(existing => existing.label === key.label) === undefined) {
+					cloneChord.push(key)
+				}
+			}
 			clone.push(cloneChord)
 		}
 		return clone
@@ -690,7 +730,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 	private _keydown(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
-		this.eventListener?.({ event: e, keys, isKeydown: true })
+
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
 
 		if (keys.length === 0) { this._unknownKey(e); return }
 		this._setKeyState(keys, true)
@@ -700,7 +741,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 	private _keyup(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
-		this.eventListener?.({ event: e, keys, isKeydown: false })
+
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+
 		if (keys.length === 0) {this._unknownKey(e); return}
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e, keys)
@@ -711,7 +754,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const dir = e.deltaY < 0 ? "Up" : "Down"
 		const code = `Wheel${dir}`
 		const keys = this.keys.query(key => (key.id === code || key.variants?.includes(code)) && !key.pressed)!
-		this.eventListener?.({ event: e, keys, isKeydown: true })
+
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+
 		this._setKeyState(keys, true)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "deltaY", keys)
@@ -722,7 +767,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _mousedown(e: MouseEvent): void {
 		const button = e.button.toString()
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
-		this.eventListener?.({ event: e, keys, isKeydown: true })
+
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+
 		this._setKeyState(keys, true)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "button", keys)
@@ -731,7 +778,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _mouseup(e: MouseEvent): void {
 		const button = e.button.toString()
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
-		this.eventListener?.({ event: e, keys, isKeydown: false })
+
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "button", keys)
@@ -929,7 +978,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	/**
 	 * Converts exported manager state back into real instance that can then be added.
 	 *
-	 * This takes care of mapping, for example, an shortcut's string keys to real keys. Same thing with commands.
+	 * This takes care of mapping, for example, a shortcut's string keys to real keys. Same thing with commands.
 	 *
 	 * You can control how conditions are parsed (e.g. use a custom class) by passing a `parseCondition` function.
 	 *
@@ -992,7 +1041,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 				if (_shortcut.command) {
 					const found = generated.commands[_shortcut.command] ?? (fallbackToManagerCommands ? this.commands.get(_shortcut.command) : undefined)
 					if (!found) {
-						Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_COMMAND, `Unknown command ${_shortcut.command} for shortcut ${pretty(_shortcut.chain, { oneline: true })}`, { command: _shortcut.command, shortcut: _shortcut }))
+						return Result.Err(new KnownError(ERROR.IMPORT_SHORTCUT_COMMAND, `Unknown command ${_shortcut.command} for shortcut ${pretty(_shortcut.chain, { oneline: true })}`, { command: _shortcut.command, shortcut: _shortcut }))
 					} else {
 						rawEntry.opts!.command = found
 					}

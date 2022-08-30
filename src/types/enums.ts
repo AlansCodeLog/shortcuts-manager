@@ -62,7 +62,7 @@ export type ChainErrors =
 /** Errors that will throw since they should be caught at production. */
 export enum TYPE_ERROR {
 	ILLEGAL_OPERATION = "ILLEGAL_OPERATION",
-	HOOK_DOES_NOT_EXIST = "HOOK_DOES_NOT_EXIST",
+	HOOK_OR_LISTENER_DOES_NOT_EXIST = "HOOK_OR_LISTENER_DOES_NOT_EXIST",
 	FILTER_DOES_NOT_EXIST = "FILTER_DOES_NOT_EXIST",
 }
 
@@ -143,6 +143,9 @@ type ERROR_Info = {
 	[ERROR.DUPLICATE_SHORTCUT]: {
 		existing: Shortcut
 		self: Shortcuts
+		/** If the error is caused by a change, key and value will contain the new key and value. */
+		key?: string
+		value?: any
 	}
 	[ERROR.DUPLICATE_COMMAND]: {
 		existing: Command
@@ -208,9 +211,12 @@ type ERROR_Info = {
 // eslint-disable-next-line @typescript-eslint/naming-convention
 type TYPE_ERROR_Info = {
 	[TYPE_ERROR.ILLEGAL_OPERATION]: undefined
-	[TYPE_ERROR.HOOK_DOES_NOT_EXIST]: {
-		hook: BaseHook<any, any>[]
+	[TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST]: {
+		hook: BaseHook<any, any>
 		hooks: BaseHook<any, any>[]
+	} | {
+		listener: ManagerListener
+		listeners: ManagerListener[]
 	}
 	[TYPE_ERROR.FILTER_DOES_NOT_EXIST]: {
 		filter: ManagerListener
