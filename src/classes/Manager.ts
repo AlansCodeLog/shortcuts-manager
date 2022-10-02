@@ -7,12 +7,16 @@ import { defaultStringifier } from "./Stringifier"
 import { HookableBase } from "@/bases"
 import { Command, Commands, Condition, Context, Key, Keys, KeysSorter, Shortcut, Shortcuts, Stringifier } from "@/classes"
 import { checkManagerShortcuts, checkShortcutCommands, checkShortcutKeys, defaultManagerCallback, isModifierKey, isToggleRootKey, isTriggerKey, isValidChain, KnownError, mapKeys } from "@/helpers"
-import { AnyInputEvent, BaseHook, CollectionHook, CommandsHooks, ERROR, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut, TYPE_ERROR } from "@/types"
+import { AnyInputEvent, AttachTarget, BaseHook, CollectionHook, CommandsHooks, ERROR, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut, TYPE_ERROR } from "@/types"
 
 
 const defaultLabelFilter = (): boolean => true
 
 export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
+	/**
+	 * Disabled triggering of shortcuts. The manager otherwise works as normal.
+	 */
+	enabled: boolean = true
 	/** @RequiresSet @AllowsHookable @SetHookable */
 	readonly keys!: Keys
 	/** @RequiresSet @AllowsHookable @SetHookable */
@@ -43,21 +47,11 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * Usually you will want to clear the manager's chain when this happens and display the error to the user.
 	 *
-	 * In the case of multiple valid shortcuts, if you trigger any of the shortcuts "manually" note that you will to simulate both the keydown/keyup calls if you differentiate between them.
+	 * In the case of multiple valid shortcuts, if you trigger any of the shortcuts "manually" note that you will need to simulate both the keydown/keyup calls if you differentiate between them.
 	 *
 	 * The default callback logs the error and clears the chain.
-	 *
-	 * Note the event parameter might be undefined because it might not exist when the manager needs to emulate a key release. See {@link Manager.autoReleaseDelay}
 	 */
 	cb: ManagerErrorCallback<ERROR.MULTIPLE_MATCHING_SHORTCUTS | ERROR.NO_MATCHING_SHORTCUT | ERROR.UNKNOWN_KEY_EVENT> = defaultManagerCallback
-	/**
-	 * There are cases when a keyup event might never fire because it happened out of focus.
-	 *
-	 * This sets how long to wait after the last keydown event before simulating a keyup event.
-	 *
-	 * This will mean a key release is simulated when the user looses focus (since the element will stop getting keydown events).
-	 */
-	autoReleaseDelay: number
 	/**
 	 * If enabled, sets the labels for keys "automatically". This overrides the existing label. Set {@link Manager.labelOnlyBlank} for disabling this.
 	 * There's two strategies for auto labeling:
@@ -101,6 +95,23 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	readonly isAwaitingKeyup: boolean = false
 	readonly isRecording: boolean = false
+	/**
+	 * Whether to check the state of modifier or toggle keys using `event.getModifierState`.
+	 *
+	 * This is set to true by default which is what you usually want since it tracks the state with the most accuracy when, for example, the user focuses out, toggles a key, then focuses back.
+	 *
+	 * But if you are allowing the user to change key states in some way (e.g. clicking on keys in the settings to visualize shortcuts), you will want to disable this temporarily so that they can click modifier keys. Otherwise they'd be immediately toggled off again (by the state check during the click) and nothing would happen.
+	 *
+	 * Keys also have their own individual {@link Key.checkStateOnAllEvents} in case you need more fine grained control.
+	 *
+	 * When this is set to false the manager will remove / not add it's mouseenter listener.
+	 *
+	 * This should be set using {@link Manager.set} so the manager can add/remove the listener as needed.
+	 *
+	 * @RequiresSet
+	 */
+	readonly checkStateOnAllEvents: boolean = true
+	private _els: AttachTarget[] = []
 	private _nextIsChord: boolean = false
 	private _bypassChainSet: boolean = false
 	private _untrigger: false | TriggerableShortcut = false
@@ -110,6 +121,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private readonly _boundKeyup: Manager["_keyup"]
 	private readonly _boundMousedown: Manager["_mousedown"]
 	private readonly _boundMouseup: Manager["_mouseup"]
+	private readonly _boundMouseEnter: Manager["_mouseenter"]
 	private readonly _boundWheel: Manager["_wheel"]
 	private readonly _boundKeysAddHook: CollectionHook<"add", KeysCollectionHooks>
 	private readonly _boundKeysRemoveHook: CollectionHook<"remove", KeysCollectionHooks>
@@ -137,12 +149,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * 		// you can pass a custom sorter/stringifier and this will set it for all instances
 	 * 		sorter,
 	 * 		stringifier,
-	 * 		// for when keyup events happen out of focus
-	 * 		autoReleaseDelay: 500
 	 * 	},
 	 * )
 	 *
-	 * // this will listen to the correct key/mouse/wheel events on the element
+	 * // this will listen to the correct key/mouse/wheel/mouseenter events on the element
 	 * manager.attach(document)
 	 * ```
 	 *
@@ -156,6 +166,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * The moment a key is released after a shortcut is triggered, the command's execute function is fired again with `isKeydown = false`.
 	 *
+	 * If {@link Manager.checkStateOnAllEvents} is not disabled, the manager also adds an mouseenter listener to the element it's attached to to be able to keep the most accurate state of the modifier keys. See {@link Manager.checkStateOnAllEvents} for more info.
+	 *
 	 * ### Notes
 	 *
 	 * - **The creation of the manager can throw since it checks whether shortcuts contain known keys/commands.**
@@ -166,7 +178,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * - If you need to emulate keypresses for testing see {@link Emulator}.
 	 *
-	 * Other common things you might want/need to do though:
+	 * Other common things you might want/need to do:
 	 *
 	 * - Add a shortcut to a command that can clear the manager's chord chain (e.g. `Escape`).
 	 *
@@ -181,13 +193,11 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		{
 			stringifier,
 			sorter,
-			autoReleaseDelay = 500,
 			labelStrategy = true,
 			labelFilter,
 		}: {
 			stringifier?: Stringifier
 			sorter?: KeysSorter
-			autoReleaseDelay?: number
 			labelStrategy?: Manager["labelStrategy"]
 			labelFilter?: Manager["labelFilter"]
 		} = {},
@@ -197,6 +207,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this._boundKeyup = this._keyup.bind(this)
 		this._boundMousedown = this._mousedown.bind(this)
 		this._boundMouseup = this._mouseup.bind(this)
+		this._boundMouseEnter = this._mouseenter.bind(this)
 		this._boundWheel = this._wheel.bind(this)
 		this._boundKeysAddHook = this._keysAddHook.bind(this)
 		this._boundKeysRemoveHook = this._keysRemoveHook.bind(this)
@@ -211,7 +222,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this.context = context
 		this.stringifier = stringifier ?? defaultStringifier
 		this.sorter = sorter ?? defaultSorter
-		this.autoReleaseDelay = autoReleaseDelay
 		if (labelFilter) this.labelFilter = labelFilter
 		this.set("labelStrategy", labelStrategy)
 		this.safeSet("replace", { shortcuts, keys, commands }).unwrap()
@@ -308,22 +318,27 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	/**
 	 * Attach the manager to an element so it can listen to the needed event hooks.
 	 */
-	attach(el: { addEventListener: HTMLElement["addEventListener"] }): void {
+	attach(el: AttachTarget): void {
+		this._els.push(el)
 		el.addEventListener("keydown", this._boundKeydown)
 		el.addEventListener("keyup", this._boundKeyup)
 		el.addEventListener("wheel", this._boundWheel)
 		el.addEventListener("mousedown", this._boundMousedown)
 		el.addEventListener("mouseup", this._boundMouseup)
+		if (this.checkStateOnAllEvents) el.addEventListener("mouseenter", this._boundMouseEnter)
 	}
 	/**
 	 * Detach the manager from an element and remove all it's event listeners.
 	 */
-	detach(el: { removeEventListener: HTMLElement["removeEventListener"] }): void {
+	detach(el: AttachTarget): void {
+		this._els.splice(this._els.indexOf(el))
 		el.removeEventListener("keydown", this._boundKeydown)
 		el.removeEventListener("keyup", this._boundKeyup)
 		el.removeEventListener("wheel", this._boundWheel)
 		el.removeEventListener("mousedown", this._boundMousedown)
 		el.removeEventListener("mouseup", this._boundMouseup)
+		el.removeEventListener("mouseenter", this._boundMouseEnter)
+		if (this.checkStateOnAllEvents) el.removeEventListener("mouseenter", this._boundMouseEnter)
 	}
 	private readonly _listeners: ManagerListener[] = []
 	/**
@@ -337,18 +352,13 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * 	- For example say you have a div which records while focused, if the manager is attached to a parent element, you will have to allow clicks to the parent so losing focus stops the recording. You do not generally need to allow keys through, see {@link Manager.startRecording} for why.
 	 * - We also need to `e.preventDefault()` for any chords that are also browser shortcuts (though note not all browser shortcuts can be overriden).
 	 *
-	 * Assuming that you only allow chains to start with chords that have modifiers, the following should give you a good starting point:
+	 * The following should give you a good starting point:
 	 *
 	 * ```ts
-	 * manager.eventListener = ({event, isKeydown, keys}) => {
+	 * manager.addEventListener(({event, isKeydown, keys}) => {
 	 * 	if (
 	 * 		(manager.isRecording && !(event instanceof MouseEvent)) ||
-	 *   	(!manager.isRecording &&
-	 *   		(
-	 *   			manager.chain.length > 1 ||
-	 *   			manager.pressedNonModifierKeys().length > 0
-	 *   		)
-	 *   	)
+	 *   		//TODO browser shortcuts filter
 	 * 	) {
 	 * 		event.preventDefault()
 	 * 	}
@@ -509,9 +519,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this._nextIsChord = true
 		this._untrigger = false
 		setReadOnly(this, "isAwaitingKeyup", false)
-		for (const [key] of this._timers.entries()) {
-			this._clearKeyTimer(key)
-		}
 		for (const key of Object.values(this.keys.entries)) {
 			if ((key.is.modifier === "native" || key.is.toggle === "native") && ignoreNative) return
 			key.set("pressed", false)
@@ -534,11 +541,13 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			const untrigger: TriggerableShortcut = this._untrigger
 			// MUST be set to false first or we can get into an infinite loop if the user uses `set(chain)` from inside the command execute function
 			this._untrigger = false
+			if (!this.enabled) return
 			untrigger.command.execute?.({ isKeydown: false, command: untrigger.command, shortcut: untrigger, manager: this, event: e })
 		}
 	}
 	private _checkTrigger(e?: AnyInputEvent): void {
 		this._checkUntrigger(e)
+		if (!this.enabled) return
 		const res = this._getTriggerableShortcut()
 		if (res.isError) {
 			if (res.error.code !== ERROR.RECORDING) {
@@ -590,7 +599,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		}
 	}
-	private _removeFromChain(keys: Key[], e?: AnyInputEvent): void {
+	private _removeFromChain(keys: Key[], e: AnyInputEvent): void {
 		if (keys.length === 0) return
 
 		if (this.isAwaitingKeyup) {
@@ -616,34 +625,19 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		key.on!.set("pressed", value)
 		key.off!.set("pressed", !value)
 	}
-	private _setKeyTimer(key: Key): void {
-		this._timers.set(key, setTimeout(() => {
-			key.set("pressed", false)
-			this._removeFromChain([key], undefined)
-		}, this.autoReleaseDelay))
-	}
-	private _clearKeyTimer(key: Key): void {
-		const timer = this._timers.get(key)
-		clearTimeout(timer as number)
-		this._timers.delete(key)
-	}
 	private _setKeyState(keys: Key[], state: boolean): void {
 		for (const key of keys) {
 			if (key.pressed === state) {
-				this._clearKeyTimer(key)
-				this._setKeyTimer(key)
 				continue
 			}
 			key.set("pressed", state)
-
-			this._clearKeyTimer(key)
 
 			if (state) {
 				// toggles are considered active on keydown
 				if (key.is.toggle === "emulated") {
 					// state was never set
 					if (key.on!.pressed && key.off!.pressed) {
-						throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key)} is a toggle key whose on and off versions are both pressed, which is not a valid state.`, { key })
+						throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key)} is a toggle key whose on and off versions are both pressed, which is not a valid state. If manually setting pressed state, use Key.toggleToggle for easier setting of a toggle key's pressed state.`, { key })
 					}
 					if (!key.on!.pressed && !key.off!.pressed) {
 						this._setEmulatedToggleState(key, true)
@@ -653,11 +647,11 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 						this._setEmulatedToggleState(key, true)
 					}
 				}
-				this._setKeyTimer(key)
 			}
 		}
 	}
-	private _getModifierState(key: Key, e: AnyInputEvent): boolean {
+	private _getModifierState(key: Key, e: AnyInputEvent): boolean | null {
+		if (!this.checkStateOnAllEvents|| !key.checkStateOnAllEvents) return null
 		for (const code of [key.id, ...key.variants ?? []]) {
 			if (e.getModifierState(code)) return true
 		}
@@ -675,14 +669,17 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * Mutates the passed keys array to remove processed keys.
 	 */
 	private _checkSpecialKeys(e: AnyInputEvent, keys: Key[]): void {
-		// returned processed keys to splice out of array? TODO
+
 		for (const key of this._nativeToggleKeys) {
 			if (key.on.pressed && key.off.pressed) {
 				throw new KnownError(ERROR.INCORRECT_TOGGLE_STATE, `Key ${key.stringifier.stringify(key as Key)} is a toggle key whose on and off versions are both pressed, which is not a valid state.`, { key: key as Key })
 			}
 			// this does not guarantee the key code is valid
 			// it just returns false even for made up keys
-			if (this._getModifierState(key as Key, e)) {
+			const modifierState = this._getModifierState(key as Key, e)
+
+			if (modifierState === null) continue
+			if (modifierState) {
 				if (!key.on.pressed) {
 					key.on.set("pressed", true)
 					key.off.set("pressed", false)
@@ -697,18 +694,16 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const added: Key[] = []
 		const removed: Key[] = []
 		for (const key of this._nativeModifierKeys) {
-			if (this._getModifierState(key, e)) {
+			const modifierState = this._getModifierState(key as Key, e)
+			if (modifierState === null) continue
+			if (modifierState) {
 				if (!key.pressed) {
 					key.set("pressed", true)
-					this._clearKeyTimer(key)
-					this._setKeyTimer(key)
 					added.push(key)
 				}
 			} else {
 				if (key.pressed) {
 					key.set("pressed", false)
-					this._clearKeyTimer(key)
-					this._setKeyTimer(key)
 					removed.push(key)
 				}
 			}
@@ -725,8 +720,14 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			multisplice(keys, indexes)
 		}
 	}
+	/**
+	 * Force the manager to update the state of modifier/toggle keys during a keyboard or mouse event.
+	 */
+	public updateModifiersState(e: KeyboardEvent | MouseEvent): void {
+		this._checkSpecialKeys(e, [])
+	}
 	private _unknownKey(e: KeyboardEvent): void {
-		this.cb(new KnownError(ERROR.UNKNOWN_KEY_EVENT, `An unknown key (code: ${e.code} key:${e.key}) was pressed.`, { e }), this)
+		this.cb(new KnownError(ERROR.UNKNOWN_KEY_EVENT, `An unknown key (code: ${e.code} key:${e.key}) was pressed.`, { e }), this, e)
 	}
 	private _keydown(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
@@ -742,7 +743,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	private _keyup(e: KeyboardEvent): void {
 		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
 
-		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: false })
 
 		if (keys.length === 0) {this._unknownKey(e); return}
 		this._setKeyState(keys, false)
@@ -779,12 +780,16 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const button = e.button.toString()
 		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
 
-		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
+		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: false })
 
 		this._setKeyState(keys, false)
 		this._checkSpecialKeys(e, keys)
 		this._checkLabel(e, "button", keys)
 		this._removeFromChain(keys, e)
+	}
+	private _mouseenter(e: MouseEvent): void {
+		for (const listener of this._listeners) listener({ event: e, keys:[], isKeydown: false })
+		this._checkSpecialKeys(e, [])
 	}
 	private _keysAddHook(_self: any, _entries: any, entry: Key): void {
 		if (entry.is.toggle === "native"
@@ -856,8 +861,25 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		}
 		return Ok(true)
 	}
-	protected override _set(key: string, value: any): void {
+	protected override _set(key: keyof Manager | "replace", value: any): void {
 		switch (key) {
+			case "checkStateOnAllEvents": {
+				if (this[key]) { // is enabled
+					if (!value) { // gets disabled
+						for (const el of this._els) {
+							el.removeEventListener("mouseenter", this._boundMouseEnter)
+						}
+					}
+				} else { // is disabled
+					if (value) { // gets enabled
+						for (const el of this._els) {
+							el.addEventListener("mouseenter", this._boundMouseEnter)
+						}
+					}
+				}
+				setReadOnly(this, key, value)
+				break
+			}
 			case "chain": {
 				const isEmpty = value.length === 0
 				if (!this._bypassChainSet) {

@@ -3,6 +3,7 @@ import { Condition } from "./Condition"
 import { HookableBase } from "@/bases"
 import { createInstance } from "@/helpers/createInstance"
 import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "@/types"
+import { pick } from "@alanscodelog/utils"
 
 
 export class Command<
@@ -77,7 +78,7 @@ export class Command<
 		)
 	}
 	get opts(): CommandOptions {
-		return { description: this.description, execute: this.execute, condition: this.condition }
+		return pick(this, ["description", "execute", "condition"])
 	}
 	/** Create an instance from a raw entry. */
 	static create<T extends Command = Command>(entry: RawCommand): T {

@@ -34,8 +34,14 @@ todo
 
 # [Development](./docs-src/DEVELOPMENT.md)
 
+
+## Notes
+
+Under gnome at least, if the a key (usually Ctrl) is set to locate the cursor, it will not send any key events. It will only be detected when pressed with another key.
+
 ## Related
 
 [Expressit (boolean parser)](https://github.com/alanscodelog/expressit)
 
 [Parsekey (shortcuts parser)](https://github.com/alanscodelog/parsekey)
+

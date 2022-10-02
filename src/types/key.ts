@@ -3,7 +3,7 @@ import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
 import type { ERROR, KEY_SORT_POS } from "./enums"
 import type { BaseHookType, CollectionHookType } from "./hooks"
 
-import type { Key, Keys, Stringifier } from "@/classes"
+import type { Key, Keys, Manager, Stringifier } from "@/classes"
 import type { KnownError } from "@/helpers"
 
 
@@ -223,6 +223,8 @@ export type KeyOptions = {
 		 */
 		readonly toggle: "native" | "emulated" | false
 	}
+	/** See {@link Manager.checkStateOnAllEvents}. Only has an effect if the key is a modifier or toggle key. */
+	checkStateOnAllEvents: boolean
 }
 
 export type KeysOptions = {

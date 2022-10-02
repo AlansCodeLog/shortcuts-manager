@@ -227,12 +227,11 @@ export class HookableCollection<
 		entry: T,
 	): Result<true, KnownError<ERROR.MISSING>> {
 		let existing: any
-
-		if (this instanceof Keys) {
+		if (self instanceof Keys) {
 			existing = (entries as any)[(entry as Key).id]
-		} else if (this instanceof Commands) {
+		} else if (self instanceof Commands) {
 			existing = (entries as any)[(entry as Command).name]
-		} else if (this instanceof Shortcuts) {
+		} else if (self instanceof Shortcuts) {
 			existing = (entries as any[]).find(item => entry.equals(item))
 		}
 

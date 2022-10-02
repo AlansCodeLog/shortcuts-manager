@@ -66,7 +66,7 @@ export enum TYPE_ERROR {
 	FILTER_DOES_NOT_EXIST = "FILTER_DOES_NOT_EXIST",
 }
 
-
+/** Note the input event can be undefined if you set the manager chain directly since it will check if it should trigger shortcuts. */
 export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e?: AnyInputEvent) => void
 
 /**

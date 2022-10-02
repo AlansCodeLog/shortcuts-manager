@@ -29,3 +29,7 @@ export type NavigatorWKeyboard = {
 export type KeyCode = string
 export type KeyLabel = string
 export type KeyboardLayoutMap = Map<KeyCode, KeyLabel>
+export type AttachTarget = {
+	addEventListener: HTMLElement["addEventListener"],
+	removeEventListener: HTMLElement["removeEventListener"]
+}

@@ -9,21 +9,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from "vue"
-
-
-export default defineComponent({
+export default {
 	name: "contexts-component",
-	components: {
-	},
-	props: {
-		contexts: { type: Array as PropType<string[]>, required: true, default: () => [] },
-	},
-	// eslint-disable-next-line vue/require-emit-validator
-	emits: ["addContext"],
-	setup() {
-		const addVal = ref("")
-		return { addVal }
-	},
+}
+</script>
+<script setup lang="ts">
+import { defineProps, PropType, ref } from "vue";
+
+const props= defineProps({
+	contexts: { type: Array as PropType<string[]>, required: true, default: () => [] },
 })
+const emit = defineEmits<(e: "addContext", val:string) => void>()
+const addVal = ref("")
 </script>

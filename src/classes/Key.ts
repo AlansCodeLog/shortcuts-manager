@@ -1,10 +1,10 @@
 import { Result, setReadOnly } from "@alanscodelog/utils"
-import { castType, Err, Ok } from "@utils/utils"
+import { castType, Err, Ok, pick } from "@utils/utils"
 
 import { defaultStringifier } from "./Stringifier"
 
 import { HookableBase } from "@/bases"
-import { KnownError } from "@/helpers"
+import { isToggleRootKey, KnownError } from "@/helpers"
 import { createInstance } from "@/helpers/createInstance"
 import { ERROR, KeyHooks, KeyOptions, RawKey, ToggleKey } from "@/types"
 
@@ -24,6 +24,8 @@ export class Key<
 	 * @RequiresSet @SetHookable
 	 */
 	readonly pressed: boolean = false
+	/** @inheritdoc */
+	checkStateOnAllEvents: boolean = true
 	// cannot inherit doc
 	/** See {@link KeyOptions.is} */
 	readonly is: KeyOptions["is"]
@@ -72,9 +74,6 @@ export class Key<
 		this.stringifier = opts.stringifier as Stringifier ?? defaultStringifier
 
 		setReadOnly(this, "id", id)
-		if (opts.variants) {
-			this.safeSet("variants", opts.variants).unwrap()
-		}
 		this.label = opts.label ?? this.id
 
 		this.classes = opts.classes ?? []
@@ -104,6 +103,19 @@ export class Key<
 			}
 		}
 		Object.freeze(this.is)
+		if (opts.variants) {
+			this.safeSet("variants", opts.variants).unwrap()
+		}
+	}
+	/**
+	 * On toggle keys, allows easily toggling the state of the toggles.
+	 */
+	public toggleToggle(): void {
+		if (!this.is.toggle) throw new Error("toggleToggle is a method for toggle keys only.")
+		const rootKey = isToggleRootKey(this) ? this : this.root
+		const onValue = rootKey.on!.pressed
+		rootKey.on!.set("pressed", !onValue)
+		rootKey.off!.set("pressed", onValue)
 	}
 	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
@@ -168,7 +180,7 @@ export class Key<
 		return this === key || this.id === key.id
 	}
 	get opts(): KeyOptions {
-		return { is: this.is, variants: this.variants, x: this.x, y: this.y, width: this.width, height: this.height, stringifier: this.stringifier, label: this.label, render: this.render, classes: this.classes }
+		return pick(this, ["is", "x", "y", "width", "height", "stringifier", "label", "render", "classes", "checkStateOnAllEvents"])
 	}
 	/** Create an instance from a raw entry. */
 	static create<T extends Key = Key>(entry: RawKey): T {

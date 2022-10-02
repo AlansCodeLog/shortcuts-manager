@@ -27,6 +27,7 @@ export default defineConfig({
 		watch: {
 			ignored: ["!**/node_modules/@alanscodelog/**"],
 		},
+		port:3000,
 	},
 	resolve: {
 		alias: {
@@ -51,5 +52,14 @@ export default defineConfig({
 	build: {
 		outDir: path.resolve(rootPath, "./docs/demo"),
 		minify: false,
+	},
+	css: {
+		preprocessorOptions: {
+			scss: {
+				additionalData: `
+					@import "node_modules/@alanscodelog/vue-components/src/assets/main.scss";
+				`,
+			},
+		},
 	},
 })

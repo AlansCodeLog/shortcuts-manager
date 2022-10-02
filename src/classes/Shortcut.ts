@@ -1,4 +1,4 @@
-import { Ok, Result, setReadOnly } from "@alanscodelog/utils"
+import { Ok, pick, Result, setReadOnly } from "@alanscodelog/utils"
 
 import type { Command } from "./Command"
 import { Condition } from "./Condition"
@@ -83,7 +83,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		return chainContainsKey(this.chain, key)
 	}
 	get opts(): ShortcutOptions {
-		return { command: this.command, sorter: this.sorter, enabled: this.enabled, condition: this.condition, stringifier: this.stringifier }
+		return pick(this, ["command", "sorter", "enabled", "condition", "stringifier"])
 	}
 	protected override _set<TKey extends keyof ShortcutHooks>(
 		key: TKey,

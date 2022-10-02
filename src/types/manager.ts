@@ -17,6 +17,7 @@ export type ManagerHook = {
 	"keys": BaseHookType<Manager, Keys, ManagerReplaceErrors>
 	"labelStrategy": BaseHookType<Manager, boolean | "navigator" | "press" | "both", never>
 	// cannot be allows hooked
+	"checkStateOnAllEvents": BaseHookType<Manager, boolean, never>
 	"chain": BaseHookType<Manager, Key[][], KnownError<ChainErrors>, never, true>
 }
 

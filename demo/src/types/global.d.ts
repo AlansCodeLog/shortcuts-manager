@@ -5,7 +5,7 @@ declare module "*.vue" {
 	export default component
 }
 export { }
-import { fa, LibButton, LibDebug, LibGroup, LibInput, LibNotifications, LibPalette, LibTable } from "@alanscodelog/vue-components/dist/components"
+import { fa, LibButton, LibDebug, LibGroup, LibInput, LibNotifications, LibPalette, LibTable } from "@alanscodelog/vue-components"
 import { NavigatorWKeyboard } from "@lib/types"
 import { DefineComponent } from "vue"
 
@@ -17,8 +17,6 @@ declare global {
 		shared: boolean
 	}
 }
-
-
 
 declare module '@vue/runtime-core' {
 	export interface GlobalComponents {
