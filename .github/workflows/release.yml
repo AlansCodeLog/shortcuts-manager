@@ -1,22 +1,22 @@
-name: Docs
+name: Release
 
 env:
   USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
-  ENABLE_DOCS: ${{ secrets.ENABLE_DOCS }}
+  ENABLE_RELEASE: ${{ secrets.ENABLE_RELEASE }}
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, alpha, beta ]
   repository_dispatch:
-    types: [ docs ]
+    types: [ release ]
 
 jobs:
-  docs:
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+  release:
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]') && ! contains(toJSON(github.event.commits.*.message), '(no-release)')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["latest"]
+        node-version: ["lts/*"]
 
     steps:
 
@@ -32,7 +32,7 @@ jobs:
       name: Install pnpm
       id: pnpm-install
       with:
-          version: latest
+        version: latest
 
     - name: Get Pnpm Cache Path
       id: pnpm-cache
@@ -52,30 +52,34 @@ jobs:
     - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
     # regionend
 
+    # region Steps
     - run: pnpm install --frozen-lockfile
       if: "env.USE_LOCKFILE == 'true'"
 
-    - run: pnpm install --no-lockfile
+    - run: pnpm install
       if: "env.USE_LOCKFILE != 'true'"
 
     - run: pnpm build
 
-    - run: pnpm lint
+    - run: pnpm lint:eslint # test command will lint types
 
     - run: pnpm test
 
-    - run: pnpm doc
-
-    - name: Documentation
-      if: "env.ENABLE_DOCS == 'true'"
-      uses: crazy-max/ghaction-github-pages@v2
-      with:
-        jekyll: false
-        target_branch: gh-pages
-        build_dir: docs
+    - name: Release
+      if: "env.ENABLE_RELEASE == 'true'"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npx semantic-release
 
-    - run: echo "env.ENABLE_DOCS is ${{ env.ENABLE_DOCS }}, no documentation can be published" && exit 1
-      if: "env.ENABLE_DOCS != 'true'"
+    - name: Release Dry Run
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npx semantic-release --dry-run 
+      if: "env.ENABLE_RELEASE != 'true'"
+
+
+    - run: echo "env.ENABLE_RELEASE is ${{ env.ENABLE_RELEASE }}, no release can be published" && exit 1
+      if: "env.ENABLE_RELEASE != 'true'"
     # regionend

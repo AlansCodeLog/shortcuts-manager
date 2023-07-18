@@ -1,9 +1,8 @@
 import { catchError, testName } from "@alanscodelog/utils"
-
-import { expect } from "./chai"
-
-import { Key, Keys } from "@/classes"
-import { ERROR } from "@/types"
+import { Key } from "classes/Key.js"
+import { Keys } from "classes/Keys.js"
+import { ERROR } from "types/enums.js"
+import {  describe, expect, it, vi } from "vitest"
 
 
 describe(testName(), () => {
@@ -52,7 +51,7 @@ describe(testName(), () => {
 			new Key("c"),
 		])
 		it("exists", () => {
-			const filter = jest.fn((key: Key) => {
+			const filter = vi.fn((key: Key) => {
 				expect(key).to.not.equal(undefined)
 				return key.id === "a"
 			})

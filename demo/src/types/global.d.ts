@@ -5,7 +5,7 @@ declare module "*.vue" {
 	export default component
 }
 export { }
-import { fa, LibButton, LibDebug, LibGroup, LibInput, LibNotifications, LibPalette, LibTable } from "@alanscodelog/vue-components"
+import { fa, LibButton, LibDebug, LibGroup, LibInput, LibNotifications, LibPagination, LibPalette, LibTable } from "@alanscodelog/vue-components"
 import { NavigatorWKeyboard } from "@lib/types"
 import { DefineComponent } from "vue"
 
@@ -18,7 +18,7 @@ declare global {
 	}
 }
 
-declare module '@vue/runtime-core' {
+declare module "@vue/runtime-core" {
 	export interface GlobalComponents {
 		LibInput: typeof LibInput
 		LibTable: typeof LibTable
@@ -26,6 +26,7 @@ declare module '@vue/runtime-core' {
 		LibNotifications: typeof LibNotifications
 		LibDebug: typeof LibDebug
 		LibPalette: typeof LibPalette
+		LibPagination: typeof LibPagination
 		LibGroup: typeof LibGroup
 		fa: typeof fa
 	}

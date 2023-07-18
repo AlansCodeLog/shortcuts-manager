@@ -1,7 +1,7 @@
-import type { Commands, Key, Keys, Manager, Shortcuts } from "@/classes"
-import type { KnownError } from "@/helpers"
+import type { Commands, Key, Keys, Manager, Shortcuts } from "classes/index.js"
+import type { KnownError } from "helpers/index.js"
 
-import type { BaseHookType, ChainErrors, ERROR } from "."
+import type { BaseHookType, ChainErrors, ERROR } from "./index.js"
 
 
 export type AnyInputEvent = (KeyboardEvent | MouseEvent | WheelEvent)

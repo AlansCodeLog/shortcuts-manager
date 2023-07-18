@@ -9,7 +9,7 @@
 							:suggestions="existingCommandsList"
 							:restrict-to-suggestions="true"
 						>
-							<template #item="{item}">
+							<template #item="{ item }">
 								{{ item }}
 							</template>
 						</lib-input>
@@ -81,9 +81,9 @@
 
 <script setup lang="ts">
 import { unreachable } from "@alanscodelog/utils";
-import { notificationHandlerSymbol } from "@demo/injectionSymbols";
-import { Command, Key, Manager, Shortcut } from "@lib/classes";
-import { KnownError } from "@lib/helpers";
+import { notificationHandlerSymbol } from "../injectionSymbols.js";
+import { Command, Key, Manager, Shortcut } from "shortcuts-manager/classes";
+import { KnownError } from "shortcuts-manager/helpers";
 import { computed, inject, ref, Ref } from "vue";
 
 const notificationHandler = inject(notificationHandlerSymbol)
@@ -99,10 +99,10 @@ const existingCommandsList = computed(() => props.commands.map(command => comman
 // const newShortcutCommand = ref("")
 const recordingValue = ref("")
 const recordingIndex = ref(-2)
-const newShortcut = ref<Shortcut|null>(null)
+const newShortcut = ref<Shortcut | null>(null)
 const newShortcutIsValid = ref<true | string>("Cannot add shortcut, no shortcut chain or command is set.")
 
-const change = (prop: string, shortcut: Partial<Shortcut>, name: string): void => {
+const change = (_prop: string, shortcut: Partial<Shortcut>, name: string): void => {
 	shortcut.command?.set("name", name)
 }
 
@@ -120,22 +120,22 @@ const updateNewShortcutCommand = (val: string) => {
 // props.manager.startRecording
 
 const recorder = {
-// 	keydown
+	// 	keydown
 }
 
 
-const cancelRecordingHook:Parameters<Key["addHook"]>[1] = (prop, val) => {
+const cancelRecordingHook: Parameters<Key["addHook"]>[1] = (prop, val) => {
 	if (prop === "pressed" && val === true) {
 		cancelRecording()
 	}
 }
-const saveRecordingHook:Parameters<Key["addHook"]>[1] = (prop, val) => {
+const saveRecordingHook: Parameters<Key["addHook"]>[1] = (prop, val) => {
 	if (prop === "pressed" && val === true) {
 		saveRecording(recordingIndex.value)
 	}
 }
 
-const updateRecordingValueHook:Parameters<Manager["addHook"]>[1] = (key, val)=> {
+const updateRecordingValueHook: Parameters<Manager["addHook"]>[1] = (key, val) => {
 	if (key === "chain") {
 		console.log(recordingValue.value);
 
@@ -143,15 +143,15 @@ const updateRecordingValueHook:Parameters<Manager["addHook"]>[1] = (key, val)=> 
 	}
 }
 
-const startRecording = (index:number) => {
+const startRecording = (index: number) => {
 	recordingIndex.value = index
 	props.manager.startRecording()
-	props.manager.addHook("set",updateRecordingValueHook)
+	props.manager.addHook("set", updateRecordingValueHook)
 	props.manager.keys.entries.Escape.addHook("set", cancelRecordingHook)
 	props.manager.keys.entries.Enter.addHook("set", saveRecordingHook)
 }
-const saveRecording = (index:number) => {
-	if (recordingIndex.value >  -2) {
+const saveRecording = (index: number) => {
+	if (recordingIndex.value > -2) {
 		const chain = props.manager.chain
 		if (index === -2) unreachable()
 		if (index === -1) {
@@ -167,7 +167,7 @@ const saveRecording = (index:number) => {
 			}
 
 		} else {
-			const shortcut =props.manager.shortcuts.entries[index]
+			const shortcut = props.manager.shortcuts.entries[index]
 			const allowed = shortcut.allows("chain", chain)
 			if (allowed.isOk) {
 				shortcut.set("chain", chain)
@@ -178,7 +178,7 @@ const saveRecording = (index:number) => {
 		props.manager.stopRecording()
 		props.manager.keys.entries.Escape.removeHook("set", cancelRecordingHook)
 		props.manager.keys.entries.Enter.removeHook("set", saveRecordingHook)
-		props.manager.removeHook("set",updateRecordingValueHook)
+		props.manager.removeHook("set", updateRecordingValueHook)
 		recordingValue.value = ""
 		recordingIndex.value = -2
 	}
@@ -196,7 +196,7 @@ const removeShortcut = (i: number) => {
 		props.manager.shortcuts.remove(shortcut)
 	} else {
 		const code = canRemove.error instanceof KnownError ? canRemove.error.code : "Unknown"
-		notificationHandler.notify({ message:canRemove.error.message, code, requiresAction: true, icon: "triangle-exclamation"})
+		notificationHandler.notify({ message: canRemove.error.message, code, requiresAction: true, icon: "triangle-exclamation" })
 	}
 }
 const cancelRecording = () => {
@@ -204,13 +204,13 @@ const cancelRecording = () => {
 		props.manager.stopRecording()
 		props.manager.keys.entries.Escape.removeHook("set", cancelRecordingHook)
 		props.manager.keys.entries.Enter.removeHook("set", saveRecordingHook)
-		props.manager.removeHook("set",updateRecordingValueHook)
+		props.manager.removeHook("set", updateRecordingValueHook)
 		recordingValue.value = ""
 		recordingIndex.value = -2
 	}
 }
 
-const recorderClick = ({event, indicator, input}:{event: MouseEvent, indicator: HTMLElement, input: HTMLElement}, index: number) => {
+const recorderClick = ({ event, indicator, input }: { event: MouseEvent, indicator: HTMLElement, input: HTMLElement }, index: number) => {
 	if (index === recordingIndex.value) {
 		if (event.target === indicator) {
 			recordingIndex.value = -2
@@ -226,7 +226,7 @@ const recorderClick = ({event, indicator, input}:{event: MouseEvent, indicator: 
 		saveRecording(index)
 	}
 }
-const recorderBlur = (event:FocusEvent, index: number) => {
+const recorderBlur = (_event: FocusEvent, _index: number) => {
 	cancelRecording()
 }
 
@@ -234,28 +234,31 @@ const recorderBlur = (event:FocusEvent, index: number) => {
 </script>
 
 <style lang="scss" scoped>
-
 table {
 	// display:flex;
 	// flex-wrap:wrap;
 	width: 100%;
 }
+
 table:not(.resizable-table-setup) {
 	tr {
-	display:flex;
-	flex-wrap:nowrap;
-	// width: 100%;
+		display: flex;
+		flex-wrap: nowrap;
+		// width: 100%;
 	}
+
 	.col-command {
-		flex-grow:1;
+		flex-grow: 1;
 	}
+
 	.col-shortcut {
-		flex-grow:1;
+		flex-grow: 1;
 	}
+
 	.col-add-remove {
 		// min-width: min-content;
-		flex-grow:0;
-		flex-shrink:0;
+		flex-grow: 0;
+		flex-shrink: 0;
 	}
 }
 

@@ -1,12 +1,11 @@
+/** @type {import('@typescript-eslint/utils').TSESLint.Linter.Config} */
 module.exports = {
 	root: false,
-	env: {
-		jest: true,
-	},
 	extends: [
 		// ./node_modules/@alanscodelog/eslint-config/tests.js
 		"@alanscodelog/eslint-config/tests",
 	],
-	rules: {
-	},
+	rules :  {
+		"@typescript-eslint/no-restricted-imports": "off"
+	}
 }

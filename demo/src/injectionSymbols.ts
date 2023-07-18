@@ -1,3 +1,3 @@
-import { NotificationHandler } from "@alanscodelog/vue-components/src/helpers"
-import { InjectionKey } from "vue"
+import type { NotificationHandler } from "@alanscodelog/vue-components/helpers"
+import type { InjectionKey } from "vue"
 export const notificationHandlerSymbol: InjectionKey<NotificationHandler> = Symbol("notificationHandler")

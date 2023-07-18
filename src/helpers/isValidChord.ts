@@ -1,12 +1,10 @@
-import { Err, Ok, Result } from "@alanscodelog/utils"
-import { crop, findDuplicates, indent } from "@utils/utils"
+import { crop, Err, findDuplicates, indent, Ok, type Result } from "@alanscodelog/utils"
+import type { Key, Manager, Shortcut, Stringifier } from "classes/index.js"
+import { ERROR } from "types/index.js"
 
-import { isNormalKey } from "./isNormalKey"
-import { isWheelKey } from "./isWheelKey"
-import { KnownError } from "./KnownError"
-
-import type { Key, Manager, Shortcut, Stringifier } from "@/classes"
-import { ERROR } from "@/types"
+import { isNormalKey } from "./isNormalKey.js"
+import { isWheelKey } from "./isWheelKey.js"
+import { KnownError } from "./KnownError.js"
 
 
 /**

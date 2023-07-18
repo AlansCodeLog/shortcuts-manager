@@ -1,9 +1,8 @@
-import { crop, Err, Ok, Result } from "@alanscodelog/utils"
+import { crop, Err, Ok, type Result } from "@alanscodelog/utils"
+import type { Commands, Shortcut, Stringifier } from "classes/index.js"
+import { ERROR } from "types/index.js"
 
-import type { Commands, Shortcut, Stringifier } from "@/classes"
-import { ERROR } from "@/types"
-
-import { KnownError } from "."
+import { KnownError } from "./KnownError.js"
 
 
 export function checkShortcutCommands(shortcut: Shortcut, commands: Commands, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_COMMAND_IN_SHORTCUT>>

@@ -1,12 +1,14 @@
-import { AnyClass, Ok, Result } from "@alanscodelog/utils"
+import { type AnyClass, crop, Err, indent, Ok, type Result } from "@alanscodelog/utils"
+import { HookableCollection } from "bases/HookableCollection.js"
+import { isToggleKey } from "helpers/isToggleKey.js"
+import { isToggleRootKey } from "helpers/isToggleRootKey.js"
+import { KnownError } from "helpers/KnownError.js"
+import { ERROR } from "types/enums.js"
+import type { BaseHook, KeyHooks, KeyOptions, KeysBaseHooks, KeysCollectionHooks, KeysOptions, RawKey, RecordFromArray } from "types/index.js"
 
-import { defaultStringifier } from "./Stringifier"
-
-import { HookableCollection } from "@/bases"
-import { isToggleKey } from "@/helpers"
-import type { BaseHook, KeyHooks, KeyOptions, KeysBaseHooks, KeysCollectionHooks, KeysOptions, RawKey, RecordFromArray } from "@/types"
-
-import { Key } from "."
+import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
+import { Key } from "./Key.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 
 export class Keys<
@@ -21,17 +23,23 @@ export class Keys<
 		RecordFromArray<TRawKeys, "id", TKey>,
 > extends HookableCollection<KeysCollectionHooks, KeysBaseHooks> implements Pick<KeyOptions, "stringifier">, KeysOptions {
 	protected _basePrototype: AnyClass<Key> & { create(...args: any[]): Key } = Key
+
 	private readonly _boundKeyManageLayoutHook: BaseHook<"set", KeyHooks>
+
 	override readonly entries: TEntries
+
 	private _manageLayout: boolean = true
+
 	/** @inheritdoc */
 	set manageLayout(val: boolean) {
 		this._manageLayout = val
 		if (val) this.recalculateLayout()
 	}
+
 	get manageLayout(): boolean {
 		return this._manageLayout
 	}
+
 	/**
 	 * If {@link Keys.manageLayout} is true, the size of the keyboard in key units.
 	 *
@@ -40,6 +48,7 @@ export class Keys<
 	 * @SetHookable
 	 */
 	readonly layout: { rows: number, columns: number } = { rows: 0, columns: 0 }
+
 	/**
 	 * Creates a set of keys.
 	 *
@@ -73,7 +82,6 @@ export class Keys<
 		this._boundKeyManageLayoutHook = this._keyManageLayoutHook.bind(this)
 		this.stringifier = opts?.stringifier ?? defaultStringifier
 
-
 		this.entries = {} as TEntries
 
 		this.manageLayout = opts?.manageLayout ?? true
@@ -83,6 +91,9 @@ export class Keys<
 			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
 	}
+
+	stringifier: Stringifier
+
 	protected override _add(rawEntry: RawKey): void {
 		const entry = this.create(rawEntry)
 
@@ -95,6 +106,25 @@ export class Keys<
 		entry.addHook("set", this._boundKeyManageLayoutHook)
 		if (this.manageLayout) this.recalculateLayout()
 	}
+
+	protected _canAddToDict(entries: Key[], entry: Key): Result<true, KnownError<ERROR.DUPLICATE_KEY | ERROR.KEYS_CANNOT_ADD_TOGGLE>
+	> {
+		if (isToggleKey(entry) && !isToggleRootKey(entry)) {
+			return Err(new KnownError(ERROR.KEYS_CANNOT_ADD_TOGGLE, `Toggle keys are automatically added to the key set when the root key is added, on/off instances cannot be added individually.`, { entry })) as any
+		}
+		const existingIdentifier = (entry as any as Key).id
+		const existing = (entries as any)[(entry as any as Key).id]
+
+		if (existing) {
+			const text = canAddToDictErrorText("key", existingIdentifier, this.stringifier.stringify(existing), this.stringifier.stringify(entry))
+			const error = new KnownError(ERROR.DUPLICATE_KEY, text, { existing, self: this as any as Keys })
+
+			return Err(error) as any
+		}
+
+		return Ok(true)
+	}
+
 	protected override _remove(entry: Key): void {
 		const entries = this.entries as any
 		delete entries[entry.id]
@@ -105,6 +135,20 @@ export class Keys<
 		entry.removeHook("set", this._boundKeyManageLayoutHook)
 		if (this.manageLayout) this.recalculateLayout()
 	}
+
+	protected _canRemoveFromDict(entries: Keys, entry: Key): Result<true, KnownError<ERROR.MISSING>> {
+		const existing = (entries as any)[(entry).id]
+
+		if (existing === undefined) {
+			return Err(new KnownError(ERROR.MISSING, crop`
+			${entry.constructor.name} does not exist in this collection.
+
+			${indent(this.stringifier.stringify(entry), 3)}
+			`, { entry, collection: this }))
+		}
+		return Ok(true)
+	}
+
 	/**
 	 * Calculates the layout size.
 	 *
@@ -125,24 +169,29 @@ export class Keys<
 		}
 		this.set("layout", { rows, columns })
 	}
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+
 	private _keyManageLayoutHook(prop: string, _value: any, _old: any, _self: Key): Result<true, never> {
 		if (this.manageLayout && ["x", "y", "width", "height", "render"].includes(prop)) {
 			this.recalculateLayout()
 		}
 		return Ok(true)
 	}
+
 	get(id: TRawKeys[number]["id"] | string): TKey {
 		return this.entries[id as keyof TEntries]
 	}
+
 	/** Query the class. Just a simple wrapper around array find/filter. */
 	query(filter: Parameters<TKey[]["filter"]>["0"], all?: true): TKey[]
+
 	query(filter: Parameters<TKey[]["find"]>["0"], all?: false): TKey | undefined
+
 	query(filter: Parameters<TKey[]["filter"] | TKey[]["find"]>["0"], all: boolean = true): TKey | TKey[] | undefined {
 		return all
 			? Object.values(this.entries).filter(filter as any)
 			: Object.values(this.entries).find(filter as any)!
 	}
+
 	/**
 	 * Creates a base instance that conforms to the class.
 	 */
@@ -159,6 +208,7 @@ export class Keys<
 			},
 		}) as T
 	}
+
 	export(): Record<string, ReturnType<Key["export"]>> {
 		const keys: Record<string, ReturnType<Key["export"]>> = {}
 		for (const id of Object.keys(this.entries)) {
@@ -166,6 +216,7 @@ export class Keys<
 		}
 		return keys
 	}
+
 	/**
 	 * Checks if all commands can be removed, if they can, removes them all, otherwise does nothing and returns the error.
 	 *

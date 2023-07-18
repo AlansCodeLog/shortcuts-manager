@@ -1,4 +1,4 @@
-import type { Key } from "@/classes"
+import type { Key } from "classes/index.js"
 
 /**
  * Returns whether a shortcut's keys contains the given key.

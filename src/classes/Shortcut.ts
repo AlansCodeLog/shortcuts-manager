@@ -1,19 +1,18 @@
-import { Ok, pick, Result, setReadOnly } from "@alanscodelog/utils"
+import { Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
+import { HookableBase } from "bases/HookableBase.js"
+import { chainContainsKey } from "helpers/chainContainsKey.js"
+import { createInstance } from "helpers/createInstance.js"
+import { equalsKeys } from "helpers/equalsKeys.js"
+import { isValidChain } from "helpers/isValidChain.js"
+import { mapKeys } from "helpers/mapKeys.js"
+import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "types/shortcut.js"
 
-import type { Command } from "./Command"
-import { Condition } from "./Condition"
-import type { Key } from "./Key"
-import { defaultSorter } from "./KeysSorter"
-import { defaultStringifier } from "./Stringifier"
-
-import { HookableBase } from "@/bases"
-import { equalsKeys, mapKeys } from "@/helpers"
-import { chainContainsKey } from "@/helpers/chainContainsKey"
-import { createInstance } from "@/helpers/createInstance"
-import { isValidChain } from "@/helpers/isValidChain"
-import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "@/types"
-
-import type { Context } from "."
+import type { Command } from "./Command.js"
+import { Condition } from "./Condition.js"
+import type { Context } from "./Context.js"
+import type { Key } from "./Key.js"
+import { defaultSorter } from "./KeysSorter.js"
+import { defaultStringifier } from "./Stringifier.js"
 
 
 export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOptions {
@@ -23,16 +22,22 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
 	readonly chain: Key[][] = []
+
 	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
+
 	/** @inheritdoc */
 	readonly command?: Command
+
 	/** @inheritdoc */
 	readonly condition: Condition = new Condition("")
+
 	/** @inheritdoc */
 	readonly enabled: boolean = true
+
 	/** It is sometimes useful for some shortcuts to not equal eachother temporarily. For example, inside allow hooks when swapping, this makes it easier to return the correct answer without making major modifications to the instances. */
 	forceUnequal: boolean = false
+
 	/**
 	 * # Shortcut
 	 *
@@ -53,6 +58,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		if (opts.condition) this.condition = opts.condition
 		this.safeSet("chain", chain).unwrap()
 	}
+
 	/**
 	 * Returns whether the shortcut passed is equal to this one.
 	 *
@@ -70,43 +76,50 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 			)
 		)
 	}
+
 	/**
 	 * A wrapper around {@link equalsKeys} for the instance.
 	 */
 	equalsKeys(keys: Key[][], length?: number): boolean {
 		return equalsKeys(this.chain, keys, length)
 	}
+
 	/**
 	 * A wrapper around {@link chainContainsKey} for the instance.
 	 */
 	containsKey(key: Key): boolean {
 		return chainContainsKey(this.chain, key)
 	}
+
 	get opts(): ShortcutOptions {
 		return pick(this, ["command", "sorter", "enabled", "condition", "stringifier"])
 	}
+
 	protected override _set<TKey extends keyof ShortcutHooks>(
 		key: TKey,
 		value: ShortcutHooks[TKey]["value"],
 	): void {
 		switch (key) {
 			case "chain":
-				setReadOnly(this, "chain", (value as ShortcutHooks["chain"]["value"]).map(chord => this.sorter.sort([...chord])))
+				setReadOnly(this, "chain", (value as Shortcut["chain"]).map(chord => this.sorter.sort([...chord])))
 				break
 			default: {
 				(this as any)[key] = value
 			}
 		}
 	}
+
 	protected override _allows<TKey extends keyof ShortcutHooks>(key: TKey, value: ShortcutHooks[TKey]["value"]): Result<true, ShortcutHooks[TKey]["error"]> {
 		switch (key) {
-			case "chain": return this._hookAllowsKeys(value as ShortcutHooks["chain"]["value"])
+			case "chain": return this._hookAllowsKeys(value as Key[][])
 			default: return Ok(true)
 		}
 	}
+
 	protected _hookAllowsKeys(value: ShortcutHooks["chain"]["value"]): Result<true, ShortcutHooks["chain"]["error"]> {
 		return isValidChain(this, value, this.stringifier, this.sorter)
 	}
+
 	triggerableBy(chain: Key[][], context: Context): boolean {
 		return this.enabled &&
 			this.command !== undefined &&
@@ -114,10 +127,12 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 			this.condition.eval(context) &&
 			(this.command === undefined || this.command.condition.eval(context))
 	}
+
 	/** Create an instance from a raw entry. */
 	static create<T extends Shortcut = Shortcut>(entry: RawShortcut): T {
 		return createInstance<Shortcut, "chain">(Shortcut, "chain", entry) as T
 	}
+
 	export(): {
 		chain: string[][]
 		command?: ReturnType<Command["export"]>["name"]

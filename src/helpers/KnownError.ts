@@ -1,4 +1,5 @@
-import type { ERROR, ErrorInfo, TYPE_ERROR } from "@/types"
+import type { ERROR, ErrorInfo, TYPE_ERROR } from "types/index.js"
+
 
 /**
  * Creates a known error that extends the base Error with some extra information.
@@ -9,7 +10,9 @@ export class KnownError<
 	TInfo extends ErrorInfo<T> = ErrorInfo<T>,
 > extends Error {
 	code: T
+
 	info: TInfo
+
 	constructor(
 		code: T,
 		str: string,

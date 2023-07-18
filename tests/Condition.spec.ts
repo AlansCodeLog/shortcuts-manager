@@ -1,9 +1,8 @@
 // import { check_extends } from "./helpers.condition"
 import { testName } from "@alanscodelog/utils"
-
-import { expect } from "./chai"
-
-import { Condition, Context } from "@/classes"
+import { Condition } from "classes/Condition.js"
+import { Context } from "classes/Context.js"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 
 const context = new Context({

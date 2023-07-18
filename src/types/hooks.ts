@@ -1,8 +1,7 @@
 import type { Result } from "@alanscodelog/utils"
+import type { Manager } from "classes/index.js"
 
-import type { Manager } from "@/classes"
-
-import type { Bases, Collections } from "."
+import type { Bases, Collections } from "./index.js"
 
 
 export type BaseHookType<

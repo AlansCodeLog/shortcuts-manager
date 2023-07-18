@@ -1,9 +1,9 @@
-import { Condition } from "./Condition"
-
-import { HookableBase } from "@/bases"
-import { createInstance } from "@/helpers/createInstance"
-import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "@/types"
 import { pick } from "@alanscodelog/utils"
+import { HookableBase } from "bases/HookableBase.js"
+import { createInstance } from "helpers/createInstance.js"
+import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "types/index.js"
+
+import { Condition } from "./Condition.js"
 
 
 export class Command<
@@ -22,12 +22,16 @@ export class Command<
 > extends HookableBase<CommandHooks> implements CommandOptions {
 	/** Unique string to identify the command by. */
 	name: TName
+
 	/** @inheritdoc */
 	execute?: TExec
+
 	/** @inheritdoc */
 	condition: TCondition = new Condition("") as TCondition
+
 	/** @inheritdoc */
 	description: string = ""
+
 	/**
 	 * # Command
 	 * Creates a command.
@@ -45,10 +49,12 @@ export class Command<
 		name: TName,
 		opts?: Partial<TOpts>,
 	)
+
 	constructor(
 		name: TName,
 		opts: Optional<Partial<TOpts>>,
 	)
+
 	constructor(
 		name: TName,
 		opts: Partial<TOpts> = {},
@@ -59,6 +65,7 @@ export class Command<
 		if (opts.description) this.description = opts.description as string
 		if (opts.condition) this.condition = opts.condition as TCondition
 	}
+
 	/**
 	 * Returns whether the command passed is equal to this one.
 	 *
@@ -77,13 +84,16 @@ export class Command<
 			)
 		)
 	}
+
 	get opts(): CommandOptions {
 		return pick(this, ["description", "execute", "condition"])
 	}
+
 	/** Create an instance from a raw entry. */
 	static create<T extends Command = Command>(entry: RawCommand): T {
 		return createInstance<Command, "name">(Command, "name", entry) as T
 	}
+
 	export(): ExportedCommand {
 		return {
 			name: this.name,

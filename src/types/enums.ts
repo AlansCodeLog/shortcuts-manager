@@ -1,11 +1,10 @@
-import type { BaseHook } from "./hooks"
-import type { AnyInputEvent } from "./manager"
+import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "classes/index.js"
+import type { Manager } from "classes/Manager.js"
+import type { KnownError } from "helpers/index.js"
 
-import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
-
-import type { ManagerListener } from "."
+import type { BaseHook } from "./hooks.js"
+import type { ManagerListener } from "./index.js"
+import type { AnyInputEvent } from "./manager.js"
 
 
 /**

@@ -1,8 +1,7 @@
-import { Ok, Result } from "@utils/utils"
+import { Ok, Result } from "@alanscodelog/utils"
+import type { BaseHook, BaseHookType } from "types/index.js"
 
-import { Hookable } from "./Hookable"
-
-import type { BaseHook, BaseHookType } from "@/types"
+import { Hookable } from "./Hookable.js"
 
 
 export class HookableBase<
@@ -18,6 +17,7 @@ export class HookableBase<
 	constructor() {
 		super(["allows", "set"])
 	}
+
 	protected _set<
 		TKey extends
 			keyof THooks =
@@ -28,18 +28,11 @@ export class HookableBase<
 	): void {
 		(this as any)[key] = value
 	}
-	protected _allows<
-		TKey extends
-			keyof THooks =
-			keyof THooks,
-	>(
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		_key: TKey,
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		_value: THooks[TKey]["value"],
-	): Result<true, THooks[TKey]["error"] | Error> {
+
+	protected _allows<TKey extends keyof THooks = keyof THooks>(_key: TKey, _value: THooks[TKey]["value"]): Result<true, THooks[TKey]["error"] | Error> {
 		return Result.Ok(true)
 	}
+
 	/**
 	 * Tells you whether a property is allowed to be set.
 	 *
@@ -67,11 +60,7 @@ export class HookableBase<
 	 * const res = manager.allows("replace", {keys, commands, shortcuts})
 	 * ```
 	 */
-	allows<
-		TKey extends
-			keyof THooks =
-			keyof THooks,
-	>(
+	allows< TKey extends keyof THooks = keyof THooks>(
 		key: TKey,
 		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
@@ -83,6 +72,7 @@ export class HookableBase<
 		if (self._allows) return self._allows(key, value)
 		return Result.Ok(true)
 	}
+
 	/**
 	 * Sets the property and triggers any hooks on it.
 	 *
@@ -90,11 +80,7 @@ export class HookableBase<
 	 *
 	 * For the manager there is also the special `"replace"` property. See {@link HookableBase.set set}.
 	 */
-	set<
-		TKey extends
-			keyof THooks =
-			keyof THooks,
-	>(
+	set< TKey extends keyof THooks = keyof THooks>(
 		key: TKey,
 		value: THooks[TKey]["excludeSet"] extends true ? never : THooks[TKey]["value"],
 	): void {
@@ -105,6 +91,7 @@ export class HookableBase<
 			hook(key, value, oldValue, self)
 		}
 	}
+
 	/**
 	 * Like `set` but checks first if the property can be set.
 	 *
@@ -118,11 +105,7 @@ export class HookableBase<
 	 * shortcut.safeSet("keys", [[key.a]]).unwrap()
 	 * ```
 	 */
-	safeSet<
-		TKey extends
-		keyof THooks =
-		keyof THooks,
-	>(
+	safeSet< TKey extends keyof THooks = keyof THooks>(
 		key: TKey,
 		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
@@ -133,7 +116,3 @@ export class HookableBase<
 	}
 }
 
-/**
- *
- *
- */

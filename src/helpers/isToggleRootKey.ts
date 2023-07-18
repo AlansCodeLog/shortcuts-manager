@@ -1,4 +1,5 @@
-import type { Key } from "@/classes"
+import type { Key } from "classes/index.js"
+
 
 /**
  * Returns whether a key is the root key of a toggle key.

@@ -1,9 +1,8 @@
 import { catchError, testName } from "@alanscodelog/utils"
-
-import { expect } from "./chai"
-
-import { Key, Stringifier } from "@/classes"
-import { ERROR } from "@/types"
+import { Stringifier } from "classes/index.js"
+import { Key } from "classes/Key.js"
+import { ERROR } from "types/enums.js"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 
 describe(testName(), () => {

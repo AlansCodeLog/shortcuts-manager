@@ -1,6 +1,9 @@
 import { crop, dedupe, pretty, unreachable } from "@alanscodelog/utils"
 
-import { Command, Condition, Key, Shortcut } from "@/classes"
+import { Command } from "./Command.js"
+import { Condition } from "./Condition.js"
+import { Key } from "./Key.js"
+import { Shortcut } from "./Shortcut.js"
 
 
 type StringifierOptions = {
@@ -47,13 +50,21 @@ type StringifierOptions = {
  */
 export class Stringifier {
 	protected _key: StringifierOptions["key"]
+
 	protected _keys: StringifierOptions["keys"]
+
 	protected _chain: StringifierOptions["chain"]
+
 	protected _chord: StringifierOptions["chord"]
+
 	protected _shortcut: StringifierOptions["shortcut"]
+
 	protected _command: StringifierOptions["command"]
+
 	protected _condition: StringifierOptions["condition"]
+
 	protected _propertyValue: StringifierOptions["propertyValue"]
+
 	constructor(opts: StringifierOptions = {}) {
 		if (opts.key) this._key = opts.key
 		if (opts.keys) this._keys = opts.keys
@@ -64,6 +75,7 @@ export class Stringifier {
 		if (opts.condition) this._condition = opts.condition
 		if (opts.propertyValue) this._propertyValue = opts.propertyValue
 	}
+
 	stringify(entry: Key | Key[] | Key[][] | Shortcut | Command | Key): string {
 		if (entry instanceof Command) return this.stringifyCommand(entry)
 		if (entry instanceof Shortcut) return this.stringifyShortcut(entry)
@@ -76,6 +88,7 @@ export class Stringifier {
 		}
 		unreachable()
 	}
+
 	stringifyPropertyValue(entry: any): string {
 		let res = ""
 		try {
@@ -98,6 +111,7 @@ export class Stringifier {
 				return entry.toString()
 		}
 	}
+
 	stringifyShortcut(shortcut: Shortcut): string {
 		if (this._shortcut) return this._shortcut(shortcut)
 		const command = this.stringifyCommand(shortcut.command)
@@ -105,28 +119,34 @@ export class Stringifier {
 		const condition = this.stringifyCondition(shortcut.condition)
 		return crop`Shortcut ${chain} (${command}${shortcut.condition ? `, ${condition}` : ""})`
 	}
+
 	stringifyCondition(condition?: Condition): string {
 		if (this._condition) return this._condition(condition)
 		return condition ? `condition: "${condition?.text}"` : `condition: undefined`
 	}
+
 	stringifyCommand(command?: Command): string {
 		if (this._command) return this._command(command)
 		return command ? `command: "${command?.name}"` : `command: undefined`
 	}
+
 	stringifyKey(key: Key): string {
 		if (this._key) return this._key(key)
-		return key.label
+		return key.label ?? key.id
 	}
+
 	stringifyChord(keys: Key[]): string {
 		const stringified = dedupe(keys.map(key => this.stringifyKey(key)), { mutate: true })
 		if (this._chord) return this._chord(stringified)
 		return stringified.join("+")
 	}
+
 	stringifyChain(chain: Key[][]): string {
 		const stringified = chain.map(chord => this.stringifyChord(chord))
 		if (this._chain) return this._chain(stringified)
 		return stringified.join(" ")
 	}
+
 	stringifyKeys(chord: Key[]): string {
 		const stringified = chord.map(key => this.stringifyKey(key))
 		if (this._keys) return this._keys(stringified)

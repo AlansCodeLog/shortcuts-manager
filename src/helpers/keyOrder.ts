@@ -1,10 +1,11 @@
-import { isModifierKey } from "./isModifierKey"
-import { isMouseKey } from "./isMouseKey"
-import { isToggleKey } from "./isToggleKey"
-import { isWheelKey } from "./isWheelKey"
+import type { Key } from "classes/index.js"
+import type { KEY_SORT_POS } from "types/index.js"
 
-import type { Key } from "@/classes"
-import type { KEY_SORT_POS } from "@/types"
+import { isModifierKey } from "./isModifierKey.js"
+import { isMouseKey } from "./isMouseKey.js"
+import { isToggleKey } from "./isToggleKey.js"
+import { isWheelKey } from "./isWheelKey.js"
+
 
 /**
  * The default key ordering function.

@@ -1,13 +1,12 @@
 import type { Mutable } from "@alanscodelog/utils"
+import type { Command, Commands, Condition, Shortcut } from "classes/index.js"
+import type { Manager } from "classes/Manager.js"
+import type { KnownError } from "helpers/index.js"
 
-import type { RawCondition } from "./condition"
-import type { ERROR } from "./enums"
-import type { BaseHookType, CollectionHookType } from "./hooks"
-import type { AnyInputEvent } from "./manager"
-
-import type { Command, Commands, Condition, Shortcut } from "@/classes"
-import type { Manager } from "@/classes/Manager"
-import type { KnownError } from "@/helpers"
+import type { RawCondition } from "./condition.js"
+import type { ERROR } from "./enums.js"
+import type { BaseHookType, CollectionHookType } from "./hooks.js"
+import type { AnyInputEvent } from "./manager.js"
 
 
 export type RawCommand = {

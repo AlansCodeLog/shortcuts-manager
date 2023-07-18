@@ -1,9 +1,8 @@
 import { testName } from "@alanscodelog/utils"
-
-import { expect } from "./chai"
-
-import { Command, Condition } from "@/classes"
-import type { CommandOptions } from "@/types"
+import { Command } from "classes/Command.js"
+import { Condition } from "classes/Condition.js"
+import type { CommandOptions } from "types/command.js"
+import { describe, expect, it } from "vitest"
 
 
 describe(testName(), () => {

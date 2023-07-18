@@ -1,9 +1,8 @@
-import { crop, Err, Ok, Result } from "@alanscodelog/utils"
+import { crop, Err, Ok, type Result } from "@alanscodelog/utils"
+import type { Key, Manager, Shortcut, Stringifier } from "classes/index.js"
+import { ERROR } from "types/index.js"
 
-import { KnownError } from "./KnownError"
-
-import type { Key, Manager, Shortcut, Stringifier } from "@/classes"
-import { ERROR } from "@/types"
+import { KnownError } from "./KnownError.js"
 
 
 /**

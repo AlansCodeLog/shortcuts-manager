@@ -1,6 +1,6 @@
-import type { Condition } from "./Condition"
+import type { RecursiveRecord } from "types/index.js"
 
-import type { RecursiveRecord } from "@/types"
+import type { Condition } from "./Condition.js"
 
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {
@@ -23,6 +23,7 @@ export class Context<
 > {
 	/** Where the context object is stored. */
 	value: TValue
+
 	/**
 	 * # Context
 	 *
@@ -38,6 +39,7 @@ export class Context<
 	) {
 		this.value = context
 	}
+
 	/**
 	 * Returns whether the context passed is equal to this one.
 	 *
@@ -46,12 +48,14 @@ export class Context<
 	equals(context: Context<any>): context is Context<TValue> {
 		return fastIsEqual(this.value, context.value)
 	}
+
 	/**
 	 * A wrapper around the parameter's eval function if you prefer to write `context.eval(condition)` instead of `condition.eval(context)`
 	 */
 	eval(condition: Condition): boolean {
 		return condition.eval(this)
 	}
+
 	export(): Pick<Context, "value"> {
 		return { value: this.value }
 	}

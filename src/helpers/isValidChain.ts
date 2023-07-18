@@ -1,11 +1,10 @@
-import { Ok, Result } from "@alanscodelog/utils"
+import { Ok, type Result } from "@alanscodelog/utils"
+import type { Key, KeysSorter, Manager, Shortcut, Stringifier } from "classes/index.js"
+import type { ERROR } from "types/index.js"
 
-import type { KnownError } from "./KnownError"
-
-import type { Key, KeysSorter, Manager, Shortcut, Stringifier } from "@/classes"
-import type { ERROR } from "@/types"
-
-import { containsPossibleToggleChords, isValidChord } from "."
+import { containsPossibleToggleChords } from "./containsPossibleToggleChords.js"
+import { isValidChord } from "./isValidChord.js"
+import type { KnownError } from "./KnownError.js"
 
 
 /**

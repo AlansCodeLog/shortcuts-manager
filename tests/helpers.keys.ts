@@ -1,4 +1,4 @@
-import { Key } from "@/classes"
+import { Key } from "classes/Key.js"
 
 
 const a = new Key("a", { variants: ["aVariant"]})

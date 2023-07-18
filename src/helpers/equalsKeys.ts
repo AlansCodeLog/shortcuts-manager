@@ -1,4 +1,5 @@
-import type { Key } from "@/classes"
+import type { Key } from "classes/index.js"
+
 
 /**
  * Returns if the given chords are equal.

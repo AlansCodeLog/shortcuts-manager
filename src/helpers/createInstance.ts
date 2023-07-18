@@ -1,5 +1,5 @@
-import type { Command, Condition, Key, Shortcut } from "@/classes"
-import type { RawCommand, RawKey, RawShortcut } from "@/types"
+import type { Command, Condition, Key, Shortcut } from "classes/index.js"
+import type { RawCommand, RawKey, RawShortcut } from "types/index.js"
 
 /**
  * Can create a key, command, shortcut, or condition from a raw entry. Can also just be passed an existing instance and it will return it.

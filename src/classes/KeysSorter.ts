@@ -1,7 +1,7 @@
-import type { Key } from "./Key"
+import { keyOrder } from "helpers/keyOrder.js"
+import { KEY_SORT_POS, type KeysSorterOptions } from "types/index.js"
 
-import { keyOrder } from "@/helpers"
-import { KEY_SORT_POS, KeysSorterOptions } from "@/types"
+import type { Key } from "./Key.js"
 
 
 const sDefaultSort = Symbol("defaultSort")
@@ -30,6 +30,7 @@ const sDefaultSort = Symbol("defaultSort")
  */
 export class KeysSorter {
 	order: KeysSorterOptions["order"] = KEY_SORT_POS;
+
 	[sDefaultSort](a: Key, b: Key, order: KeysSorterOptions["order"]): number {
 		// -1 = a b
 		if (keyOrder(a, order) < keyOrder(b, order)) return -1
@@ -37,9 +38,11 @@ export class KeysSorter {
 		if (keyOrder(b, order) < keyOrder(a, order)) return 1
 		return a.id.localeCompare(b.id) // => alphabetical
 	}
+
 	constructor(opts: Partial<KeysSorterOptions> = {}) {
 		if (opts.order) this.order = opts.order
 	}
+
 	sort(keys: Key[]): Key[] {
 		return keys.sort((a, b) => this[sDefaultSort]!(a, b, this.order))
 	}

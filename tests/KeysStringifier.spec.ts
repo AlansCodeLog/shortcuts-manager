@@ -1,9 +1,9 @@
 import { crop, testName } from "@alanscodelog/utils"
-
-import { expect } from "./chai"
-
-import { Key, Shortcut, Shortcuts } from "@/classes"
-import { defaultStringifier, Stringifier } from "@/classes/Stringifier"
+import { Key } from "classes/Key.js"
+import { Shortcut } from "classes/Shortcut.js"
+import { Shortcuts } from "classes/Shortcuts.js"
+import { defaultStringifier, Stringifier } from "classes/Stringifier.js"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 
 describe(testName(), () => {

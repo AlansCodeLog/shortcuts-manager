@@ -1,7 +1,7 @@
 name: Pull Request Checks
 
 env:
-  USE_LOCKFILE: false
+  USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
 
 on:
   pull_request:
@@ -13,8 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # awaiting https://github.com/actions/setup-node/issues/26 so we can just set this to [lts, latest]
-        node-version: [14.x, 17.x]
+        node-version: ["lts/*", "latest"]
 
     steps:
 
@@ -22,7 +21,7 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Setting Up Node.js (${{ matrix.node-version }})
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
 
@@ -33,13 +32,11 @@ jobs:
         version: latest
 
     - name: Get Pnpm Cache Path
-      if: "env.USE_LOCKFILE == 'true'"
       id: pnpm-cache
       run: |
         echo "::set-output name=dir::$(pnpm store path)"
 
     - uses: actions/cache@v3
-      if: "env.USE_LOCKFILE == 'true'"
       name: pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.dir }}
@@ -53,11 +50,11 @@ jobs:
     # regionend
 
     # region Steps
-    - run: pnpm install
+    - run: pnpm install --frozen-lockfile
       if: "env.USE_LOCKFILE == 'true'"
 
-    - run: pnpm install --no-frozen-lockfile
-      if: "env.USE_LOCKFILE == 'false'"
+    - run: pnpm install --no-lockfile
+      if: "env.USE_LOCKFILE != 'true'"
 
     - name: Commits to Lint
       run: git log ${{github.event.pull_request.base.sha}}..${{github.event.pull_request.head.sha}} --graph --abbrev-commit --decorate --format=format:'%h%d%n%s (%cr) - %an (%ae)%n%b'
@@ -67,7 +64,7 @@ jobs:
 
     - run: pnpm build
 
-    - run: pnpm lint:eslint # test command will lint types (coverage runs test script)
+    - run: pnpm lint
 
     - run: pnpm coverage
 

@@ -1,4 +1,5 @@
-import type { Key } from "@/classes"
+import type { Key } from "classes/index.js"
+
 
 /**
  * Returns whether a key is a modifier key (emulated or native).

@@ -1,27 +1,35 @@
+// https://www.typescriptlang.org/tsconfig/
 {
-  "compilerOptions": {
-    "baseUrl": ".",
-    "paths": {
-      "@demo/*": ["src/*"],
-      "@/*": ["../src/*"],
-      "@lib/*": ["../dist/*"],
-      "@utils/*": [ "../node_modules/@alanscodelog/utils/dist/*"],
-    },
-    "target": "esnext",
-    "useDefineForClassFields": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "jsx": "preserve",
-    "sourceMap": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
-    "typeRoots": ["src/types"]
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.vue",
-  ]
+	// ./node_modules/@alanscodelog/tsconfigs/tsconfig.json
+	// https://github.com/AlansCodeLog/tsconfigs
+	"extends": "@alanscodelog/tsconfigs",
+	"compilerOptions": {
+		"target": "ESNext",
+		"moduleResolution": "Node16",
+		"outDir": "dist",
+		"baseUrl": "src",
+		"paths": {}
+	},
+	"types": [
+		// "node"
+	],
+	"lib": [
+		"esnext",
+		"dom"
+	],
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/**/*.vue",
+		"tests/**/*.ts",
+		"tests/**/*.vue",
+		// so eslint doesn't bother us, we don't build with tsc anyways, and to emit types, there's tsconfig.types.json
+		"*.ts",
+		"*.cjs",
+		"*.js"
+	],
+	"exclude": [],
+	"tsc-alias": {
+		"resolveFullPaths": true // for esm compatibility
+	}
 }

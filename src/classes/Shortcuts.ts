@@ -1,14 +1,16 @@
-import { AnyClass, crop, Err, Ok } from "@alanscodelog/utils"
-import type { Result } from "@alanscodelog/utils/dist/utils"
+import type {  AnyClass, Result } from "@alanscodelog/utils"
+import { crop, Err, indent, Ok } from "@alanscodelog/utils"
+import { HookableCollection } from "bases/HookableCollection.js"
+import { equalsKeys } from "helpers/equalsKeys.js"
+import { KnownError } from "helpers/KnownError.js"
+import { mapKeys } from "helpers/mapKeys.js"
+import { ERROR, type RawShortcut, type ShortcutOptions, type ShortcutsHooks, type ShortcutsOptions } from "types/index.js"
 
-import type { Key } from "./Key"
-import { defaultSorter } from "./KeysSorter"
-import { Shortcut } from "./Shortcut"
-import { defaultStringifier } from "./Stringifier"
-
-import { HookableCollection } from "@/bases"
-import { equalsKeys, KnownError } from "@/helpers"
-import { ERROR, RawShortcut, ShortcutOptions, ShortcutsHooks, ShortcutsOptions } from "@/types"
+import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
+import type { Key } from "./Key.js"
+import { defaultSorter } from "./KeysSorter.js"
+import { Shortcut } from "./Shortcut.js"
+import { defaultStringifier } from "./Stringifier.js"
 
 
 export class Shortcuts<
@@ -23,10 +25,14 @@ export class Shortcuts<
 		TShortcut[],
 > extends HookableCollection<ShortcutsHooks> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
 	protected _basePrototype: AnyClass<Shortcut> & { create(...args: any[]): Shortcut } = Shortcut
+
 	override entries: TEntries
+
 	private readonly _boundAllowsHook: any
+
 	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
+
 	/**
 	 * # Shortcut
 	 *
@@ -57,6 +63,8 @@ export class Shortcuts<
 			if (this.allows("add", properEntry).unwrap()) this.add(properEntry)
 		}
 	}
+
+	// overrides add since shortcuts are in an array
 	protected override _add(rawEntry: Shortcut | RawShortcut): void {
 		const entry = this.create(rawEntry)
 
@@ -65,6 +73,34 @@ export class Shortcuts<
 		const entries = this.entries as any
 		entries.push(entry)
 	}
+
+	protected _canAddToDict(entries: Shortcut[], entry: Shortcut): Result<true, KnownError<ERROR.DUPLICATE_SHORTCUT>> {
+		const existingIdentifier = JSON.stringify(mapKeys((entry).chain))
+		const existing = (entries).find(item => (entry).equals(item))
+
+		if (existing) {
+			const text = canAddToDictErrorText("shortcut", existingIdentifier, this.stringifier.stringify(existing), this.stringifier.stringify(entry))
+			const error = new KnownError(ERROR.DUPLICATE_SHORTCUT, text, { existing: (existing as any), self: this as any as Shortcuts })
+
+			return Err(error) as any
+		}
+
+		return Ok(true)
+	}
+
+	protected _canRemoveFromDict(entries: Shortcut[], entry: Shortcut): Result<true, KnownError<ERROR.MISSING>> {
+		const existing = entries.find(item => entry.equals(item))
+
+		if (existing === undefined) {
+			return Err(new KnownError(ERROR.MISSING, crop`
+			${entry.constructor.name} does not exist in this collection.
+
+			${indent(this.stringifier.stringify(entry), 3)}
+			`, { entry, collection: self as any }))
+		}
+		return Ok(true)
+	}
+
 	protected _allowsHook(key: string, value: any, _old: any, instance: Shortcut): Result<true, KnownError<ERROR.DUPLICATE_SHORTCUT>> {
 		const proxy = Proxy.revocable(instance, {
 			get(target: any, prop: any, receiver: any) {
@@ -93,6 +129,7 @@ export class Shortcuts<
 			this.entries.splice(i, 1)
 		}
 	}
+
 	/**
 	 * Query the class for some shortcut/s. Just a simple wrapper around array find/filter
 	 *
@@ -101,10 +138,13 @@ export class Shortcuts<
 	 * @param all If set to true, uses filter and returns all matching entries. Otherwise uses find and only returns the first match.
 	 */
 	query(filter: Parameters<TShortcut[]["filter"]>["0"], all?: true): TShortcut[]
+
 	query(filter: Parameters<TShortcut[]["find"]>["0"], all?: false): TShortcut | undefined
+
 	query(filter: Parameters<TShortcut[]["filter"] | TShortcut[]["find"]>["0"], all: boolean = true): TShortcut | TShortcut[] | undefined {
 		return all ? this.entries.filter(filter) : this.entries.find(filter)
 	}
+
 	/**
 	 * Swaps the given chords for all matching shortcuts.
 	 *
@@ -194,6 +234,7 @@ export class Shortcuts<
 		this._setForceUnequal(shortcutsB, false)
 		return Ok(true)
 	}
+
 	private _assertCorrectSwapParameters(
 		chordsA: Key[][], chordsB: Key[][],
 	): Result<true, KnownError<ERROR.INVALID_SWAP_CHORDS>> {
@@ -214,6 +255,7 @@ export class Shortcuts<
 		}
 		return Ok(true)
 	}
+
 	private _assertChordsNotEmpty(chord: Key[][]): Result<true, KnownError<ERROR.INVALID_SWAP_CHORDS>> {
 		let found: undefined | Key[][]
 		if (chord.length === 0 || chord.find(keys => keys.length === 0)) {
@@ -224,11 +266,13 @@ export class Shortcuts<
 		}
 		return Ok(true)
 	}
+
 	private _setForceUnequal(shortcuts: Shortcut[], value: boolean): void {
 		for (const shortcut of shortcuts) {
 			shortcut.forceUnequal = value
 		}
 	}
+
 	/**
 	 * Returns whether swapChords will succeed.
 	 *
@@ -291,9 +335,11 @@ export class Shortcuts<
 
 		return can
 	}
+
 	export(): ReturnType<Shortcut["export"]>[] {
 		return this.entries.map(shortcut => shortcut.export())
 	}
+
 	/**
 	 * @inheritdoc
 	 */
@@ -312,6 +358,7 @@ export class Shortcuts<
 			},
 		}) as T
 	}
+
 	/**
 	 * Checks if all shortcuts can be removed, if they can, removes them all, otherwise does nothing and returns the error.
 	 *

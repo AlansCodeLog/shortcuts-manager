@@ -1,8 +1,7 @@
-import { isWheelKey } from "./isWheelKey"
+import type { Key } from "classes/index.js"
 
-import type { Key } from "@/classes"
-
-import { isMouseKey } from "."
+import { isMouseKey } from "./isMouseKey.js"
+import { isWheelKey } from "./isWheelKey.js"
 
 
 /**

@@ -1,14 +1,12 @@
-import { Result, setReadOnly } from "@alanscodelog/utils"
-import { castType, Err, Ok, pick } from "@utils/utils"
+import { castType, Err, Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
+import { HookableBase } from "bases/HookableBase.js"
+import { createInstance } from "helpers/createInstance.js"
+import { isToggleRootKey } from "helpers/isToggleRootKey.js"
+import { KnownError } from "helpers/KnownError.js"
+import { ERROR, type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } from "types/index.js"
 
-import { defaultStringifier } from "./Stringifier"
-
-import { HookableBase } from "@/bases"
-import { isToggleRootKey, KnownError } from "@/helpers"
-import { createInstance } from "@/helpers/createInstance"
-import { ERROR, KeyHooks, KeyOptions, RawKey, ToggleKey } from "@/types"
-
-import type { Stringifier } from "."
+import type { Stringifier } from "./index.js"
+import { defaultStringifier } from "./Stringifier.js"
 
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
@@ -24,35 +22,48 @@ export class Key<
 	 * @RequiresSet @SetHookable
 	 */
 	readonly pressed: boolean = false
+
 	/** @inheritdoc */
 	checkStateOnAllEvents: boolean = true
+
 	// cannot inherit doc
 	/** See {@link KeyOptions.is} */
 	readonly is: KeyOptions["is"]
+
 	/** @inheritdoc */
 	readonly width: number = 1
+
 	/** @inheritdoc */
 	readonly height: number = 1
+
 	/** @inheritdoc */
 	readonly x: number = 0
+
 	/** @inheritdoc */
 	readonly y: number = 0
+
 	/** @inheritdoc */
 	readonly render: boolean = true
+
 	/** @inheritdoc */
 	classes: string[]
+
 	/**
 	 * If the key is a toggle key, pass this when defining shortcuts if you want them to trigger when the key is toggled on. Otherwise if you just pass the key it will trigger on every change of state.
 	 *
 	 * See {@link KeyOptions.is.toggle} for how this works.
 	 */
 	declare on?: ToggleKey<Key>
+
 	/** See {@link Key.on} except this triggers when the key is toggled off. */
 	declare off?: ToggleKey<Key>
+
 	/** This property is only available on toggle states (e.g. key.on / key.off). */
 	declare root: Key & { on: ToggleKey<Key>, off: ToggleKey<Key> }
+
 	/** @inheritdoc */
 	readonly variants: KeyOptions["variants"]
+
 	/**
 	 * # Key
 	 * Creates a key.
@@ -107,16 +118,20 @@ export class Key<
 			this.safeSet("variants", opts.variants).unwrap()
 		}
 	}
+
+	stringifier: Stringifier
+
 	/**
 	 * On toggle keys, allows easily toggling the state of the toggles.
 	 */
-	public toggleToggle(): void {
+	toggleToggle(): void {
 		if (!this.is.toggle) throw new Error("toggleToggle is a method for toggle keys only.")
 		const rootKey = isToggleRootKey(this) ? this : this.root
 		const onValue = rootKey.on!.pressed
 		rootKey.on!.set("pressed", !onValue)
 		rootKey.off!.set("pressed", onValue)
 	}
+
 	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
 		if (key === "variants") {
 			if (value.includes(this.id)) {
@@ -125,6 +140,7 @@ export class Key<
 		}
 		return Ok(true)
 	}
+
 	/**
 	 * Adds on/off toggle states to the instance.
 	 * See {@link KeyOptions.is.toggle} for how this works.
@@ -144,11 +160,13 @@ export class Key<
 		this.addHook("set", (prop, val) => {
 			if (prop === "label") {
 				castType<string>(val)
+
 				if (this.on!.allows("label", `${val} (On)`).isOk) this.on!.set("label", `${val} (On)`)
 				if (this.off!.allows("label", `${val} (Off)`).isOk) this.off!.set("label", `${val} (Off)`)
 			}
 		})
 	}
+
 	/**
 	 * The id used to identify which key was pressed.
 	 *
@@ -163,6 +181,7 @@ export class Key<
 	 * For toggles, pass the key code like normal (e.g. `CapsLock`), see {@link KeyOptions.is.toggle} for how to implement toggles.
 	 */
 	declare id: string
+
 	/**
 	 * The preferred human readable version of a key.
 	 *
@@ -171,6 +190,7 @@ export class Key<
 	 * This is a getter so label can be a function and this will return it's value. It's type is string, but you can safely set a function to it.
 	 */
 	declare label: string // function is hidden, though it can still be set via the property
+
 	/**
 	 * Returns whether the key passed is equal to this one.
 	 *
@@ -179,13 +199,16 @@ export class Key<
 	equals(key: Key): key is Key {
 		return this === key || this.id === key.id
 	}
+
 	get opts(): KeyOptions {
 		return pick(this, ["is", "x", "y", "width", "height", "stringifier", "label", "render", "classes", "checkStateOnAllEvents"])
 	}
+
 	/** Create an instance from a raw entry. */
 	static create<T extends Key = Key>(entry: RawKey): T {
 		return createInstance<Key, "id">(Key, "id", entry) as T
 	}
+
 	export(): RawKey {
 		const opts: any = { ...this.opts }
 		delete opts.stringifier

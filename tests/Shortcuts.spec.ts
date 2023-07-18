@@ -1,12 +1,12 @@
-import { testName } from "@alanscodelog/utils"
-import type { Result } from "@alanscodelog/utils/dist/utils"
+import { type Result, testName } from "@alanscodelog/utils"
+import { Condition } from "classes/Condition.js"
+import { Shortcut } from "classes/Shortcut.js"
+import { Shortcuts } from "classes/Shortcuts.js"
+import type { KnownError } from "helpers/KnownError.js"
+import { ERROR } from "types/enums.js"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { expect } from "./chai"
-import { k } from "./helpers.keys"
-
-import { Condition, Shortcut, Shortcuts } from "@/classes"
-import type { KnownError } from "@/helpers"
-import { ERROR } from "@/types"
+import { k } from "./helpers.keys.js"
 
 
 const shortcut1 = new Shortcut([[k.a]])

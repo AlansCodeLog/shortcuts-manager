@@ -1,11 +1,10 @@
 import { catchError, testName } from "@alanscodelog/utils"
+import { defaultSorter } from "classes/KeysSorter.js"
+import { Shortcut } from "classes/Shortcut.js"
+import { ERROR } from "types/enums.js"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { expect } from "./chai"
-import { k, properOrder } from "./helpers.keys"
-
-import { Shortcut } from "@/classes"
-import { defaultSorter } from "@/classes/KeysSorter"
-import { ERROR } from "@/types"
+import { k, properOrder } from "./helpers.keys.js"
 
 
 describe(testName(), () => {
@@ -125,7 +124,7 @@ describe(testName(), () => {
 
 		const sorted = defaultSorter.sort(reverseOrder)
 
-		expect(sorted).to.partial.deep.equal(properOrder)
+		expect(sorted).to.deep.equal(properOrder)
 	})
 	it("equalsKeys", () => {
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.a]])).to.equal(true)

@@ -15,7 +15,6 @@ src
  ┣ helpers
  ┣ types - all the types and enums are stored here in their respective categories
 tests
- ┣ chai.ts - imports & re-exports retyped chai + plugins
  ┣ template.ts - the template to use for tests, just copy and rename to the name of the test + `.spec.ts`
  ┗ helpers.keys.ts - contains com pre-configured keys used in tests, they are not meant to be very realistic
 ```
@@ -31,7 +30,3 @@ The demo is mostly WIP, hardly demo. Am currently using it as a playground to ch
 It uses vite and compiles the src of the library also, so changes in both the library and the demo should be instantaneous.
 
 Note that the out dir is `docs/demo` so that it can be seen from the docs site in the future.
-
-## Other
-
-`@utils/*` imports are an alias to my utils library [`@alanscodelog/utils`](https://github.com/AlansCodeLog/my-utils).

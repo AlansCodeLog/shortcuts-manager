@@ -1,10 +1,9 @@
 import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
+import type { Key, Keys, Stringifier } from "classes/index.js"
+import type { KnownError } from "helpers/index.js"
 
-import type { ERROR, KEY_SORT_POS } from "./enums"
-import type { BaseHookType, CollectionHookType } from "./hooks"
-
-import type { Key, Keys, Manager, Stringifier } from "@/classes"
-import type { KnownError } from "@/helpers"
+import type { ERROR, KEY_SORT_POS } from "./enums.js"
+import type { BaseHookType, CollectionHookType } from "./hooks.js"
 
 
 /**

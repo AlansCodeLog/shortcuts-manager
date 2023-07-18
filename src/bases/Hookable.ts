@@ -1,8 +1,7 @@
-import { crop, indent, pretty } from "@utils/utils"
-
-import type { Stringifier } from "@/classes"
-import { KnownError } from "@/helpers"
-import { TYPE_ERROR } from "@/types"
+import { crop, indent, pretty } from "@alanscodelog/utils"
+import type { Stringifier } from "classes/Stringifier.js"
+import { KnownError } from "helpers/KnownError.js"
+import { TYPE_ERROR } from "types/enums.js"
 
 
 export class Hookable<
@@ -10,10 +9,13 @@ export class Hookable<
 	TTypes extends keyof THooks = keyof THooks,
 > {
 	stringifier!: Stringifier
+
 	hooks: {[K in keyof THooks]: THooks[K][] } = {} as any
+
 	constructor(keys: TTypes[]) {
 		for (const key of keys) this.hooks[key] = [] as any
 	}
+
 	/**
 	 * Add a hook.
 	 *
@@ -49,6 +51,7 @@ export class Hookable<
 		}
 		this.hooks[type].push(hook as any)
 	}
+
 	/**
 	 * Remove a hook.
 	 *

@@ -1,10 +1,11 @@
-import { AnyClass, crop, Err, Ok, Result } from "@alanscodelog/utils"
+import { type AnyClass, crop, Err, Ok, type Result } from "@alanscodelog/utils"
+import { HookableCollection } from "bases/HookableCollection.js"
+import { KnownError } from "helpers/KnownError.js"
+import { ERROR } from "types/enums.js"
+import type { CommandsHooks, RawCommand, RecordFromArray } from "types/index.js"
 
-import { HookableCollection } from "@/bases"
-import { KnownError } from "@/helpers"
-import { CommandsHooks, ERROR, RawCommand, RecordFromArray } from "@/types"
-
-import { Command } from "."
+import { Command } from "./Command.js"
+import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
 
 
 export class Commands<
@@ -19,7 +20,9 @@ export class Commands<
 		RecordFromArray<TRawCommands, "name", TCommand>,
 > extends HookableCollection<CommandsHooks> {
 	protected _basePrototype: AnyClass<Command> & { create(...args: any[]): Command } = Command
+
 	override entries: TEntries
+
 	/**
 	 * # Commands
 	 * Creates a set of commands.
@@ -44,6 +47,7 @@ export class Commands<
 			if (this.allows("add", entry).unwrap()) this.add(entry)
 		}
 	}
+
 	protected override _add(rawEntry: RawCommand): void {
 		const entry = this.create(rawEntry)
 		entry.addHook("allows", (type, value, old) => {
@@ -67,21 +71,42 @@ export class Commands<
 		const entries = this.entries as any
 		entries[rawEntry.name] = rawEntry
 	}
+
+	protected override _canAddToDict(entries: Command[], entry: Command): Result<true, KnownError<ERROR.DUPLICATE_COMMAND>
+	> {
+		const existingIdentifier = (entry).name
+		const existing = (entries as any)[(entry).name]
+
+		if (existing) {
+			const text = canAddToDictErrorText("commands", existingIdentifier, this.stringifier.stringify(existing), this.stringifier.stringify(entry))
+			const error = new KnownError(ERROR.DUPLICATE_COMMAND, text, { existing, self: this as any as Commands })
+
+			return Err(error) as any
+		}
+
+		return Ok(true)
+	}
+
 	protected override _remove(entry: Command): void {
 		const entries = this.entries as any
 		delete entries[entry.name]
 	}
+
 	get(name: TRawCommands[number]["name"] | string): TCommand {
 		return this.entries[name as keyof TEntries]
 	}
+
 	/** Query the class. Just a simple wrapper around array find/filter. */
 	query(filter: Parameters<TCommand[]["filter"]>["0"], all?: true): TCommand[]
+
 	query(filter: Parameters<TCommand[]["find"]>["0"], all?: false): TCommand | undefined
+
 	query(filter: Parameters<TCommand[]["filter"] | TCommand[]["find"]>["0"], all: boolean = true): TCommand | TCommand[] | undefined {
 		return all
 			? Object.values(this.entries).filter(filter as any)
 			: Object.values(this.entries).find(filter as any)!
 	}
+
 	export(): Record<string, ReturnType<Command["export"]>> {
 		const commands: Record<string, any> = {}
 		for (const id of Object.keys(this.entries)) {
@@ -89,6 +114,7 @@ export class Commands<
 		}
 		return commands
 	}
+
 	/**
 	 * Creates a base instance that conforms to the class.
 	 */
@@ -96,6 +122,7 @@ export class Commands<
 		if (rawEntry instanceof Command) return rawEntry as T
 		return this._basePrototype.create(rawEntry) as T
 	}
+
 	/**
 	 * Checks if all commands can be removed, if they can, removes them all, otherwise does nothing and returns the error.
 	 *

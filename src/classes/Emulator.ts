@@ -1,8 +1,7 @@
 import type { AnyFunction } from "@alanscodelog/utils"
 
-import { EmulatedEvent } from "./EmulatedEvent"
-
-import type { Keys } from "."
+import { EmulatedEvent } from "./EmulatedEvent.js"
+import type { Keys } from "./Keys.js"
 
 
 const mouseButtons = ["0", "1", "2", "3", "4", "5"]
@@ -23,32 +22,45 @@ const wheelKeys = ["wheelUp", "wheelDown"]
  */
 export class Emulator {
 	validKeys?: Keys
+
 	constructor(keys?: Keys) {
 		this.validKeys = keys
 	}
+
 	listeners: {
 		keydown: AnyFunction[]
 		keyup: AnyFunction[]
 		wheel: AnyFunction[]
 		mousedown: AnyFunction[]
 		mouseup: AnyFunction[]
+		mouseenter: AnyFunction[]
 	} = {
 			keydown: [],
 			keyup: [],
 			wheel: [],
 			mousedown: [],
+			mouseenter: [],
 			mouseup: [],
 		}
+
 	initiated: boolean = false
+
 	addEventListener(type: string, func: AnyFunction): void {
 		this.listeners[type as keyof Emulator["listeners"]].push(func)
 		this.initiated = true
 	}
+
 	removeEventListener(type: string, func: AnyFunction): void {
 		const i = this.listeners[type as keyof Emulator["listeners"]].indexOf(func)
-		if (i === -1) throw new Error("Listener could not be found.")
+		if (i === -1) throw new Error(`Listener ${type} could not be found.`)
 		this.listeners[type as keyof Emulator["listeners"]].splice(i, 1)
 	}
+
+	mouseenter(modifiers: string[] = []): void {
+		const event = new EmulatedEvent("mouseenter", { }, modifiers)
+		this._dispatch("mouseenter", event)
+	}
+
 	/**
 	 *
 	 * Emulate pressing/releasing keys.
@@ -116,6 +128,7 @@ export class Emulator {
 			}
 		}
 	}
+
 	press(type: "mouse" | "wheel" | "key", key: string, modifiers: string[] = [], validKeys?: Keys): void {
 		this._checkIsValidKey(key, validKeys)
 		switch (type) {
@@ -133,6 +146,7 @@ export class Emulator {
 			} break
 		}
 	}
+
 	release(type: "mouse" | "key", key: string, modifiers: string[] = [], validKeys?: Keys): void {
 		this._checkIsValidKey(key, validKeys)
 		switch (type) {
@@ -146,6 +160,7 @@ export class Emulator {
 			} break
 		}
 	}
+
 	private _checkIsValidKey(key: string, validKeys?: Keys): void {
 		const valid = validKeys ?? this.validKeys
 		if (valid) {
@@ -154,6 +169,7 @@ export class Emulator {
 			}
 		}
 	}
+
 	private _dispatch<T extends keyof Emulator["listeners"]>(type: T, event: EmulatedEvent<T>): void {
 		for (const listener of this.listeners[type]) {
 			listener(event)

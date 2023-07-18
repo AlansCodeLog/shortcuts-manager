@@ -1,11 +1,11 @@
-import type { RawCondition } from "./condition"
-import type { ERROR } from "./enums"
-import type { BaseHookType, CollectionHookType } from "./hooks"
-import type { Optional } from "./utils"
+import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "classes/index.js"
+import type { Stringifier } from "classes/Stringifier.js"
+import type { KnownError } from "helpers/index.js"
 
-import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "@/classes"
-import type { Stringifier } from "@/classes/Stringifier"
-import type { KnownError } from "@/helpers"
+import type { RawCondition } from "./condition.js"
+import type { ERROR } from "./enums.js"
+import type { BaseHookType, CollectionHookType } from "./hooks.js"
+import type { Optional } from "./utils.js"
 
 
 /**

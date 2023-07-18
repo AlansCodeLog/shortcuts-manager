@@ -1,4 +1,5 @@
-import type { Manager } from "@/classes"
+import type { Manager } from "classes/index.js"
+
 
 /**
  * The default callback for the manager which logs the error and clears the chain.

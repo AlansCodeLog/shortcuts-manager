@@ -1,5 +1,7 @@
 <template>
-	<div :class="classes" :style="`height:${height}px; width:100%;`" ref="keyboard" @mousedown="keyboardMousedown">
+<div>
+</div>
+	<div :class="classes" :style="`height:${height}px; width:100%;`" ref="keyboard" @mousedown="mousedownHandler" @touchstart.disablePassive="mousedownHandler">
 		<div class="keyboard-width">
 			<template v-for="key of displayedKeys" :key="key">
 				<div :class="['key-container', ...key.value.classes, key.value.pressed || key.value.on?.pressed ? 'pressed' : '']"
@@ -10,9 +12,9 @@
 						left:${key.value.x * keyW}px;
 					`"
 					@click="toggleKey(key.value)"
-					@mouseenter="isDragging ? '' : keyHovered=key.value.id"
-					@mouseleave="keyHovered=''"
-					:key_id="key.value.id"
+					@mouseenter="openKey(key.value.id)"
+					@mouseleave="closeKey()"
+					:keyId="key.value.id"
 				>
 					<div class="key" :title="key.value.id">
 						<div class="label">
@@ -20,14 +22,13 @@
 							<!-- {{key.value.pressed ? "T":"F"}}
 							{{key.value.on?.pressed ? "T":"F"}} -->
 						</div>
-						<div :class="['shortcuts', shortcutsList[key.value.id].length > 0 && key.value.id === keyHovered ? 'hovered' : '']">
+						<div :class="['shortcuts', shortcutsList[key.value.id].length > 0 && key.value.id === openedKey ? 'hovered' : '']">
 							<div
 								class="shortcut"
-								v-for="shortcut,i in shortcutsList[key.value.id]"
-								:keyID="key.value.id"
+								v-for="shortcut, i in shortcutsList[key.value.id]"
 								:shortcutIndex="i"
 							>
-							{{shortcut.value?.command?.name ?? "(None)"}}
+							{{ shortcut.value?.command?.name ?? "(None)" }}
 							</div>
 						</div>
 					</div>
@@ -35,19 +36,19 @@
 			</template>
 		</div>
 		<div
-			v-if="shortcutDragging"
+			v-if="candidateShortcut && isDragging"
 			class="shortcut shortcut-dragging"
 			:style="`left:${coords.x}px; top:${coords.y}px;`"
 		>
-			{{shortcutDragging?.command?.name ?? "(None)"}}
+			{{ candidateShortcut?.command?.name ?? "(None)" }}
 		</div>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { Key, Keys, Manager, Shortcut } from "@lib/classes";
-import { isToggleKey, isToggleRootKey } from "@lib/helpers";
-import { castType, last } from "@utils/utils";
+import { Key, Keys, Manager, Shortcut } from "shortcuts-manager/classes";
+import { isToggleKey, isToggleRootKey } from "shortcuts-manager/helpers";
+import { castType, last } from "@alanscodelog/utils";
 import { computed, onMounted, onUnmounted, reactive, Ref, ref } from "vue";
 
 
@@ -98,7 +99,7 @@ props.manager.keys.addHook("set", (prop: string, val: any) => {
 
 
 const shortcutsList = computed(() => {
-	return Object.fromEntries(props.keys.map( key => {
+	return Object.fromEntries(props.keys.map(key => {
 		const psuedoChain = [...props.manager.chain]
 		const lastChord = [...last(psuedoChain) ?? []].filter(key => !key.is.modifier)
 		if (!lastChord.includes(key.value)) lastChord.push(key.value)
@@ -107,17 +108,17 @@ const shortcutsList = computed(() => {
 		const filtered = props.shortcuts.filter(_shortcut => {
 			const shortcut = _shortcut.value
 			return shortcut.enabled &&
-			psuedoChain.length <= shortcut.chain.length &&
-			shortcut.equalsKeys(psuedoChain, psuedoChain.length) &&
-			shortcut.condition.eval(props.manager.context) &&
-			(shortcut.command === undefined || shortcut.command.condition.eval(props.manager.context))
+				psuedoChain.length <= shortcut.chain.length &&
+				shortcut.equalsKeys(psuedoChain, psuedoChain.length) &&
+				shortcut.condition.eval(props.manager.context) &&
+				(shortcut.command === undefined || shortcut.command.condition.eval(props.manager.context))
 		})
 
 		return [key.value.id, filtered]
 	}))
 })
 
-const toggleKey = (key:Key) => {
+const toggleKey = (key: Key) => {
 	if (key.is.modifier || key.is.toggle) {
 		if (key.is.toggle) {
 			key.toggleToggle()
@@ -141,56 +142,100 @@ onUnmounted(() => {
 	observer!.disconnect()
 })
 
-const keyHovered = ref<string>()
-const shortcutDragging = ref<Shortcut>()
+const openedKey = ref<string>()
+const candidateKey = ref<Key>()
+const candidateShortcut = ref<Shortcut>()
 const isDragging = ref<boolean>()
-const elCoords = ref<{x:number, y:number}>({x:0, y:0})
-const offsetCoords = ref<{x:number, y:number}>({x:0, y:0})
+const canDrag = ref<boolean>()
 
+const pointerCoords = ref<{ x: number, y: number }>({ x: 0, y: 0 })
+const offsetCoords = ref<{ x: number, y: number }>({ x: 0, y: 0 })
 const coords = computed(() => {
-	return {x: elCoords.value.x - offsetCoords.value.x, y: elCoords.value.y - offsetCoords.value.y}
+	return { x: pointerCoords.value.x - offsetCoords.value.x, y: pointerCoords.value.y - offsetCoords.value.y }
 })
 
-const keyboardMousedown = (e:MouseEvent):void => {
-	const key = (e.target as HTMLElement).closest(".key-container")
-	document.addEventListener("mouseup", globalMouseup)
-	document.addEventListener("mousemove", globalMousemove)
-	isDragging.value = true
-	if (e.target instanceof HTMLElement) {
-		const el = e.target.closest(".shortcut")
-		if (el) {
-			const id = el.getAttribute("keyId")
-			const i = el.getAttribute("shortcutIndex")
-			if (id && i) {
-				const shortcut = shortcutsList.value[id][parseInt(i)]
-				shortcutDragging.value = shortcut.value
-				elCoords.value.x = e.pageX
-				elCoords.value.y = e.pageY
-				const clientRect = el.getBoundingClientRect()
-				offsetCoords.value.x = e.pageX - clientRect.x
-				offsetCoords.value.y = e.pageY - clientRect.y
-			}
-		}
+const setCoords = (e: MouseEvent | TouchEvent): void => {
+	const isMouseEvent = e instanceof MouseEvent
+	pointerCoords.value.x = (isMouseEvent ? e.pageX : e.touches[0].pageX) - window.scrollX
+	pointerCoords.value.y = (isMouseEvent ? e.pageY : e.touches[0].pageY) - window.scrollY
+}
+
+const getKeyByElIdProp = (el: HTMLElement): Key | undefined => {
+	const id = el.getAttribute("keyId")
+
+	return id ? props.manager.keys.entries[id] : undefined
+}
+const getShortcutByElIndexProp = (el: HTMLElement, keyId: string): [shortcut: Shortcut, index: number] | [shortcut: undefined, index: undefined] => {
+	let i: string | number | null = el.getAttribute("shortcutIndex")
+	i = typeof i === "string" ? parseInt(i) : i
+	return [i !== null && i > -1 ? shortcutsList.value[keyId][i].value : undefined, i ?? undefined] as [Shortcut, number] | [undefined, undefined]
+}
+const setOffset = (e: MouseEvent | TouchEvent, el: HTMLElement): void => {
+	setCoords(e)
+	const clientRect = el.getBoundingClientRect()
+	offsetCoords.value.x = pointerCoords.value.x - clientRect.x
+	offsetCoords.value.y = pointerCoords.value.y - clientRect.y
+}
+const openKey = (id?: string): void => {
+	const keyId = id ?? candidateKey.value?.id
+	if (!isDragging.value && keyId) {
+		canDrag.value = true
+		openedKey.value = keyId
 	}
 }
-const globalMouseup = (e:MouseEvent):void => {
-	document.removeEventListener("mouseup", globalMouseup)
-	document.removeEventListener("mousemove", globalMousemove)
+const closeKey = (): void => {
+	openedKey.value = undefined
+}
+const draggingEnd = (): void => {
 	isDragging.value = false
-	shortcutDragging.value = undefined
+	candidateKey.value = undefined
+	candidateShortcut.value = undefined
+	closeKey()
 }
-const globalMousemove = (e:MouseEvent):void => {
-	elCoords.value.x = e.pageX
-	elCoords.value.y = e.pageY
-}
-// const globalMousemove = debounce((e:MouseEvent) :void => {
 
-// 	if (key) {
-// 		keyHovered.value = key.getAttribute("key_id") as string
-// 	} else {
-// 		keyHovered.value = ""
-// 	}
-// }, 100)
+const mousedownHandler = (e: MouseEvent | TouchEvent): void => {
+	if (e.target instanceof HTMLElement) {
+		e.preventDefault()
+		const keyEl = e.target.closest(".key-container")
+		const shortcutEl = e.target.closest(".shortcut")
+		if (!(keyEl instanceof HTMLElement)) return
+		const key = getKeyByElIdProp(keyEl)
+		candidateKey.value = key
+		if (!openedKey.value) {
+			openKey()
+		}
+
+		if (key && shortcutEl instanceof HTMLElement) {
+			const [shortcut] = getShortcutByElIndexProp(shortcutEl, key.id)
+			candidateShortcut.value = shortcut
+			setOffset(e, shortcutEl)
+		}
+		if (isDragging.value) return
+
+		document.addEventListener("mouseup", mouseupHandler)
+		document.addEventListener("touchend", mouseupHandler)
+		document.addEventListener("mousemove", mousemoveHandler, { passive: false })
+		document.addEventListener("touchmove", mousemoveHandler, { passive: false })
+	}
+}
+const mousemoveHandler = (e: MouseEvent | TouchEvent): void => {
+	if (canDrag.value) {
+		isDragging.value = true
+		setCoords(e)
+		e.preventDefault()
+	}
+}
+const mouseupHandler = (e: MouseEvent | TouchEvent): void => {
+	if (!isDragging.value) {
+		openKey()
+	} else {
+		draggingEnd()
+	}
+	document.removeEventListener("mouseup", mouseupHandler)
+	document.removeEventListener("touchend", mouseupHandler)
+	document.removeEventListener("mousemove", mousemoveHandler)
+	document.removeEventListener("touchmove", mousemoveHandler)
+}
 </script>
 
 <style scoped lang="scss">
@@ -207,15 +252,21 @@ const globalMousemove = (e:MouseEvent):void => {
 
 	// .keyboard-width {
 	// }
-	.isDragging & {
+	&.isDragging {
+		border: 1px solid red;
 		user-select: none;
 	}
+
+	overflow:scroll;
+	touch-action:manipulation;
 }
+
 .key-container {
 	position: absolute;
 	word-break: break-all;
 	padding: var(--padding);
 }
+
 .key {
 	border: 1px solid black;
 	border-radius: var(--padding);
@@ -223,15 +274,17 @@ const globalMousemove = (e:MouseEvent):void => {
 	white-space: pre;
 	box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
 	@include flex-col(nowrap);
+
 	.label {
 		padding-left: var(--padding);
-		z-index:1;
+		z-index: 1;
 		overflow: hidden;
 		width: 100%;
 		flex-shrink: 0;
 		// padding-left: calc(var(--padding) * 2);
 		// padding-top: calc(var(--padding) * 1.5);
 	}
+
 	// .center-label & {
 	// 	align-items: center;
 	// 	justify-content: center;
@@ -243,7 +296,8 @@ const globalMousemove = (e:MouseEvent):void => {
 			background: gray !important;
 		}
 	}
-	.iso-enter  & {
+
+	.iso-enter & {
 		box-shadow: none;
 		border: none;
 		position: relative;
@@ -251,6 +305,7 @@ const globalMousemove = (e:MouseEvent):void => {
 		.label {
 			position: absolute;
 		}
+
 		display:flex;
 		flex-direction: column;
 		// filter: drop-shadow(0 var(--shadow) calc(var(--padding)/2) rgb(0 0 0 / 50%));
@@ -284,24 +339,26 @@ const globalMousemove = (e:MouseEvent):void => {
 }
 
 .shortcuts {
-	flex-shrink:1;
+	flex-shrink: 1;
 	width: 100%;
 	// hide overflowing shortcuts
 	@include flex-row(wrap);
-	overflow:hidden;
+	overflow: hidden;
+
 	&.hovered {
+
 		// position: absolute;
-		background:var(--bg);
-		z-index:2;
+		background: var(--bg);
+		z-index: 2;
 		// padding: var(--paddingXS);
 		// min-height: 100%;
-		overflow:unset;
+		overflow: unset;
 		width: min-content;
 		@include border();
 		border-radius: var(--padding);
+		box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular);
 		// margin-left: calc(-1 * var(--paddingXS));
 		// margin-top: calc(-1 * var(--paddingXS));
-		box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular);
 	}
 }
 
@@ -311,15 +368,19 @@ const globalMousemove = (e:MouseEvent):void => {
 	background: var(--cGray2);
 	margin: var(--paddingXS);
 	padding: 0 var(--paddingXS);
-	user-select:none;
+	user-select: none;
+
 	.hovered & {
 		cursor: pointer;
 	}
 }
 
 .shortcut-dragging {
-	position:fixed;
-	z-index:2;
+	position: fixed;
+	z-index: 2;
+	@include border();
+	border-radius: var(--padding);
+	box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular);
+	touch-action: none;
 }
-
 </style>

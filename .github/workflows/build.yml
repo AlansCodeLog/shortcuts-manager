@@ -2,7 +2,7 @@ name: Build
 # not technically necessary because release also runs tests but this way the build badge is separate
 
 env:
-  USE_LOCKFILE: false
+  USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
 
 on:
   #TOCONFIGURE
@@ -40,13 +40,11 @@ jobs:
         version: latest
 
     - name: Get Pnpm Cache Path
-      if: "env.USE_LOCKFILE == 'true'"
       id: pnpm-cache
       run: |
         echo "::set-output name=dir::$(pnpm store path)"
 
     - uses: actions/cache@v3
-      if: "env.USE_LOCKFILE == 'true'"
       name: pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.dir }}
@@ -63,14 +61,12 @@ jobs:
     - run: pnpm install --frozen-lockfile
       if: "env.USE_LOCKFILE == 'true'"
 
-    - run: pnpm install
-      if: "env.USE_LOCKFILE == 'false'"
-
-    - run: pnpm install
+    - run: pnpm install --no-lockfile
+      if: "env.USE_LOCKFILE != 'true'"
 
     - run: pnpm build
 
-    - run: pnpm lint:eslint # test command will lint types
+    - run: pnpm lint
 
     - run: pnpm test
     # regionend

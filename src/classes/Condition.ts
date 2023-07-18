@@ -1,6 +1,6 @@
-import type { Context } from "./Context"
+import type { RawCondition } from "types/condition.js"
 
-import type { RawCondition } from "@/types/condition"
+import type { Context } from "./Context.js"
 
 
 export class Condition {
@@ -8,6 +8,7 @@ export class Condition {
 	 * The main text representation of the condition. Note that this is NOT a unique identifier for conditions and cannot be used to compare them if you are using boolean expressions for your conditions. See {@link Condition.constructor} for an explanation.
 	 */
 	text: string
+
 	/**
 	 * # Condition
 	 * Create a condition.
@@ -21,6 +22,7 @@ export class Condition {
 	) {
 		this.text = text
 	}
+
 	/**
 	 * Evals the condition against a context. The base method always returns true.
 	 */
@@ -30,6 +32,7 @@ export class Condition {
 	eval(context: Context<any>): boolean {
 		return true
 	}
+
 	/**
 	 * Returns whether the condition passed is equal to this one.
 	 *
@@ -49,6 +52,7 @@ export class Condition {
 		if (this === condition) return true
 		return this.text === condition.text
 	}
+
 	export(): RawCondition {
 		return this.text
 	}
