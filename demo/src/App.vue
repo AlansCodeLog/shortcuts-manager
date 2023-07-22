@@ -1,7 +1,7 @@
 <template>
 	<meta name="viewport" content="width=device-width">
 	<div id="settings-area" :class="classes" ref="el" @mouseenter="mouseenter()" >
-		<!-- <contexts :contexts="contexts" @add-context="contexts.push($event)"/> -->
+		<contexts :contexts="contexts" @add-context="contexts.push($event)"/>
 		<!-- <keyboard :keys="keys" :manager="manager" :shortcuts="shortcuts"/> -->
 		<!-- <lib-group> -->
 		<!-- 	<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/> -->

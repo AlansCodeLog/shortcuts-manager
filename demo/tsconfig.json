@@ -5,13 +5,14 @@
 	"extends": "@alanscodelog/tsconfigs",
 	"compilerOptions": {
 		"skipLibCheck": true,
-		"target": "ESNext",
+		"module": "esnext",
+		"target": "esnext",
 		"moduleResolution": "bundler",
 		"outDir": "dist",
 		"baseUrl": "src",
 		"paths": {
 			"shortcuts-manager/*": [
-				"../dist"
+				"../dist/*"
 			]
 		}
 	},

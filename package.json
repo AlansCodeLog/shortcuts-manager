@@ -10,8 +10,28 @@
 			"import": "./dist/index.js"
 		},
 		"./*": {
-			"types": "./dist/*/index.d.ts",
-			"import": "./dist/*/index.js"
+			"types": "./dist/*",
+			"import": "./dist/*"
+		},
+		"./bases": {
+			"types": "./dist/bases/index.d.ts",
+			"import": "./dist/bases/index.js"
+		},
+		"./classes": {
+			"types": "./dist/classes/index.d.ts",
+			"import": "./dist/classes/index.js"
+		},
+		"./helpers": {
+			"types": "./dist/helpers/index.d.ts",
+			"import": "./dist/helpers/index.js"
+		},
+		"./layouts": {
+			"types": "./dist/layouts/index.d.ts",
+			"import": "./dist/layouts/index.js"
+		},
+		"./types": {
+			"types": "./dist/types/index.d.ts",
+			"import": "./dist/types/index.js"
 		}
 	},
 	"scripts": {
