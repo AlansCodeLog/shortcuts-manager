@@ -49,7 +49,7 @@
 import { Key, Keys, Manager, Shortcut } from "shortcuts-manager/classes";
 import { isToggleKey, isToggleRootKey } from "shortcuts-manager/helpers";
 import { castType, last } from "@alanscodelog/utils";
-import { computed, onMounted, onUnmounted, reactive, Ref, ref } from "vue";
+import { computed, onMounted, onUnmounted, reactive, type Ref, ref } from "vue";
 
 
 const props = defineProps<{
@@ -238,149 +238,149 @@ const mouseupHandler = (e: MouseEvent | TouchEvent): void => {
 }
 </script>
 
-<style scoped lang="scss">
-.keyboard {
-	--padding: calc(v-bind(keyW) * 0.05px);
-	--shadow: calc(var(--padding) - 1px);
-	overflow: hidden;
-	font-size: calc(v-bind(keyW) * 0.25px);
-	// margin: 3px;
-	width: 100%;
-	// display:flex;
-	// justify-content: center;
-	position: relative;
-
-	// .keyboard-width {
-	// }
-	&.isDragging {
-		border: 1px solid red;
-		user-select: none;
-	}
-
-	overflow:scroll;
-	touch-action:manipulation;
-}
-
-.key-container {
-	position: absolute;
-	word-break: break-all;
-	padding: var(--padding);
-}
-
-.key {
-	border: 1px solid black;
-	border-radius: var(--padding);
-	height: 100%;
-	white-space: pre;
-	box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
-	@include flex-col(nowrap);
-
-	.label {
-		padding-left: var(--padding);
-		z-index: 1;
-		overflow: hidden;
-		width: 100%;
-		flex-shrink: 0;
-		// padding-left: calc(var(--padding) * 2);
-		// padding-top: calc(var(--padding) * 1.5);
-	}
-
-	// .center-label & {
-	// 	align-items: center;
-	// 	justify-content: center;
-	// }
-	.pressed & {
-		background: gray;
-
-		&::before {
-			background: gray !important;
-		}
-	}
-
-	.iso-enter & {
-		box-shadow: none;
-		border: none;
-		position: relative;
-
-		.label {
-			position: absolute;
-		}
-
-		display:flex;
-		flex-direction: column;
-		// filter: drop-shadow(0 var(--shadow) calc(var(--padding)/2) rgb(0 0 0 / 50%));
-
-		&::before {
-			position: unset;
-			height: calc(1px * v-bind(keyW) - var(--padding) * 2 - 0px);
-			border: 1px solid black;
-			content: "";
-			border-radius: var(--padding) var(--padding) 0 var(--padding);
-			margin-left: calc(-1 * var(--padding));
-			background: white;
-			box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
-
-		}
-
-		&::after {
-			content: "";
-			flex: 1 1 auto;
-			z-index: 1;
-			background: white;
-			border: 1px solid black;
-			width: calc(83.3%);
-			align-self: flex-end;
-			margin-top: -1px;
-			border-top: 0 solid white; //width must be 0 or we get artifact
-			border-radius: 0 0 var(--padding) var(--padding);
-			box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%);
-		}
-	}
-}
-
-.shortcuts {
-	flex-shrink: 1;
-	width: 100%;
-	// hide overflowing shortcuts
-	@include flex-row(wrap);
-	overflow: hidden;
-
-	&.hovered {
-
-		// position: absolute;
-		background: var(--bg);
-		z-index: 2;
-		// padding: var(--paddingXS);
-		// min-height: 100%;
-		overflow: unset;
-		width: min-content;
-		@include border();
-		border-radius: var(--padding);
-		box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular);
-		// margin-left: calc(-1 * var(--paddingXS));
-		// margin-top: calc(-1 * var(--paddingXS));
-	}
-}
-
-.shortcut {
-	@include flex(1, 0, calc(100% - var(--paddingXS) * 2));
-	border-radius: var(--paddingXS);
-	background: var(--cGray2);
-	margin: var(--paddingXS);
-	padding: 0 var(--paddingXS);
-	user-select: none;
-
-	.hovered & {
-		cursor: pointer;
-	}
-}
-
-.shortcut-dragging {
-	position: fixed;
-	z-index: 2;
-	@include border();
-	border-radius: var(--padding);
-	box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular);
-	touch-action: none;
-}
-</style>
+<!-- <style scoped lang="scss"> -->
+<!-- .keyboard { -->
+<!-- 	--padding: calc(v-bind(keyW) * 0.05px); -->
+<!-- 	--shadow: calc(var(--padding) - 1px); -->
+<!-- 	overflow: hidden; -->
+<!-- 	font-size: calc(v-bind(keyW) * 0.25px); -->
+<!-- 	// margin: 3px; -->
+<!-- 	width: 100%; -->
+<!-- 	// display:flex; -->
+<!-- 	// justify-content: center; -->
+<!-- 	position: relative; -->
+<!---->
+<!-- 	// .keyboard-width { -->
+<!-- 	// } -->
+<!-- 	&.isDragging { -->
+<!-- 		border: 1px solid red; -->
+<!-- 		user-select: none; -->
+<!-- 	} -->
+<!---->
+<!-- 	overflow:scroll; -->
+<!-- 	touch-action:manipulation; -->
+<!-- } -->
+<!---->
+<!-- .key-container { -->
+<!-- 	position: absolute; -->
+<!-- 	word-break: break-all; -->
+<!-- 	padding: var(--padding); -->
+<!-- } -->
+<!---->
+<!-- .key { -->
+<!-- 	border: 1px solid black; -->
+<!-- 	border-radius: var(--padding); -->
+<!-- 	height: 100%; -->
+<!-- 	white-space: pre; -->
+<!-- 	box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%); -->
+<!-- 	@include flex-col(nowrap); -->
+<!---->
+<!-- 	.label { -->
+<!-- 		padding-left: var(--padding); -->
+<!-- 		z-index: 1; -->
+<!-- 		overflow: hidden; -->
+<!-- 		width: 100%; -->
+<!-- 		flex-shrink: 0; -->
+<!-- 		// padding-left: calc(var(--padding) * 2); -->
+<!-- 		// padding-top: calc(var(--padding) * 1.5); -->
+<!-- 	} -->
+<!---->
+<!-- 	// .center-label & { -->
+<!-- 	// 	align-items: center; -->
+<!-- 	// 	justify-content: center; -->
+<!-- 	// } -->
+<!-- 	.pressed & { -->
+<!-- 		background: gray; -->
+<!---->
+<!-- 		&::before { -->
+<!-- 			background: gray !important; -->
+<!-- 		} -->
+<!-- 	} -->
+<!---->
+<!-- 	.iso-enter & { -->
+<!-- 		box-shadow: none; -->
+<!-- 		border: none; -->
+<!-- 		position: relative; -->
+<!---->
+<!-- 		.label { -->
+<!-- 			position: absolute; -->
+<!-- 		} -->
+<!---->
+<!-- 		display:flex; -->
+<!-- 		flex-direction: column; -->
+<!-- 		// filter: drop-shadow(0 var(--shadow) calc(var(--padding)/2) rgb(0 0 0 / 50%)); -->
+<!---->
+<!-- 		&::before { -->
+<!-- 			position: unset; -->
+<!-- 			height: calc(1px * v-bind(keyW) - var(--padding) * 2 - 0px); -->
+<!-- 			border: 1px solid black; -->
+<!-- 			content: ""; -->
+<!-- 			border-radius: var(--padding) var(--padding) 0 var(--padding); -->
+<!-- 			margin-left: calc(-1 * var(--padding)); -->
+<!-- 			background: white; -->
+<!-- 			box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%); -->
+<!---->
+<!-- 		} -->
+<!---->
+<!-- 		&::after { -->
+<!-- 			content: ""; -->
+<!-- 			flex: 1 1 auto; -->
+<!-- 			z-index: 1; -->
+<!-- 			background: white; -->
+<!-- 			border: 1px solid black; -->
+<!-- 			width: calc(83.3%); -->
+<!-- 			align-self: flex-end; -->
+<!-- 			margin-top: -1px; -->
+<!-- 			border-top: 0 solid white; //width must be 0 or we get artifact -->
+<!-- 			border-radius: 0 0 var(--padding) var(--padding); -->
+<!-- 			box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%); -->
+<!-- 		} -->
+<!-- 	} -->
+<!-- } -->
+<!---->
+<!-- .shortcuts { -->
+<!-- 	flex-shrink: 1; -->
+<!-- 	width: 100%; -->
+<!-- 	// hide overflowing shortcuts -->
+<!-- 	@include flex-row(wrap); -->
+<!-- 	overflow: hidden; -->
+<!---->
+<!-- 	&.hovered { -->
+<!---->
+<!-- 		// position: absolute; -->
+<!-- 		background: var(--bg); -->
+<!-- 		z-index: 2; -->
+<!-- 		// padding: var(--paddingXS); -->
+<!-- 		// min-height: 100%; -->
+<!-- 		overflow: unset; -->
+<!-- 		width: min-content; -->
+<!-- 		@include border(); -->
+<!-- 		border-radius: var(--padding); -->
+<!-- 		box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular); -->
+<!-- 		// margin-left: calc(-1 * var(--paddingXS)); -->
+<!-- 		// margin-top: calc(-1 * var(--paddingXS)); -->
+<!-- 	} -->
+<!-- } -->
+<!---->
+<!-- .shortcut { -->
+<!-- 	@include flex(1, 0, calc(100% - var(--paddingXS) * 2)); -->
+<!-- 	border-radius: var(--paddingXS); -->
+<!-- 	background: var(--cGray2); -->
+<!-- 	margin: var(--paddingXS); -->
+<!-- 	padding: 0 var(--paddingXS); -->
+<!-- 	user-select: none; -->
+<!---->
+<!-- 	.hovered & { -->
+<!-- 		cursor: pointer; -->
+<!-- 	} -->
+<!-- } -->
+<!---->
+<!-- .shortcut-dragging { -->
+<!-- 	position: fixed; -->
+<!-- 	z-index: 2; -->
+<!-- 	@include border(); -->
+<!-- 	border-radius: var(--padding); -->
+<!-- 	box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular); -->
+<!-- 	touch-action: none; -->
+<!-- } -->
+<!-- </style> -->

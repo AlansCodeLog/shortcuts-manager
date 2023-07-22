@@ -84,7 +84,7 @@ import { unreachable } from "@alanscodelog/utils";
 import { notificationHandlerSymbol } from "../injectionSymbols.js";
 import { Command, Key, Manager, Shortcut } from "shortcuts-manager/classes";
 import { KnownError } from "shortcuts-manager/helpers";
-import { computed, inject, ref, Ref } from "vue";
+import { computed, inject, ref, type Ref } from "vue";
 
 const notificationHandler = inject(notificationHandlerSymbol)
 if (notificationHandler === undefined) unreachable()
@@ -232,51 +232,51 @@ const recorderBlur = (_event: FocusEvent, _index: number) => {
 
 
 </script>
-
-<style lang="scss" scoped>
-table {
-	// display:flex;
-	// flex-wrap:wrap;
-	width: 100%;
-}
-
-table:not(.resizable-table-setup) {
-	tr {
-		display: flex;
-		flex-wrap: nowrap;
-		// width: 100%;
-	}
-
-	.col-command {
-		flex-grow: 1;
-	}
-
-	.col-shortcut {
-		flex-grow: 1;
-	}
-
-	.col-add-remove {
-		// min-width: min-content;
-		flex-grow: 0;
-		flex-shrink: 0;
-	}
-}
-
-// table {
-// 	width: calc(100% - var(--borderWidth) * 2);
-// 	// @include border;
-// 	border-color: var(--opacity0);
-// 	:slotted(thead, tbody, tr, td, th) {
-// 		// needed for resizing
-// 		box-sizing: border-box;
-// 	}
-// 	:slotted(td, th) {
-// 		// needed for resizing
-// 		overflow:hidden
-// 	}
-// }
-</style>
-
-//#list-componen {
-//	--varName: v-bind(value);
-//}
+<!---->
+<!-- <style lang="scss" scoped> -->
+<!-- table { -->
+<!-- 	// display:flex; -->
+<!-- 	// flex-wrap:wrap; -->
+<!-- 	width: 100%; -->
+<!-- } -->
+<!---->
+<!-- table:not(.resizable-table-setup) { -->
+<!-- 	tr { -->
+<!-- 		display: flex; -->
+<!-- 		flex-wrap: nowrap; -->
+<!-- 		// width: 100%; -->
+<!-- 	} -->
+<!---->
+<!-- 	.col-command { -->
+<!-- 		flex-grow: 1; -->
+<!-- 	} -->
+<!---->
+<!-- 	.col-shortcut { -->
+<!-- 		flex-grow: 1; -->
+<!-- 	} -->
+<!---->
+<!-- 	.col-add-remove { -->
+<!-- 		// min-width: min-content; -->
+<!-- 		flex-grow: 0; -->
+<!-- 		flex-shrink: 0; -->
+<!-- 	} -->
+<!-- } -->
+<!---->
+<!-- // table { -->
+<!-- // 	width: calc(100% - var(--borderWidth) * 2); -->
+<!-- // 	// @include border; -->
+<!-- // 	border-color: var(--opacity0); -->
+<!-- // 	:slotted(thead, tbody, tr, td, th) { -->
+<!-- // 		// needed for resizing -->
+<!-- // 		box-sizing: border-box; -->
+<!-- // 	} -->
+<!-- // 	:slotted(td, th) { -->
+<!-- // 		// needed for resizing -->
+<!-- // 		overflow:hidden -->
+<!-- // 	} -->
+<!-- // } -->
+<!-- </style> -->
+<!---->
+<!-- //#list-componen { -->
+<!-- //	--varName: v-bind(value); -->
+<!-- //} -->

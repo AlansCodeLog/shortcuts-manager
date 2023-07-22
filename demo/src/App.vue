@@ -2,25 +2,25 @@
 	<meta name="viewport" content="width=device-width">
 	<div id="settings-area" :class="classes" ref="el" @mouseenter="mouseenter()" >
 		<!-- <contexts :contexts="contexts" @add-context="contexts.push($event)"/> -->
-		<keyboard :keys="keys" :manager="manager" :shortcuts="shortcuts"/>
-		<lib-group>
-			<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/>
-			<lib-button :label="'Add Command'" @click="addCommand()"/>
-		</lib-group>
-		<lib-group>
-			<lib-input
-				:suggestions="commands.map(c => c.value.name)"
-				:restrict-to-suggestions="true"
-				v-model="commandToRemove"
-				@submit="removeCommand()"
-			>
-				<template #item="{ item }">
-					{{ item }}
-				</template>
-			</lib-input>
-			<lib-button :label="'Remove Command'" @click="removeCommand()"/>
-		</lib-group>
-		<list :manager="manager" :shortcuts="shortcuts" :commands="commands"/>
+		<!-- <keyboard :keys="keys" :manager="manager" :shortcuts="shortcuts"/> -->
+		<!-- <lib-group> -->
+		<!-- 	<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/> -->
+		<!-- 	<lib-button :label="'Add Command'" @click="addCommand()"/> -->
+		<!-- </lib-group> -->
+		<!-- <lib-group> -->
+		<!-- 	<lib-input -->
+		<!-- 		:suggestions="commands.map(c => c.value.name)" -->
+		<!-- 		:restrict-to-suggestions="true" -->
+		<!-- 		v-model="commandToRemove" -->
+		<!-- 		@submit="removeCommand()" -->
+		<!-- 	> -->
+		<!-- 		<template #item="{ item }"> -->
+		<!-- 			{{ item }} -->
+		<!-- 		</template> -->
+		<!-- 	</lib-input> -->
+		<!-- 	<lib-button :label="'Remove Command'" @click="removeCommand()"/> -->
+		<!-- </lib-group> -->
+		<!-- <list :manager="manager" :shortcuts="shortcuts" :commands="commands"/> -->
 		<lib-notifications :handler="notificationHandler"/>
 	</div>
 	<div if="test-area" @mouseenter="mouseleave()">
@@ -31,22 +31,22 @@
 
 <script setup lang="ts">
 import { castType, isWhitespace, keys as objectKeys, unreachable } from "@alanscodelog/utils"
-import { theme, NotificationHandler } from "@alanscodelog/vue-components/helpers"
-import { setupAccesibilityOutline } from "@alanscodelog/vue-components/mixins"
+import { NotificationHandler } from "@alanscodelog/vue-components/helpers/NotificationHandler.js"
+// import {theme} from "@alanscodelog/vue-components/theme.js"
+import { setupAccesibilityOutline } from "@alanscodelog/vue-components/mixins/setupAccesibilityOutline.js"
 import keyboard from "./components/Keyboard.vue"
 import list from "./components/List.vue"
+import contexts from "./components/Contexts.vue"
 import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "shortcuts-manager/classes"
-import { Test } from "shortcuts-manager/classes/"
-import { KnownError } from "shortcuts-manager/helpers"
-import type { ManagerListener } from "shortcuts-manager/types"
-import { createLayout } from "shortcuts-manager/layouts"
-import { computed, onMounted, onUnmounted, provide, ref, Ref, shallowReactive, shallowRef, triggerRef } from "vue"
+import { KnownError } from "shortcuts-manager/helpers/KnownError.js"
+import type { ManagerListener } from "shortcuts-manager/types/index.js"
+import { createLayout } from "shortcuts-manager/layouts/index.js"
+import { computed, onMounted, onUnmounted, provide, ref, type Ref, shallowReactive, shallowRef, triggerRef } from "vue"
 import { notificationHandlerSymbol } from "./injectionSymbols.js"
 
 // #region Theme
 const notificationHandler = new NotificationHandler()
 provide(notificationHandlerSymbol, notificationHandler as any)
-theme()
 
 const el = ref(null)
 
@@ -251,27 +251,27 @@ onUnmounted(() => {
 
 </script>
 
-<style lang="scss">
-* {
-	box-sizing: border-box;
-}
-
-body {
-	font-family: Avenir, Helvetica, Arial, sans-serif;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-	margin: 0;
-	font-size: 1.1rem;
-}
-
-#root {
-	overflow: auto-scroll;
-	min-height: 100vh;
-	margin: 0;
-	display: flex;
-	// @include flex-col(nowrap);
-}
-
-// #test-area {
-// }
-</style>
+<!-- <style lang="scss"> -->
+<!-- * { -->
+<!-- 	box-sizing: border-box; -->
+<!-- } -->
+<!---->
+<!-- body { -->
+<!-- 	font-family: Avenir, Helvetica, Arial, sans-serif; -->
+<!-- 	-webkit-font-smoothing: antialiased; -->
+<!-- 	-moz-osx-font-smoothing: grayscale; -->
+<!-- 	margin: 0; -->
+<!-- 	font-size: 1.1rem; -->
+<!-- } -->
+<!---->
+<!-- #root { -->
+<!-- 	overflow: auto-scroll; -->
+<!-- 	min-height: 100vh; -->
+<!-- 	margin: 0; -->
+<!-- 	display: flex; -->
+<!-- 	// @include flex-col(nowrap); -->
+<!-- } -->
+<!---->
+<!-- // #test-area { -->
+<!-- // } -->
+<!-- </style> -->

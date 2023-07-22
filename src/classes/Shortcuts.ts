@@ -1,4 +1,4 @@
-import type {  AnyClass, Result } from "@alanscodelog/utils"
+import type { AnyClass, Result } from "@alanscodelog/utils"
 import { crop, Err, indent, Ok } from "@alanscodelog/utils"
 import { HookableCollection } from "bases/HookableCollection.js"
 import { equalsKeys } from "helpers/equalsKeys.js"

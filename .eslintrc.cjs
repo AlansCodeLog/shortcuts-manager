@@ -3,7 +3,7 @@ module.exports = {
 	root: true,
 	extends: [
 		// https://github.com/AlansCodeLog/eslint-config
-		"@alanscodelog/eslint-config",
+		"@alanscodelog/eslint-config/vue",
 	],
 	ignorePatterns: [
 		"coverage",
@@ -14,7 +14,7 @@ module.exports = {
 	],
 	rules: {
 		// "no-restricted-imports": "off"
-"@typescript-eslint/non-nullable-type-assertion-style":"off"
+		// "@typescript-eslint/non-nullable-type-assertion-style":"off"
 	},
 	settings: {
 		jsdoc: {
@@ -37,5 +37,11 @@ module.exports = {
 				"jsdoc/check-tag-names": ["warn", {definedTags: ["RequiresSet", "SetHookable"]}]
 			},
 		},
+		{
+			files: ["**/*"],
+			rules: {
+
+			}
+		}
 	],
 }

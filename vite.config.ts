@@ -1,65 +1,62 @@
-// eslint-disable-next-line import/no-extraneous-dependencies
-import vue from "@vitejs/plugin-vue"
+import { run } from "@alanscodelog/utils/node"
+import glob from "fast-glob"
 import path from "path"
-import { fileURLToPath } from "url"
-// eslint-disable-next-line import/no-extraneous-dependencies
-import { defineConfig } from "vite"
+import type { PluginOption } from "vite"
+import { externalizeDeps } from "vite-plugin-externalize-deps"
+import tsconfigPaths from "vite-tsconfig-paths"
+import { defineConfig } from "vitest/config"
 
-import pkg from "./package.json"
 
-
-const rootPath = path.resolve(path.dirname(fileURLToPath(import.meta.url)))
-
+const typesPlugin = (): PluginOption => ({
+	name: "typesPlugin",
+	// eslint-disable-next-line no-console
+	writeBundle: async () => run(`npm run build:types`).promise.catch(e => { console.log(e.stdout); process.exit(1) }).then(() => undefined),
+})
 
 // https://vitejs.dev/config/
-// eslint-disable-next-line import/no-default-export
-export default defineConfig({
-	root: "demo",
-	base: process.env.CI ? `/${pkg.name}/demo` : "/demo",
+export default async ({ mode }: { mode: string }) => defineConfig({
 	plugins: [
-		vue(),
+		// it isn't enough to just pass the deps list to rollup.external since it will not exclude subpath exports
+		externalizeDeps(),
+		// even if we don't use aliases, this is needed to get imports based on baseUrl working
+		tsconfigPaths(),
+		// runs build:types script which takes care of generating types and fixing type aliases and baseUrl imports
+		typesPlugin(),
 	],
-	server: {
-		fs: {
-			// temporarily, for vue-component lib symlink #todo
-			allow: ["../../"],
+	build: {
+		outDir: "dist",
+		lib: {
+			entry: glob.sync(path.resolve(__dirname, "src/**/*.ts")),
+			formats: ["es"],
 		},
-		watch: {
-			ignored: ["!**/node_modules/@alanscodelog/**"],
+		rollupOptions: {
+			output: {
+				preserveModulesRoot: "src",
+				preserveModules: true,
+			},
 		},
-		port:3000,
+		minify: false,
+		...(mode === "production" ? {
+		} : {
+			sourcemap: "inline",
+		}),
+	},
+	test: {
+		cache: process.env.CI ? false : undefined,
 	},
 	resolve: {
-		alias: {
-			/*
-			 * Same as `@` but to differentiate the library import in case we want to change it.
-			 *
-			 * Ideally we would setup the demo as it's own package and link to the library but because the library is not esm, we would not get any recompilation if we did it that way.
-			 *
-			 * It is possible to set it up that way and get recompilation if we do something like `@demo = src` && `@ = ../src`, but that's a bit weird, because normally one would expect `@` to point to the demo/src.
-			 *
-			 * I think putting the vite config at this level makes it more obvious what's happening.
-			 *
-			 * That vite is compiling the ts from src for both the library and the demo.
-			 */
-			"@lib": path.resolve(rootPath, "src"),
-			"@demo": path.resolve(rootPath, "demo/src"),
-			// for library, must match path "aliases" in tsconfig (and therefore babel config)
-			"@utils": "@alanscodelog/utils/dist",
-			"@": path.resolve(rootPath, "src"),
-		},
+		alias: [
+			// absolute path needed because of https://github.com/vitest-dev/vitest/issues/2425
+			{ find: /^@\/(.*)/, replacement: `${path.resolve("src")}/$1/index.ts` },
+			{ find: /^@tests\/(.*)/, replacement: `${path.resolve("tests")}/$1` },
+		],
 	},
-	build: {
-		outDir: path.resolve(rootPath, "./docs/demo"),
-		minify: false,
-	},
-	css: {
-		preprocessorOptions: {
-			scss: {
-				additionalData: `
-					@import "node_modules/@alanscodelog/vue-components/src/assets/main.scss";
-				`,
-			},
+	server: {
+		watch: {
+			// for pnpm
+			followSymlinks: true,
+			// watch changes in linked repos
+			ignored: ["!**/node_modules/@alanscodelog/**"],
 		},
 	},
 })

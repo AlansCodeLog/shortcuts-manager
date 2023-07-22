@@ -14,7 +14,7 @@ export default {
 }
 </script>
 <script setup lang="ts">
-import { defineProps, PropType, ref } from "vue";
+import { defineProps,type PropType, ref } from "vue";
 
 const props= defineProps({
 	contexts: { type: Array as PropType<string[]>, required: true, default: () => [] },

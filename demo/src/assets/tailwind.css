@@ -1,0 +1,5 @@
+/* @import "@alanscodelog/vue-components/base.css"; */
+/* @import "@alanscodelog/vue-components/utilities.css"; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -2,7 +2,7 @@ import { catchError, testName } from "@alanscodelog/utils"
 import { Key } from "classes/Key.js"
 import { Keys } from "classes/Keys.js"
 import { ERROR } from "types/enums.js"
-import {  describe, expect, it, vi } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 
 describe(testName(), () => {

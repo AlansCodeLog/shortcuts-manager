@@ -4,11 +4,16 @@
 	// https://github.com/AlansCodeLog/tsconfigs
 	"extends": "@alanscodelog/tsconfigs",
 	"compilerOptions": {
+		"skipLibCheck": true,
 		"target": "ESNext",
-		"moduleResolution": "Node16",
+		"moduleResolution": "bundler",
 		"outDir": "dist",
 		"baseUrl": "src",
-		"paths": {}
+		"paths": {
+			"shortcuts-manager/*": [
+				"../dist"
+			]
+		}
 	},
 	"types": [
 		// "node"
@@ -31,5 +36,10 @@
 	"exclude": [],
 	"tsc-alias": {
 		"resolveFullPaths": true // for esm compatibility
+	},
+	"ts-node": {
+		"moduleTypes": {
+			"postcss.config.ts": "cjs"
+		}
 	}
 }

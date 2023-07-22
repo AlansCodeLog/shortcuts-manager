@@ -642,8 +642,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 				})
 			}
 		}
-		console.log({ res: !!res.value }, "'", this.stringifier.stringify(this.lastChord() ?? []), "'")
-
 
 		if (this.lastChord()?.find(key => isTriggerKey(key))) {
 			if (this.inChain() || this.isRecording) {
