@@ -1,7 +1,7 @@
 import { crop, indent, pretty } from "@alanscodelog/utils"
-import type { Stringifier } from "classes/Stringifier.js"
-import { KnownError } from "helpers/KnownError.js"
-import { TYPE_ERROR } from "types/enums.js"
+import type { Stringifier } from "../classes/Stringifier.js"
+import { KnownError } from "../helpers/KnownError.js"
+import { TYPE_ERROR } from "../types/enums.js"
 
 
 export class Hookable<

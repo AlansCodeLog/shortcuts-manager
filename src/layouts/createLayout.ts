@@ -1,4 +1,4 @@
-import { calculateAndSetPositionAndWidth } from "helpers/calculateAndSetPositionAndWidth.js"
+import { calculateAndSetPositionAndWidth } from "../helpers/calculateAndSetPositionAndWidth.js"
 
 
 const start = 0

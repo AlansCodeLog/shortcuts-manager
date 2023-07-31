@@ -1,7 +1,7 @@
-import type { Commands, Key, Keys, Manager, Shortcuts } from "classes/index.js"
-import type { KnownError } from "helpers/index.js"
-
 import type { BaseHookType, ChainErrors, ERROR } from "./index.js"
+
+import type { Commands, Key, Keys, Manager, Shortcuts } from "../classes/index.js"
+import type { KnownError } from "../helpers/index.js"
 
 
 export type AnyInputEvent = (KeyboardEvent | MouseEvent | WheelEvent)
@@ -22,7 +22,7 @@ export type ManagerHook = {
 }
 
 
-export type ManagerListener = ({ event, keys, isKeydown }: { event: AnyInputEvent, keys: Key[], isKeydown: boolean }) => void
+export type ManagerListener = ({ event, keys, isKeydown }: { event?: AnyInputEvent, keys: Key[], isKeydown: boolean }) => void
 
 export type ExportedManager = {
 	shortcuts?: ReturnType<Shortcuts["export"]>

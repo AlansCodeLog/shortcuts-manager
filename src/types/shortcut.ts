@@ -1,6 +1,6 @@
-import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "classes/index.js"
-import type { Stringifier } from "classes/Stringifier.js"
-import type { KnownError } from "helpers/index.js"
+import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "../classes/index.js"
+import type { Stringifier } from "../classes/Stringifier.js"
+import type { KnownError } from "../helpers/index.js"
 
 import type { RawCondition } from "./condition.js"
 import type { ERROR } from "./enums.js"

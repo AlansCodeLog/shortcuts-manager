@@ -1,6 +1,6 @@
-import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "classes/index.js"
-import type { Manager } from "classes/Manager.js"
-import type { KnownError } from "helpers/index.js"
+import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "../classes/index.js"
+import type { Manager } from "../classes/Manager.js"
+import type { KnownError } from "../helpers/index.js"
 
 import type { BaseHook } from "./hooks.js"
 import type { ManagerListener } from "./index.js"

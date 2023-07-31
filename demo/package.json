@@ -8,19 +8,18 @@
 		"build": "vite build",
 		"build:dev": "vite build --mode development",
 		"build:watch": "vite build --watch --mode production",
-		"build:types": "vue-tsc -p tsconfig.types.json && npm run build:types:fix",
-		"build:types:fix": "tsc-alias -p tsconfig.types.json --debug",
 		"lint:imports": "madge --circular --extensions ts ./src",
 		"lint:types": "vue-tsc --noEmit --pretty",
 		"prepare": "pnpm link ../ && npm run build"
 	},
 	"dependencies": {
 		"@alanscodelog/utils": "4.0.0-beta.10",
-		"@alanscodelog/vue-components": "^1.3.4",
+		"@alanscodelog/vue-components": "1.4.0-beta.1",
 		"@fortawesome/fontawesome-svg-core": "^6.4.0",
 		"@fortawesome/free-regular-svg-icons": "^6.4.0",
 		"@fortawesome/free-solid-svg-icons": "^6.4.0",
-		"metamorphosis": "^0.2.3"
+		"metamorphosis": "^0.2.3",
+		"tailwind-merge": "^1.14.0"
 	},
 	"devDependencies": {
 		"@types/node": "^20.4.3",

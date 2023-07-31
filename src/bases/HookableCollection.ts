@@ -1,6 +1,6 @@
 import { type Result, unreachable } from "@alanscodelog/utils"
-import type { KnownError } from "helpers/KnownError.js"
-import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "types/index.js"
+import type { KnownError } from "../helpers/KnownError.js"
+import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "../types/index.js"
 
 import { Hookable } from "./Hookable.js"
 

@@ -6,7 +6,12 @@
 	"compilerOptions": {
 		"outDir": "dist",
 		"baseUrl": "src",
-		"paths": {},
+		"paths": {
+			// for ide for demo
+			"shortcuts-manager/*": [
+				"src/*"
+			]
+		},
 		"types": [
 			"node"
 		],
@@ -20,8 +25,8 @@
 		"src/**/*.ts",
 		"src/**/*.js",
 		"src/**/*.vue",
-		"tests/**/*.ts",
 		// so eslint doesn't bother us, we don't build with tsc anyways, and to emit types, there's tsconfig.types.json
+		"tests/**/*.ts",
 		"*.ts",
 		"*.cjs",
 		"*.js"

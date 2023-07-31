@@ -12,7 +12,10 @@
 		"baseUrl": "src",
 		"paths": {
 			"shortcuts-manager/*": [
-				"../dist/*"
+				"../src/*"
+			],
+			"@alanscodelog/*": [
+				"node_modules/@alanscodelog/*"
 			]
 		}
 	},

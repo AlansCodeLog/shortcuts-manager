@@ -1,4 +1,4 @@
-import type { RawCondition } from "types/condition.js"
+import type { RawCondition } from "../types/condition.js"
 
 import type { Context } from "./Context.js"
 

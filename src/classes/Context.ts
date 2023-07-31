@@ -1,4 +1,4 @@
-import type { RecursiveRecord } from "types/index.js"
+import type { RecursiveRecord } from "../types/index.js"
 
 import type { Condition } from "./Condition.js"
 

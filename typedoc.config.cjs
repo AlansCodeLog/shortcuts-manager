@@ -1,10 +1,14 @@
-import fs from "fs"
-import path from "path"
+// #awaiting https://github.com/TypeStrong/typedoc/pull/2268
+// import fs from "fs"
+// import path from "path"
+//
+// import pkg from "./package.json"
+const fs = require("fs")
+const path = require("path")
+const pkg = require("./package.json")
 
-import pkg from "./package.json"
 
-
-export default {
+module.exports =  {
 	githubPages: true,
 	navigationLinks: {
 		Github: pkg.repository,
@@ -13,6 +17,7 @@ export default {
 	},
 	readme: "README.md",
 	logLevel: "Verbose",
+	entryPoints: ["src/index.ts"],
 	entryPoints: fs.readdirSync("src")
 		.filter(dir => fs.statSync(path.join("src", dir)).isDirectory())
 		.map(dir => `src/${dir}/index.ts`),
@@ -24,5 +29,4 @@ export default {
 	validation: {
 		invalidLink: true,
 	},
-	externalPattern: "**/{ast/builders,grammar}/**.ts",
 }

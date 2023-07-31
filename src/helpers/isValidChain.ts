@@ -1,6 +1,6 @@
 import { Ok, type Result } from "@alanscodelog/utils"
-import type { Key, KeysSorter, Manager, Shortcut, Stringifier } from "classes/index.js"
-import type { ERROR } from "types/index.js"
+import type { Key, KeysSorter, Manager, Shortcut, Stringifier } from "../classes/index.js"
+import type { ERROR } from "../types/index.js"
 
 import { containsPossibleToggleChords } from "./containsPossibleToggleChords.js"
 import { isValidChord } from "./isValidChord.js"

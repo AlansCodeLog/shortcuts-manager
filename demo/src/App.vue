@@ -1,48 +1,79 @@
 <template>
-	<meta name="viewport" content="width=device-width">
-	<div id="settings-area" :class="classes" ref="el" @mouseenter="mouseenter()" >
-		<contexts :contexts="contexts" @add-context="contexts.push($event)"/>
-		<!-- <keyboard :keys="keys" :manager="manager" :shortcuts="shortcuts"/> -->
-		<!-- <lib-group> -->
-		<!-- 	<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/> -->
-		<!-- 	<lib-button :label="'Add Command'" @click="addCommand()"/> -->
-		<!-- </lib-group> -->
-		<!-- <lib-group> -->
-		<!-- 	<lib-input -->
-		<!-- 		:suggestions="commands.map(c => c.value.name)" -->
-		<!-- 		:restrict-to-suggestions="true" -->
-		<!-- 		v-model="commandToRemove" -->
-		<!-- 		@submit="removeCommand()" -->
-		<!-- 	> -->
-		<!-- 		<template #item="{ item }"> -->
-		<!-- 			{{ item }} -->
-		<!-- 		</template> -->
-		<!-- 	</lib-input> -->
-		<!-- 	<lib-button :label="'Remove Command'" @click="removeCommand()"/> -->
-		<!-- </lib-group> -->
-		<!-- <list :manager="manager" :shortcuts="shortcuts" :commands="commands"/> -->
-		<lib-notifications :handler="notificationHandler"/>
-	</div>
-	<div if="test-area" @mouseenter="mouseleave()">
-	Test Trigger
-	{{ triggerState }}
-	</div>
+<!-- Workaround to create global style component for tests that is -->
+<!-- 	accessible from the storybook preview decorator. See theme callback -->
+<!-- 	above. -->
+<!-- <component :is="'style'" ref="styleEl"/> -->
+<div
+	id="shortcuts-manager"
+	:class="twMerge(`
+		p-2
+		dark:bg-neutral-900
+		dark:text-white
+		min-h-screen
+		min-h-100dvh
+		flex
+		flex-col
+	`,
+		outline ? 'group outlined outlined-visible' : '[&_*]:outline-none',
+		darkMode && `dark`
+	)"
+	tabindex="-1"
+	ref="el"
+	@mouseenter="mouseenter()"
+	@mouseleave="mouseleave()"
+>
+	<k-context
+		:contexts="contexts"
+		@add="(contexts.has($event) ? undefined : contexts.set($event, false))"
+		@remove="contexts.delete($event)"
+		@activate="contexts.has($event) && contexts.set($event, true)"
+		@deactivate="contexts.set($event, false)"
+	/>
+	<k-keyboard :keys="keys" :manager="manager" :shortcuts="shortcuts"/>
+	<!-- <lib-debug>{{contextsRaw}}</lib-debug> -->
+	<!-- <div if="test-area" @mouseenter="mouseleave()"> -->
+	<!-- Test Trigger -->
+	<!-- {{ triggerState }} -->
+	<!-- </div> -->
+	<lib-notifications :handler="notificationHandler"/>
+</div>
+<!-- <lib-group> -->
+<!-- 	<lib-input v-model:modelValue="commandToAdd" @submit="addCommand()"/> -->
+<!-- 	<lib-button :label="'Add Command'" @click="addCommand()"/> -->
+<!-- </lib-group> -->
+<!-- <lib-group> -->
+<!-- 	<lib-input -->
+<!-- 		:suggestions="commands.map(c => c.value.name)" -->
+<!-- 		:restrict-to-suggestions="true" -->
+<!-- 		v-model="commandToRemove" -->
+<!-- 		@submit="removeCommand()" -->
+<!-- 	> -->
+<!-- 		<template #item="{ item }"> -->
+<!-- 			{{ item }} -->
+<!-- 		</template> -->
+<!-- 	</lib-input> -->
+<!-- 	<lib-button :label="'Remove Command'" @click="removeCommand()"/> -->
+<!-- </lib-group> -->
+<!-- <list :manager="manager" :shortcuts="shortcuts" :commands="commands"/> -->
 </template>
 
 <script setup lang="ts">
-import { castType, isWhitespace, keys as objectKeys, unreachable } from "@alanscodelog/utils"
+import { castType, isBlank, isWhitespace, keys as objectKeys, unreachable, walk } from "@alanscodelog/utils"
+import { useAccesibilityOutline, useDarkMode } from "@alanscodelog/vue-components/composables"
 import { NotificationHandler } from "@alanscodelog/vue-components/helpers/NotificationHandler.js"
+import { twMerge } from "tailwind-merge"
+import { computed, onMounted, onUnmounted, provide, type Ref, ref, shallowReactive, shallowRef, triggerRef } from "vue"
+
+import KContext from "./components/Contexts.vue"
 // import {theme} from "@alanscodelog/vue-components/theme.js"
-import { setupAccesibilityOutline } from "@alanscodelog/vue-components/mixins/setupAccesibilityOutline.js"
-import keyboard from "./components/Keyboard.vue"
+import KKeyboard from "./components/Keyboard.vue"
 import list from "./components/List.vue"
-import contexts from "./components/Contexts.vue"
+import { notificationHandlerSymbol } from "./injectionSymbols.js"
+
 import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "shortcuts-manager/classes"
 import { KnownError } from "shortcuts-manager/helpers/KnownError.js"
-import type { ManagerListener } from "shortcuts-manager/types/index.js"
 import { createLayout } from "shortcuts-manager/layouts/index.js"
-import { computed, onMounted, onUnmounted, provide, ref, type Ref, shallowReactive, shallowRef, triggerRef } from "vue"
-import { notificationHandlerSymbol } from "./injectionSymbols.js"
+import type { ManagerListener } from "shortcuts-manager/types/index.js"
 
 // #region Theme
 const notificationHandler = new NotificationHandler()
@@ -50,13 +81,12 @@ provide(notificationHandlerSymbol, notificationHandler as any)
 
 const el = ref(null)
 
-const { outline } = setupAccesibilityOutline(el)
+const { outline } = useAccesibilityOutline(el)
+const { darkMode } = useDarkMode()
 // #region Theme
 
 // #region Manager
-const classes = computed(() => ({
-	outline: outline.value,
-}))
+
 const manager = new Manager(new Keys([]),
 	new Commands([]),
 	new Shortcuts([]),
@@ -76,16 +106,14 @@ const manager = new Manager(new Keys([]),
 		},
 	},
 )
-const mouseenter = () => {
+const mouseenter = (): void => {
 	if (manager.checkStateOnAllEvents) {
 		manager.safeSet("checkStateOnAllEvents", false)
-		manager.enabled = false
 	}
 }
-const mouseleave = () => {
+const mouseleave = (): void => {
 	if (!manager.checkStateOnAllEvents) {
 		manager.set("checkStateOnAllEvents", true)
-		manager.enabled = true
 	}
 }
 /*
@@ -100,15 +128,21 @@ While the manager could provide, or we could implement a shortcut hook that adds
 const keys: Ref<Key>[] = shallowReactive([])
 const commands: Ref<Command>[] = shallowReactive([])
 const shortcuts: Ref<Shortcut>[] = shallowReactive([])
+const contexts = ref<Map<string, boolean>>(new Map())
 // #region Keys
 
 /**
  * Manage the adding and removing of entries as shallowRefs from a reactive array and add/remove any hooks to the entries automatically.
  */
-const manageHooks = <T extends Key | Command | Shortcut>(manager: Manager, type: "keys" | "commands" | "shortcuts", reactiveArray: Ref<T>[], hooks: Record<string, any>): void => {
-	; (manager[type] as any).addHook("add", (_self: any, _entries: any, entry: T) => {
+const manageHooks = <T extends Key | Command | Shortcut>(
+	manager: Manager,
+	type: "keys" | "commands" | "shortcuts",
+	reactiveArray: Ref<T>[],
+	hooks: Record<string, any>,
+): void => {
+	 (manager[type] as any).addHook("add", (_self: any, _entries: any, entry: T) => {
 		const isToggle = type === "keys" && (entry as any).is.toggle
-		for (let key of objectKeys(hooks)) {
+		for (const key of objectKeys(hooks)) {
 			(entry as any).addHook(key, hooks[key])
 			if (isToggle) {
 				(entry as any).on.addHook(key, hooks[key])
@@ -119,29 +153,36 @@ const manageHooks = <T extends Key | Command | Shortcut>(manager: Manager, type:
 			reactiveArray.push(shallowRef((entry as any).on))
 		}
 	})
-		; (manager[type] as any).addHook("remove", (_self: any, _entries: any, entry: T) => {
-			const isToggle = type === "keys" && (entry as any).is.toggle
-			for (let key of objectKeys(hooks)) {
-				(entry as any).removeHook(key, hooks[key])
-				if (isToggle) {
-					(entry as any).on.removeHook(key, hooks[key])
-				}
-			}
-			reactiveArray.splice(reactiveArray.findIndex(existing => existing.value === entry), 1)
+	; (manager[type] as any).addHook("remove", (_self: any, _entries: any, entry: T) => {
+		const isToggle = type === "keys" && (entry as any).is.toggle
+		for (const key of objectKeys(hooks)) {
+			(entry as any).removeHook(key, hooks[key])
 			if (isToggle) {
-				reactiveArray.splice(reactiveArray.findIndex(existing => existing.value === (entry as any).on), 1)
+				(entry as any).on.removeHook(key, hooks[key])
 			}
-		})
+		}
+		const index = reactiveArray
+			.findIndex(existing => existing.value === entry)
+		reactiveArray.splice(index, 1)
+
+		if (isToggle) {
+			const index = reactiveArray
+				.findIndex(existing => existing.value === (entry as any).on)
+			reactiveArray.splice(index, 1)
+		}
+	})
 }
 
 
 const keySet: Parameters<Key["addHook"]>[1] = (key, _value, _old, self) => {
 	triggerRef(keys[keys.findIndex(existing => existing.value.id === self.id)])
 	if (key === "label") {
-		for (const shortcut of shortcuts.filter(shortcut => shortcut.value.containsKey(self))) triggerRef(shortcut)
+		const filtered = shortcuts
+			.filter(shortcut => shortcut.value.containsKey(self))
+		for (const shortcut of filtered) triggerRef(shortcut)
 	}
 }
-manageHooks(manager, "keys", keys, { "set": keySet })
+manageHooks(manager, "keys", keys, { set: keySet })
 
 for (const raw of createLayout("ansi")) {
 	manager.keys.add(Key.create(raw))
@@ -155,7 +196,9 @@ manager.keys.recalculateLayout()
 const commandSet: Parameters<Command["addHook"]>[1] = (key, _value, _old, self) => {
 	triggerRef(commands[commands.findIndex(existing => existing.value === self)])
 	if (key === "name") {
-		for (const shortcut of shortcuts.filter(shortcut => shortcut.value.command === self)) triggerRef(shortcut)
+		const filtered = shortcuts
+			.filter(shortcut => shortcut.value.command === self)
+		for (const shortcut of filtered) triggerRef(shortcut)
 	}
 }
 manageHooks(manager, "commands", commands, { set: commandSet })
@@ -165,12 +208,12 @@ const commandToRemove = ref("")
 
 const triggerState = ref(false)
 const defaultCommandExec = () => {
-	console.log("Test");
+	console.log("Test")
 
 	triggerState.value = true
 	setTimeout(() => {
 		triggerState.value = false
-	}, 500);
+	}, 500)
 }
 const addCommand = (): void => {
 	const name = commandToAdd.value
@@ -182,7 +225,12 @@ const addCommand = (): void => {
 		commandToAdd.value = ""
 		manager.commands.add(command)
 	} else {
-		notificationHandler.notify({ message: canAdd.error.message, code: canAdd.error instanceof KnownError ? canAdd.error.code : "Unknown" })
+		notificationHandler.notify({
+			message: canAdd.error.message,
+			code: canAdd.error instanceof KnownError
+				? canAdd.error.code
+				: "Unknown",
+		})
 	}
 }
 const removeCommand = (): void => {
@@ -194,14 +242,20 @@ const removeCommand = (): void => {
 		commandToAdd.value = ""
 		manager.commands.remove(command)
 	} else {
-		notificationHandler.notify({ message: canRemove.error.message, code: canRemove.error instanceof KnownError ? canRemove.error.code : "Unknown" })
+		notificationHandler.notify({
+			message: canRemove.error.message,
+			code: canRemove.error instanceof KnownError
+				? canRemove.error.code
+				: "Unknown",
+		})
 	}
 }
 
 // #endregion
 // #region Shortcuts
 
-const shortcutSet: Parameters<Shortcut["addHook"]>[1] = (_shortcut, _value, _old, self) => {
+const shortcutSet: Parameters<Shortcut["addHook"]>[1] =
+(_shortcut, _value, _old, self) => {
 	triggerRef(shortcuts[shortcuts.findIndex(existing => existing.value === self)])
 }
 manageHooks(manager, "shortcuts", shortcuts, { set: shortcutSet })
@@ -209,19 +263,29 @@ manageHooks(manager, "shortcuts", shortcuts, { set: shortcutSet })
 
 
 const k = manager.keys.entries
-
+const K = {
+	ctrl: k.VirtualControlLeft,
+	alt: k.VirtualAltLeft,
+	shift: k.VirtualShiftLeft,
+}
+//
 manager.commands.add(new Command("Test", { execute: defaultCommandExec }))
 manager.commands.add(new Command("Test2", { execute: defaultCommandExec }))
 manager.commands.add(new Command("Test3", { execute: defaultCommandExec }))
 manager.commands.add(new Command("Test4 Very Long Name", { execute: defaultCommandExec }))
+manager.commands.add(new Command("Ctrl+A", { execute: defaultCommandExec }))
 manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test }))
 manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test2 }))
 manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test3 }))
 manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries["Test4 Very Long Name"] }))
+manager.shortcuts.add(new Shortcut([[K.ctrl, k.KeyA]], { command: manager.commands.entries.Test }))
+manager.shortcuts.add(new Shortcut([[k.KeyB], [K.ctrl, k.KeyA]], { command: manager.commands.entries.Test }))
+
+manager.shortcuts.add(new Shortcut([[k.KeyC], [K.ctrl, k.KeyA]], { command: manager.commands.entries.Test }))
 
 const eventListener: ManagerListener = ({ event }) => {
 	if (
-		(manager.isRecording && !(event instanceof MouseEvent)) //||
+		(manager.isRecording && !(event instanceof MouseEvent)) // ||
 		// (
 		// 	!manager.isRecording &&
 		// 	// (
@@ -238,7 +302,7 @@ const eventListener: ManagerListener = ({ event }) => {
 // #endregion
 
 onMounted(() => {
-	castType<Ref<HTMLElement>>(keyboard)
+	castType<Ref<HTMLElement>>(KKeyboard)
 	manager.attach(document)
 	manager.addEventListener(eventListener)
 })
@@ -248,30 +312,9 @@ onUnmounted(() => {
 })
 
 
-
 </script>
-
-<!-- <style lang="scss"> -->
-<!-- * { -->
-<!-- 	box-sizing: border-box; -->
-<!-- } -->
-<!---->
-<!-- body { -->
-<!-- 	font-family: Avenir, Helvetica, Arial, sans-serif; -->
-<!-- 	-webkit-font-smoothing: antialiased; -->
-<!-- 	-moz-osx-font-smoothing: grayscale; -->
-<!-- 	margin: 0; -->
-<!-- 	font-size: 1.1rem; -->
-<!-- } -->
-<!---->
-<!-- #root { -->
-<!-- 	overflow: auto-scroll; -->
-<!-- 	min-height: 100vh; -->
-<!-- 	margin: 0; -->
-<!-- 	display: flex; -->
-<!-- 	// @include flex-col(nowrap); -->
-<!-- } -->
-<!---->
-<!-- // #test-area { -->
-<!-- // } -->
-<!-- </style> -->
+<style>
+body {
+	overscroll-behavior: none;
+}
+</style>

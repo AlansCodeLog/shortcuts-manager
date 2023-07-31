@@ -9,11 +9,13 @@ module.exports = {
 		"coverage",
 		"dist",
 		"docs",
-		"demo",
-		"*.html"
+		"*.html",
+		"demo/src/main.d.ts", // whyyyy
 	],
+	parserOptions: {
+		project: "./tsconfig.json"
+	},
 	rules: {
-		// "no-restricted-imports": "off"
 		// "@typescript-eslint/non-nullable-type-assertion-style":"off"
 	},
 	settings: {

@@ -1,5 +1,5 @@
 import { Ok, Result } from "@alanscodelog/utils"
-import type { BaseHook, BaseHookType } from "types/index.js"
+import type { BaseHook, BaseHookType } from "../types/index.js"
 
 import { Hookable } from "./Hookable.js"
 

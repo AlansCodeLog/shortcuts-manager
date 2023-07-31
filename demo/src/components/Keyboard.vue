@@ -1,56 +1,235 @@
 <template>
-<div>
-</div>
-	<div :class="classes" :style="`height:${height}px; width:100%;`" ref="keyboard" @mousedown="mousedownHandler" @touchstart.disablePassive="mousedownHandler">
-		<div class="keyboard-width">
-			<template v-for="key of displayedKeys" :key="key">
-				<div :class="['key-container', ...key.value.classes, key.value.pressed || key.value.on?.pressed ? 'pressed' : '']"
-					:style="`
-						width:${key.value.width * keyW}px;
-						height:${key.value.height * keyW}px;
-						top:${key.value.y * keyW}px;
-						left:${key.value.x * keyW}px;
-					`"
-					@click="toggleKey(key.value)"
-					@mouseenter="openKey(key.value.id)"
-					@mouseleave="closeKey()"
-					:keyId="key.value.id"
+<!--
+This is a container to allow styling.
+This should not have any overscroll hidden or it will hide the scrolling indicators which are allowed to go slightly outside the div (hence the margins set) for easier draggin.
+All css variables are set here for maximum flexibility.
+-->
+
+<div :class="twMerge(`
+		m-[var(--scrollMargin)]
+		container-styles
+		relative
+		border
+		border-neutral-500
+		rounded
+		after:absolute
+		after:border-transparent
+		after:rounded
+		after:pointer-events-none
+		after:inset-[-2px]
+		after:border-4
+	`,
+	/* after:inset-[calc(-1*var(--outerScrollMargin))]
+		after:[border-width:var(--scrollBorder)] */
+	isDragging && ` border-red-500 `,
+	scrollIndicator.right && `after:border-r-accent-500/60`,
+	scrollIndicator.down && `after:border-b-accent-500/60`,
+	scrollIndicator.left && `after:border-l-accent-500/60`,
+	scrollIndicator.up && `after:border-t-accent-500/60`,
+	)"
+	:style="`
+		--keyW: ${keyW};
+		--padding: calc(var(--keyW)*0.05px);
+		--shadow: calc(var(--padding) - 1px);
+		--fontSize: calc(var(--keyW)*0.25px);
+		--scrollMargin: ${scrollMargin}px;
+		--outerScrollMargin: ${outerScrollMargin}px;
+		--scrollBorder: ${scrollMargin + outerScrollMargin}px;
+		--height:${height}px;
+	`"
+>
+	<!--
+	This is a container to allow scrolling.
+	It should not have any margins or borders since the drag calculations do not include them.
+	It can allow any overscroll and be set to any size.
+	-->
+	<div :class="twMerge(`
+		container-scroll
+		overscroll-contain
+		overflow-scroll
+		scrollbar-hidden
+		text-[max(0.7rem,_var(--fontSize))]
+		relative
+		`)"
+		ref="containerEl"
+	>
+		<!--
+		This is the container that is hooked up to the manager which sets it's height (using the var set in the upper most container).
+		It can set a min width to force it's parent to scroll.
+		-->
+		<div :class="twMerge( `
+		container-keyboard-size
+		min-w-[1200px]
+		h-[var(--height)]
+	` )"
+			ref="keyboardEl"
+		>
+			<div
+				:class="twMerge(
+					keyClass,
+					`
+					absolute
+					break-all
+					p-[var(--padding)]
+				`,
+					(key.value.pressed || key.value.on?.pressed) && `
+					pressed
+				`,
+					...key.value.classes,
+				)"
+				:style="`
+				width:${key.value.width * keyW}px;
+				height:${key.value.height * keyW}px;
+				top:${key.value.y * keyW}px;
+				left:${key.value.x * keyW}px;
+			`"
+				:key-id="key.value.id"
+				v-for="key of displayedKeys"
+				:key="key.value.id"
+				@click="toggleKey(key.value)"
+				@mouseenter="openKey(key.value.id)"
+				@mouseleave="closeKey()"
+			>
+				<div :id="'key-'+key.value.id"
+					:class="twMerge(`
+						key
+						no-touch-action
+						border
+						border-neutral-500
+						h-full
+						whitespace-pre
+						shadow-[0_var(--shadow)_var(--shadow)_rgb(0_0_0/50%)]
+						flex flex-col
+						rounded-[var(--padding)]
+						relative
+						bg-bg
+					`,
+						key.value.pressed && `
+						border-accent-600
+						bg-neutral-300
+						before:bg-neutral-300
+					`,
+						key.value.on?.pressed && `border-red-600`,
+						key.value.is.modifier &&
+							shortcutsList[key.value.id]?.bases !== undefined && `
+							before:border-[3px]
+							before:inset-[-3px]
+							before:absolute
+							before:border-neutral-300
+							before:rounded
+							before:z-[-1]
+						`
+
+					)"
+					:title="key.value.label"
 				>
-					<div class="key" :title="key.value.id">
-						<div class="label">
+					<div :class="twMerge(`
+						label
+						px-1
+						z-1
+						w-full
+						flex
+						justify-between
+					`)"
+					>
+						<div class="truncate">
 							{{ key.value.label }}
-							<!-- {{key.value.pressed ? "T":"F"}}
-							{{key.value.on?.pressed ? "T":"F"}} -->
 						</div>
-						<div :class="['shortcuts', shortcutsList[key.value.id].length > 0 && key.value.id === openedKey ? 'hovered' : '']">
-							<div
-								class="shortcut"
-								v-for="shortcut, i in shortcutsList[key.value.id]"
-								:shortcutIndex="i"
-							>
+						<div
+
+							v-if="!key.value.is.modifier && shortcutsList[key.value.id]?.bases !== undefined"
+						>
+							<fa class="block" icon="fa link"/>
+						</div>
+					</div>
+					<!-- The padding needs to be on the shortcuts container and not the parent so that on hover we can still have the background with padding. -->
+					<div :class="twMerge(`
+							shortcuts
+							truncate
+							shrink-1
+							px-1
+							ml-[-1px]
+							mt-[-1px]
+							w-full
+							flex
+							flex-col
+							overflow-hidden
+							z-10
+						`,
+						canOpen[key.value.id] && `
+							hovered
+							[overflow:unset]
+							w-[min-content]
+							rounded
+							bg-bg
+							border
+							border-neutral-500
+						`,
+						/* Small indicator there are more shortcuts */
+						!canOpen[key.value.id] &&
+							(shortcutsList[key.value.id]?.shortcuts?.length ?? 0) > 1 && `
+							after:border-b-2
+							after:border-b-neutral-300
+							after:content-['...']
+							after:translate-y-[-50%]
+							after:text-accent-600
+						`,
+						
+					)"
+					>
+						<div
+							:class="twMerge(`
+								shortcut
+							`,
+								!canOpen[key.value.id] && `
+								[&:not(:first-of-type)]:hidden
+							`,
+							)
+
+							"
+							v-for="shortcut, i in shortcutsList[key.value.id]?.shortcuts"
+							:key="shortcut.toString()"
+						>
 							{{ shortcut.value?.command?.name ?? "(None)" }}
-							</div>
 						</div>
 					</div>
 				</div>
-			</template>
-		</div>
-		<div
-			v-if="candidateShortcut && isDragging"
-			class="shortcut shortcut-dragging"
-			:style="`left:${coords.x}px; top:${coords.y}px;`"
-		>
-			{{ candidateShortcut?.command?.name ?? "(None)" }}
+			</div>
 		</div>
 	</div>
+	<div>
+		{{ manager.stringifier.stringify(m.chain) }}
+		<div v-for="shortcut in pressableShortcuts" :key="shortcut.value.toString()">
+			{{ shortcut.value.toString() }}
+		</div>
+		---
+		<div v-for="shortcut in chainBases" :key="shortcut.value.toString()">
+			{{ shortcut.value.toString() }}
+		</div>
+	</div>
+	<lib-debug>{{ shortcutsList }}</lib-debug>
+<!-- 	</div> -->
+<!-- 	<div -->
+<!-- 		v-if="candidateShortcut && isDragging" -->
+<!-- 		class="shortcut shortcut-dragging" -->
+<!-- 		:style="`left:${coords.x}px; top:${coords.y}px;`" -->
+<!-- 	> -->
+<!-- 		{{ candidateShortcut?.command?.name ?? "(None)" }} -->
+</div>
 </template>
 
 <script setup lang="ts">
-import { Key, Keys, Manager, Shortcut } from "shortcuts-manager/classes";
-import { isToggleKey, isToggleRootKey } from "shortcuts-manager/helpers";
-import { castType, last } from "@alanscodelog/utils";
-import { computed, onMounted, onUnmounted, reactive, type Ref, ref } from "vue";
+import { castType, keys, last } from "@alanscodelog/utils"
+import { twMerge } from "tailwind-merge"
+import { computed, onBeforeUnmount, onMounted, onUnmounted, reactive, type Ref, ref } from "vue"
 
+import { Emulator, type Key, type Keys, type Manager, type Shortcut } from "shortcuts-manager/classes/index.js"
+import { chordContainsKey, isToggleKey, isToggleRootKey, removeKeys } from "shortcuts-manager/helpers/index.js"
+
+import { useScrollNearContainerEdges } from "../composables/useScrollNearContainerEdges.js"
+
+
+const keyClass = "container-key"
 
 const props = defineProps<{
 	keys: Ref<Key<any>>[]
@@ -58,17 +237,11 @@ const props = defineProps<{
 	manager: Manager
 }>()
 
-const classes = computed(() => {
-	return {
-		keyboard: true,
-		isDragging: isDragging.value,
-	}
-})
-const displayedKeys = computed(() => {
-	return props.keys.filter(key => !isToggleKey(key.value) || isToggleRootKey(key.value))
-})
 
-const keyboard = ref<HTMLElement | null>(null)
+const displayedKeys = computed(() => props.keys.filter(key => !isToggleKey(key.value) || isToggleRootKey(key.value)))
+
+const keyboardEl = ref<HTMLElement | null>(null)
+const containerEl = ref<HTMLElement | null>(null)
 
 const m = reactive({
 	chain: props.manager.chain,
@@ -76,17 +249,10 @@ const m = reactive({
 	columns: props.manager.keys.layout.columns,
 })
 
-const width = ref(0)
-const keyW = computed(() => {
-	const val = width.value / m.columns
-	return Number.isNaN(val) ? 1 : val
-})
-const ratio = computed(() => m.columns / m.rows)
-const height = computed(() => width.value / ratio.value)
-
 props.manager.addHook("set", (prop: any, val: any) => {
 	if (prop === "chain") {
-		m.chain = props.manager.chain
+		console.log(val)
+		m.chain = val
 	}
 })
 props.manager.keys.addHook("set", (prop: string, val: any) => {
@@ -97,50 +263,14 @@ props.manager.keys.addHook("set", (prop: string, val: any) => {
 	}
 })
 
-
-const shortcutsList = computed(() => {
-	return Object.fromEntries(props.keys.map(key => {
-		const psuedoChain = [...props.manager.chain]
-		const lastChord = [...last(psuedoChain) ?? []].filter(key => !key.is.modifier)
-		if (!lastChord.includes(key.value)) lastChord.push(key.value)
-		psuedoChain[psuedoChain.length] = lastChord
-
-		const filtered = props.shortcuts.filter(_shortcut => {
-			const shortcut = _shortcut.value
-			return shortcut.enabled &&
-				psuedoChain.length <= shortcut.chain.length &&
-				shortcut.equalsKeys(psuedoChain, psuedoChain.length) &&
-				shortcut.condition.eval(props.manager.context) &&
-				(shortcut.command === undefined || shortcut.command.condition.eval(props.manager.context))
-		})
-
-		return [key.value.id, filtered]
-	}))
+const width = ref(0)
+const keyW = computed(() => {
+	const val = width.value / m.columns
+	return Number.isNaN(val) ? 1 : val
 })
+const ratio = computed(() => m.columns / m.rows)
+const height = computed(() => width.value / ratio.value)
 
-const toggleKey = (key: Key) => {
-	if (key.is.modifier || key.is.toggle) {
-		if (key.is.toggle) {
-			key.toggleToggle()
-		} else {
-			key.set("pressed", !key.pressed)
-		}
-	}
-}
-const updateSize = (): void => {
-	castType<Ref<HTMLElement>>(keyboard)
-	width.value = keyboard.value.offsetWidth
-}
-let observer: ResizeObserver | undefined
-onMounted(() => {
-	castType<Ref<HTMLElement>>(keyboard)
-	observer = new ResizeObserver(updateSize)
-	// observer = new ResizeObserver(throttle(updateSize, 50))
-	observer.observe(keyboard.value)
-})
-onUnmounted(() => {
-	observer!.disconnect()
-})
 
 const openedKey = ref<string>()
 const candidateKey = ref<Key>()
@@ -148,16 +278,74 @@ const candidateShortcut = ref<Shortcut>()
 const isDragging = ref<boolean>()
 const canDrag = ref<boolean>()
 
-const pointerCoords = ref<{ x: number, y: number }>({ x: 0, y: 0 })
-const offsetCoords = ref<{ x: number, y: number }>({ x: 0, y: 0 })
-const coords = computed(() => {
-	return { x: pointerCoords.value.x - offsetCoords.value.x, y: pointerCoords.value.y - offsetCoords.value.y }
+
+const pressableShortcuts = computed(() => props.shortcuts.filter(({ value: shortcut }) =>
+	shortcut.canExecuteIn(props.manager.context, { allowEmptyCommand: true }) &&
+	shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: true })),
+)
+
+const chainBases = computed(() => props.shortcuts.filter(({ value: shortcut }) => shortcut.canExecuteIn(props.manager.context, { allowEmptyCommand: true }) &&
+	shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: false }) &&
+	!shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: true })))
+
+
+const shortcutsList = computed(() => {
+	const obj: Record<string, {
+		bases?: Ref<Shortcut>[]
+		shortcuts?: Ref<Shortcut>[]
+	}> = {}
+	for (const { value: key } of props.keys) {
+		const index = m.chain.length === 0 ? 0 : m.chain.length - 1
+		
+		const bases = chainBases.value.filter(({ value: shortcut }: Ref<Shortcut>): boolean =>
+			chordContainsKey(shortcut.chain[index], key, { allowVariants: true }) &&
+			(key.is.modifier || removeKeys(shortcut.chain[index], m.chain[index] ?? [])[0] === key),
+			// (!m.chain[index] || !chordContainsKey(m.chain[index], key, { allowVariants: true }))
+		)
+
+		if (bases.length > 0) {
+			obj[key.id] ??= {}
+			obj[key.id].bases = bases
+		}
+		const shortcuts = pressableShortcuts.value.filter(({ value: shortcut }: Ref<Shortcut>): boolean =>
+			chordContainsKey(shortcut.chain[index], key, { allowVariants: true }) &&
+			(!m.chain[index] || !chordContainsKey(m.chain[index], key, { allowVariants: true })))
+		if (shortcuts.length > 0) {
+			obj[key.id] ??= {}
+			obj[key.id].shortcuts = shortcuts
+		}
+	}
+	
+	return obj
 })
 
-const setCoords = (e: MouseEvent | TouchEvent): void => {
-	const isMouseEvent = e instanceof MouseEvent
-	pointerCoords.value.x = (isMouseEvent ? e.pageX : e.touches[0].pageX) - window.scrollX
-	pointerCoords.value.y = (isMouseEvent ? e.pageY : e.touches[0].pageY) - window.scrollY
+const canOpen = computed(() => {
+	const obj: Record<string, boolean> = {}
+	for (const { value: key } of props.keys) {
+		obj[key.id] = (shortcutsList.value[key.id]?.shortcuts?.length ?? 0) > 0 && openedKey.value === key.id
+	}
+	return obj
+})
+const emulator = new Emulator()
+// emulator.mouseenter()
+
+const toggleKey = (key: Key): void => {
+	if (!key.pressed) {
+		key.set("checkStateOnAllEvents", false)
+	} else {
+		key.set("checkStateOnAllEvents", true)
+	}
+	props.manager.toggle(key)
+}
+
+
+const pointerCoords = reactive<{ x: number, y: number }>({ x: 0, y: 0 })
+const offsetCoords = reactive<{ x: number, y: number }>({ x: 0, y: 0 })
+const coords = computed(() => ({ x: pointerCoords.x - offsetCoords.x, y: pointerCoords.y - offsetCoords.y }))
+
+const setCoords = (e: PointerEvent): void => {
+	pointerCoords.x = e.clientX
+	pointerCoords.y = e.clientY
 }
 
 const getKeyByElIdProp = (el: HTMLElement): Key | undefined => {
@@ -170,11 +358,11 @@ const getShortcutByElIndexProp = (el: HTMLElement, keyId: string): [shortcut: Sh
 	i = typeof i === "string" ? parseInt(i) : i
 	return [i !== null && i > -1 ? shortcutsList.value[keyId][i].value : undefined, i ?? undefined] as [Shortcut, number] | [undefined, undefined]
 }
-const setOffset = (e: MouseEvent | TouchEvent, el: HTMLElement): void => {
+const setOffset = (e: PointerEvent, el: HTMLElement): void => {
 	setCoords(e)
 	const clientRect = el.getBoundingClientRect()
-	offsetCoords.value.x = pointerCoords.value.x - clientRect.x
-	offsetCoords.value.y = pointerCoords.value.y - clientRect.y
+	offsetCoords.x = pointerCoords.x - clientRect.x
+	offsetCoords.y = pointerCoords.y - clientRect.y
 }
 const openKey = (id?: string): void => {
 	const keyId = id ?? candidateKey.value?.id
@@ -193,10 +381,11 @@ const draggingEnd = (): void => {
 	closeKey()
 }
 
-const mousedownHandler = (e: MouseEvent | TouchEvent): void => {
+const onDragStart = (e: PointerEvent): void => {
 	if (e.target instanceof HTMLElement) {
+		e.target.releasePointerCapture(e.pointerId)
 		e.preventDefault()
-		const keyEl = e.target.closest(".key-container")
+		const keyEl = e.target.closest(`.${keyClass}`)
 		const shortcutEl = e.target.closest(".shortcut")
 		if (!(keyEl instanceof HTMLElement)) return
 		const key = getKeyByElIdProp(keyEl)
@@ -210,32 +399,73 @@ const mousedownHandler = (e: MouseEvent | TouchEvent): void => {
 			candidateShortcut.value = shortcut
 			setOffset(e, shortcutEl)
 		}
-		if (isDragging.value) return
 
-		document.addEventListener("mouseup", mouseupHandler)
-		document.addEventListener("touchend", mouseupHandler)
-		document.addEventListener("mousemove", mousemoveHandler, { passive: false })
-		document.addEventListener("touchmove", mousemoveHandler, { passive: false })
+		window.addEventListener("pointermove", onDragMove)
+		window.addEventListener("pointerup", onDragEnd)
 	}
 }
-const mousemoveHandler = (e: MouseEvent | TouchEvent): void => {
+const scrollMargin = 20
+const outerScrollMargin = 15
+const {
+	 scrollEdges,
+	isScrolling,
+	scrollIndicator,
+	endScroll,
+} = useScrollNearContainerEdges({
+	containerEl,
+	scrollMargin,
+	outerScrollMargin,
+})
+
+const onDragMove = (e: PointerEvent): void => {
+	scrollEdges(e.clientX, e.clientY)
+	if (isScrolling.value) {
+		e.preventDefault()
+		return
+	}
+
+	// console.log(coords.y, rightLimit)
 	if (canDrag.value) {
-		isDragging.value = true
 		setCoords(e)
+		isDragging.value = true
 		e.preventDefault()
 	}
 }
-const mouseupHandler = (e: MouseEvent | TouchEvent): void => {
+
+const onDragEnd = (_e: PointerEvent): void => {
+	endScroll()
 	if (!isDragging.value) {
 		openKey()
 	} else {
 		draggingEnd()
 	}
-	document.removeEventListener("mouseup", mouseupHandler)
-	document.removeEventListener("touchend", mouseupHandler)
-	document.removeEventListener("mousemove", mousemoveHandler)
-	document.removeEventListener("touchmove", mousemoveHandler)
+	window.removeEventListener("pointermove", onDragMove)
+	window.removeEventListener("pointerup", onDragEnd)
 }
+
+
+const updateSize = (): void => {
+	castType<Ref<HTMLElement>>(keyboardEl.value)
+	width.value = Math.max(keyboardEl.value.offsetWidth, 1000)
+}
+let observer: ResizeObserver | undefined
+onMounted(() => {
+	castType<Ref<HTMLElement>>(keyboardEl.value)
+	observer = new ResizeObserver(updateSize)
+	// observer = new ResizeObserver(throttle(updateSize, 50))
+	observer.observe(keyboardEl.value)
+	keyboardEl.value.addEventListener("pointerdown", onDragStart, { passive: false })
+})
+
+
+onUnmounted(() => {
+	castType<Ref<HTMLElement>>(keyboardEl.value)
+	observer!.disconnect()
+	keyboardEl.value!.removeEventListener("pointerdown", onDragStart)
+	window.removeEventListener("pointermove", onDragMove)
+	window.removeEventListener("pointerup", onDragEnd)
+})
+
 </script>
 
 <!-- <style scoped lang="scss"> -->
@@ -261,7 +491,7 @@ const mouseupHandler = (e: MouseEvent | TouchEvent): void => {
 <!-- 	touch-action:manipulation; -->
 <!-- } -->
 <!---->
-<!-- .key-container { -->
+<!-- .key-connertainer { -->
 <!-- 	position: absolute; -->
 <!-- 	word-break: break-all; -->
 <!-- 	padding: var(--padding); -->

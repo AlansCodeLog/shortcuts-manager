@@ -1,4 +1,4 @@
-import type { Manager } from "classes/index.js"
+import type { Manager } from "../classes/index.js"
 
 
 /**

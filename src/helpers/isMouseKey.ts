@@ -1,4 +1,4 @@
-import type { Key } from "classes/index.js"
+import type { Key } from "../classes/index.js"
 
 /**
  * Returns whether a key is a mouse key (id = 0-4).

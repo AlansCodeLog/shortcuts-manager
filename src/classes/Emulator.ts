@@ -1,4 +1,4 @@
-import type { AnyFunction } from "@alanscodelog/utils"
+import { type AnyFunction, pretty } from "@alanscodelog/utils"
 
 import { EmulatedEvent } from "./EmulatedEvent.js"
 import type { Keys } from "./Keys.js"

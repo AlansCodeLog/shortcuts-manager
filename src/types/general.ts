@@ -1,4 +1,4 @@
-import type { Command, Commands, Condition, Key, Keys, Shortcut, Shortcuts } from "classes/index.js"
+import type { Command, Commands, Condition, Key, Keys, Shortcut, Shortcuts } from "../classes/index.js"
 
 
 export type Collections = Commands | Shortcuts | Keys

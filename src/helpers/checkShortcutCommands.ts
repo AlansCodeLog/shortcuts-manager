@@ -1,6 +1,6 @@
 import { crop, Err, Ok, type Result } from "@alanscodelog/utils"
-import type { Commands, Shortcut, Stringifier } from "classes/index.js"
-import { ERROR } from "types/index.js"
+import type { Commands, Shortcut, Stringifier } from "../classes/index.js"
+import { ERROR } from "../types/index.js"
 
 import { KnownError } from "./KnownError.js"
 

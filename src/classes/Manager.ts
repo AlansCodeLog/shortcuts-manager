@@ -1,18 +1,5 @@
 /* eslint-disable max-lines */
 import { castType, crop, Err, indent, last, multisplice, Ok, pretty, Result, setReadOnly, unreachable } from "@alanscodelog/utils"
-import { HookableBase } from "bases/HookableBase.js"
-import { checkManagerShortcuts } from "helpers/checkManagerShortcuts.js"
-import { checkShortcutCommands } from "helpers/checkShortcutCommands.js"
-import { checkShortcutKeys } from "helpers/checkShortcutKeys.js"
-import { defaultManagerCallback } from "helpers/defaultManagerCallback.js"
-import { isModifierKey } from "helpers/isModifierKey.js"
-import { isToggleRootKey } from "helpers/isToggleRootKey.js"
-import { isTriggerKey } from "helpers/isTriggerKey.js"
-import { isValidChain } from "helpers/isValidChain.js"
-import { KnownError } from "helpers/KnownError.js"
-import { mapKeys } from "helpers/mapKeys.js"
-import { ERROR, TYPE_ERROR } from "types/enums.js"
-import type { AnyInputEvent, AttachTarget, BaseHook, CollectionHook, CommandsHooks, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "types/index.js"
 
 import type { Command } from "./Command.js"
 import type { Commands } from "./Commands.js"
@@ -24,6 +11,20 @@ import { defaultSorter, type KeysSorter } from "./KeysSorter.js"
 import type { Shortcut } from "./Shortcut.js"
 import type { Shortcuts } from "./Shortcuts.js"
 import { defaultStringifier, type Stringifier } from "./Stringifier.js"
+
+import { HookableBase } from "../bases/HookableBase.js"
+import { checkManagerShortcuts } from "../helpers/checkManagerShortcuts.js"
+import { checkShortcutCommands } from "../helpers/checkShortcutCommands.js"
+import { checkShortcutKeys } from "../helpers/checkShortcutKeys.js"
+import { defaultManagerCallback } from "../helpers/defaultManagerCallback.js"
+import { isModifierKey } from "../helpers/isModifierKey.js"
+import { isToggleRootKey } from "../helpers/isToggleRootKey.js"
+import { isTriggerKey } from "../helpers/isTriggerKey.js"
+import { isValidChain } from "../helpers/isValidChain.js"
+import { KnownError } from "../helpers/KnownError.js"
+import { mapKeys } from "../helpers/mapKeys.js"
+import { ERROR, TYPE_ERROR } from "../types/enums.js"
+import type { AnyInputEvent, AttachTarget, BaseHook, CollectionHook, CommandsHooks, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "../types/index.js"
 
 
 const defaultLabelFilter = (): boolean => true
@@ -503,12 +504,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	inChain(): boolean {
 		if (this.isAwaitingKeyup) return false
 		const shortcuts = this.shortcuts.query(shortcut =>
-			shortcut.enabled &&
-			shortcut.command?.execute &&
-			this.chain.length < shortcut.chain.length &&
-			shortcut.equalsKeys(this.chain, this.chain.length) &&
-			shortcut.condition.eval(this.context) &&
-			(shortcut.command === undefined || shortcut.command.condition.eval(this.context))
+			(shortcut.canExecuteIn(this.context, { allowEmptyCommand: true }) &&
+				this.chain.length < shortcut.chain.length &&
+				shortcut.equalsKeys(this.chain, this.chain.length, { allowVariants: true }))
 		)
 		if (!shortcuts) return false
 		return shortcuts.length > 0
@@ -574,8 +572,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * Only shortcuts with chains longer than one chord would reasonably require the user to release all keys. Suppose the bold/italic shortcuts were `Ctrl+X Ctrl+B/I`. It does not make much sense in that case to allow the `Ctrl` only shortcut to still trigger after.
 	 *
+	 * You could `set("chain", [[ctrl,b/i]])` for each and still allow `Ctrl`
 	 */
-	// wut what did i mean * You could `set("chain", [[ctrl,b/i]])` for each and still allow `Ctrl`
 	smartClearChain(): void {
 		if (this.chain.length > 1) this.clearChain()
 	}
@@ -593,6 +591,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this._nextIsChord = true
 		this._untrigger = false
 		setReadOnly(this, "isAwaitingKeyup", false)
+
+		console.log("setting1", false)
 		for (const key of Object.values(this.keys.entries)) {
 			if ((key.is.modifier === "native" || key.is.toggle === "native") && ignoreNative) return
 			key.set("pressed", false)
@@ -632,25 +632,23 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 		} else if (res.value) {
 			this._untrigger = res.value
-			if (!this.isRecording) {
-				res.value.command.execute?.({
-					isKeydown: true,
-					command: res.value.command,
-					shortcut: res.value,
-					manager: this,
-					event: e,
-				})
-			}
+			res.value.command.execute?.({ isKeydown: true, command: res.value.command, shortcut: res.value, manager: this, event: e })
 		}
-
-		if (this.lastChord()?.find(key => isTriggerKey(key))) {
+		const triggerKey = this.lastChord()?.find(key => isTriggerKey(key))
+		const nonTriggerKey = this.lastChord()!.find(key => !isTriggerKey(key))
+		console.log({ triggerKey: triggerKey?.toString(), nonTriggerKey: nonTriggerKey?.toString() })
+		if (triggerKey) {
 			if (this.inChain() || this.isRecording) {
 				this._nextIsChord = true
-				setReadOnly(this, "isAwaitingKeyup", true)
-			} else if (!this.isRecording && (res.isOk && !res.value) && this.chain.length > 1) {
-				const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
-				this.cb(error, this, e)
-			}
+				if (nonTriggerKey) {
+					setReadOnly(this, "isAwaitingKeyup", true)
+					console.log("setting2", true)
+				}
+			} else
+				if (!this.isRecording && !this.inChain() && (res.isOk && !res.value) && this.chain.length > 1) {
+					const error = new KnownError(ERROR.NO_MATCHING_SHORTCUT, "A chord containing a non-modifier key was pressed while in a chord chain, but no shortcut found to trigger.", { chain: this.chain })
+					this.cb(error, this, e)
+				}
 		}
 	}
 
@@ -667,11 +665,12 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		}
 	}
 
-	private _addToChain(keys: Key[], e: AnyInputEvent): void {
+	private _addToChain(keys: Key[], e?: AnyInputEvent): void {
 		if (keys.length === 0) return
 		// the chain was just cleared
 		// the user could have released only part of the keys then pressed others
 		// we should ignore all keypresses until they are all released
+		console.log(this.isAwaitingKeyup)
 		if (this.isAwaitingKeyup) return
 		if (this._nextIsChord) {
 			this._setChain([...this.chain, []])
@@ -683,18 +682,20 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			if (!lastChord.includes(key) && !this.isAwaitingKeyup) {
 				lastChord.push(key)
 				this._setChain([...this.chain.slice(0, length), this.sorter.sort(lastChord)])
+				console.log(this.stringifier.stringify(this.chain))
 				this._checkTrigger(e)
 			}
 		}
 	}
 
-	private _removeFromChain(keys: Key[], e: AnyInputEvent): void {
+	private _removeFromChain(keys: Key[], e?: AnyInputEvent): void {
 		if (keys.length === 0) return
-
+		console.log(this.isAwaitingKeyup)
 		if (this.isAwaitingKeyup) {
 			this._checkUntrigger(e)
 			if (this.pressedNonModifierKeys().length === 0) {
 				setReadOnly(this, "isAwaitingKeyup", false)
+				console.log("setting3", false)
 			}
 		} else {
 			if (this._nextIsChord) return
@@ -822,6 +823,42 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 
 	private _unknownKey(e: KeyboardEvent): void {
 		this.cb(new KnownError(ERROR.UNKNOWN_KEY_EVENT, `An unknown key (code: ${e.code} key:${e.key}) was pressed.`, { e }), this, e)
+	}
+
+	/**
+	 * The manager is not designed to react to setting a key's pressed state directly only to events to then set the key state.
+	 *
+	 * So this method is provided to allow a "virtual" press (i.e. by some method that is not a real key press such as directly clicking on a visual representation of the key).
+	 *
+	 * It takes care of changing the key press state, calling the manager hooks, and adding the key to the chain.
+	 */
+	press(key: Key): void {
+		const keys = [key]
+		for (const listener of this._listeners) listener({ keys, isKeydown: true })
+		this._setKeyState(keys, true)
+		this._addToChain(keys)
+	}
+
+	/**
+	 * See {@link Manager["press"]}
+	 */
+	release(key: Key): void {
+		const keys = [key]
+		for (const listener of this._listeners) listener({ keys, isKeydown: false })
+
+		this._setKeyState(keys, false)
+		this._removeFromChain(keys)
+	}
+
+	/**
+	 * See {@link Manager["press"]}
+	 */
+	toggle(key: Key): void {
+		if (key.pressed) {
+			this.release(key)
+		} else {
+			this.press(key)
+		}
 	}
 
 	private _keydown(e: KeyboardEvent): void {
@@ -990,9 +1027,12 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 			case "chain": {
 				const isEmpty = value.length === 0
+				console.log("bypassed", this._bypassChainSet)
 				if (!this._bypassChainSet) {
 					if (this.pressedNonModifierKeys().length > 0) {
 						setReadOnly(this, "isAwaitingKeyup", true)
+
+						console.log("setting4", true)
 					}
 					this._checkUntrigger()
 				}
@@ -1067,6 +1107,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 					this.commands.addHook("allowsRemove", this._boundCommandsAllowsRemoveHook)
 				}
 				break
+			
 
 			default:
 				(this as any)[key] = value
@@ -1191,5 +1232,23 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			commands: Object.values(generated.commands),
 			shortcuts: generated.shortcuts,
 		})
+	}
+
+	toString({ state, items }: { state?: boolean, items?: boolean } = {}): string {
+		const res = [
+			`Manager (${this.stringifier.stringify(this.chain)})`,
+		]
+		if (state) {
+			res.push(`	inChain: ${this.inChain()}`)
+			res.push(`	isAwaitingKeyup: ${this.isAwaitingKeyup}`)
+			res.push(`	pressedKeys: ${this.pressedKeys().map(key => key.toString()).join(", ")}`)
+			res.push(`	pressedModifierKeys: ${this.pressedModifierKeys().map(key => key.toString()).join(", ")}`)
+			res.push(`	pressedNonModifierKeys: ${this.pressedNonModifierKeys().map(key => key.toString()).join(", ")}`)
+		}
+		if (items) {
+			res.push(`	keys: ${Object.values(this.keys).map(key => key.toString()).join(", ")}`)
+			res.push(`	shortcuts:\n${indent(Object.values(this.shortcuts).map(shortcut => shortcut.toString()).join("\n"), 2, {})}`)
+		}
+		return res.join("\n")
 	}
 }

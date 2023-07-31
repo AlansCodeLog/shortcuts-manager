@@ -1,32 +1,23 @@
-import { run } from "@alanscodelog/utils/node"
-import postcss from "./postcss.config"
-import path from "path"
+// @ts-expect-error
 import vue from "@vitejs/plugin-vue"
-import type { PluginOption } from "vite"
+import path from "path"
 import { externalizeDeps } from "vite-plugin-externalize-deps"
 import tsconfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
 
-const typesPlugin = (): PluginOption => ({
-	name: "typesPlugin",
-	// eslint-disable-next-line no-console
-	writeBundle: async () => run(`npm run build:types`).promise.catch(e => { console.log(e.stdout); process.exit(1) }).then(() => undefined),
-})
+import postcss from "./postcss.config.js"
 
 // https://vitejs.dev/config/
 export default async ({ mode }: { mode: string }) => defineConfig({
 	plugins: [
 		// it isn't enough to just pass the deps list to rollup.external since it will not exclude subpath exports
 		externalizeDeps(),
-		// even if we don't use aliases, this is needed to get imports based on baseUrl working
 		tsconfigPaths(),
 		vue({
 			script: {
 				defineModel: true,
 			},
 		}),
-		// runs build:types script which takes care of generating types and fixing type aliases and baseUrl imports
-		typesPlugin(),
 	],
 	base: "/demo",
 	build: {
@@ -40,7 +31,7 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 	},
 	resolve: {
 		alias: [
-			{ find: "shortcuts-manager", replacement: path.resolve("../dist")},
+			{ find: "shortcuts-manager", replacement: path.resolve("../src") },
 		],
 	},
 	server: {

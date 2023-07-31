@@ -1,10 +1,10 @@
-import type { Key } from "classes/index.js"
+import type { Key } from "../classes/index.js"
 
 /**
- * Returns whether a shortcut's keys contains the given key.
+ * Returns whether the chain contains the given key according to {@link Key["equals"]}.
  */
-export function chainContainsKey(chain: Key[][], key: Key): boolean {
-	return chain
+export function chainContainsKey(chordOrChain: Key[][] | Key[], key: Key, opts: Parameters<Key["equals"]>[1] = {}): boolean {
+	return chordOrChain
 		.flat()
-		.find(existing => existing === key) !== undefined
+		.find(existing => existing.equals(key, opts)) !== undefined
 }

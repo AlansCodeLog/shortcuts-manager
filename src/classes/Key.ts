@@ -1,12 +1,13 @@
 import { castType, Err, Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
-import { HookableBase } from "bases/HookableBase.js"
-import { createInstance } from "helpers/createInstance.js"
-import { isToggleRootKey } from "helpers/isToggleRootKey.js"
-import { KnownError } from "helpers/KnownError.js"
-import { ERROR, type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } from "types/index.js"
 
 import type { Stringifier } from "./index.js"
 import { defaultStringifier } from "./Stringifier.js"
+
+import { HookableBase } from "../bases/HookableBase.js"
+import { createInstance } from "../helpers/createInstance.js"
+import { isToggleRootKey } from "../helpers/isToggleRootKey.js"
+import { KnownError } from "../helpers/KnownError.js"
+import { ERROR, type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } from "../types/index.js"
 
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
@@ -195,11 +196,20 @@ export class Key<
 	 * Returns whether the key passed is equal to this one.
 	 *
 	 * To return true, their ids must be equal.
+	 *
+	 * There is an `allowVariants` option that is true by default that allows the key to be equal if any of their variants match.
 	 */
-	equals(key: Key): key is Key {
-		return this === key || this.id === key.id
+	equals(key: Key, { allowVariants = true }: { allowVariants?: boolean } = {}): key is Key {
+		return this === key || this.id === key.id ||
+			(allowVariants &&
+				(
+					this.variants &&
+					key.variants &&
+					this.variants
+						.find((variant: string) => key.variants!.includes(variant)) !== undefined) === true
+			)
 	}
-
+	
 	get opts(): KeyOptions {
 		return pick(this, ["is", "x", "y", "width", "height", "stringifier", "label", "render", "classes", "checkStateOnAllEvents"])
 	}
@@ -217,5 +227,9 @@ export class Key<
 			id: this.id,
 			...opts,
 		}
+	}
+
+	toString(): string {
+		return this.stringifier.stringify(this)
 	}
 }

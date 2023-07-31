@@ -1,4 +1,4 @@
-import type { Key } from "classes/index.js"
+import type { Key } from "../classes/index.js"
 
 
 /**

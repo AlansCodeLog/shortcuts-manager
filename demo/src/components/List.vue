@@ -1,90 +1,92 @@
 <template>
-	<div id="list-component">
-		<lib-table>
-				<tr>
-					<td class="col-command">
-						<lib-input :border="false"
-							:model-value="newShortcut?.command?.name ?? ''"
-							@update:modelValue="updateNewShortcutCommand($event)"
-							:suggestions="existingCommandsList"
-							:restrict-to-suggestions="true"
-						>
-							<template #item="{ item }">
-								{{ item }}
-							</template>
-						</lib-input>
-					</td>
-					<td class="col-shortcut">
-						<lib-input
-							:border="false"
-							:recording="recordingIndex === -1 ? true : false"
-							:recorder="recordingIndex === -1 ? recorder : {}"
-							:recordingValue="recordingIndex === -1 ? recordingValue : ''"
-							:model-value="newShortcut ? props.manager.stringifier.stringify(newShortcut.chain) : ''"
-							@recorder:click="recorderClick($event, -1)"
-							@recorder:blur="recorderBlur($event, -1)"
-						/>
-					</td>
-					<td class="col-add-remove no-resize">
-						<lib-button
-							:disabled="newShortcutIsValid !== true"
-							:title="newShortcutIsValid === true ? 'Add Shortcut' : newShortcutIsValid"
-							@click="addShortcut()"
-						>
-							<fa icon="plus"></fa>
-						</lib-button>
-					</td>
-				</tr>
-			<!-- <thead> -->
-			<tr>
-				<th>
-					<div>Command</div>
-				</th>
-				<th>
-					<div>Shortcut</div>
-				</th>
-				<th>
-					<div></div>
-				</th>
-			</tr>
-			<!-- </thead> -->
-				<tr v-for="(shortcut, i) of shortcuts" :key="i">
-					<td>
-						<lib-input :border="false"
-							:model-value="shortcut.value.command?.name ?? ''"
-							@update:model-value="change('name', shortcut.value, $event)"
-						/>
-					</td>
-					<td>
-						<lib-input
-							:border="false"
-							:recording="recordingIndex === i ? true : false"
-							:recorder="recordingIndex === i ? recorder : {}"
-							:recordingValue="recordingIndex === i ? recordingValue : ''"
-							:model-value="shortcut.value.stringifier.stringify(shortcut.value.chain)"
-							@recorder:click="recorderClick($event, i)"
-							@recorder:blur="recorderBlur($event, i)"
-						/>
-					</td>
-					<td>
-						<lib-button
-							title="Remove Shortcut"
-							@click="removeShortcut(i)"
-						>
-							<fa icon="trash"></fa>
-						</lib-button>
-					</td>
-				</tr>
-		</lib-table>
-	</div>
+<div id="list-component">
+	<lib-table>
+		<tr>
+			<td class="col-command">
+				<lib-input :border="false"
+					:model-value="newShortcut?.command?.name ?? ''"
+					:suggestions="existingCommandsList"
+					:restrict-to-suggestions="true"
+					@update:model-value="updateNewShortcutCommand($event)"
+				>
+					<template #item="{ item }">
+						{{ item }}
+					</template>
+				</lib-input>
+			</td>
+			<td class="col-shortcut">
+				<lib-input
+					:border="false"
+					:recording="recordingIndex === -1 ? true : false"
+					:recorder="recordingIndex === -1 ? recorder : {}"
+					:recording-value="recordingIndex === -1 ? recordingValue : ''"
+					:model-value="newShortcut ? props.manager.stringifier.stringify(newShortcut.chain) : ''"
+					@recorder:click="recorderClick($event, -1)"
+					@recorder:blur="recorderBlur($event, -1)"
+				/>
+			</td>
+			<td class="col-add-remove no-resize">
+				<lib-button
+					:disabled="newShortcutIsValid !== true"
+					:title="newShortcutIsValid === true ? 'Add Shortcut' : newShortcutIsValid"
+					@click="addShortcut()"
+				>
+					<fa icon="plus"/>
+				</lib-button>
+			</td>
+		</tr>
+		<!-- <thead> -->
+		<tr>
+			<th>
+				<div>Command</div>
+			</th>
+			<th>
+				<div>Shortcut</div>
+			</th>
+			<th>
+				<div/>
+			</th>
+		</tr>
+		<!-- </thead> -->
+		<tr v-for="(shortcut, i) of shortcuts" :key="i">
+			<td>
+				<lib-input :border="false"
+					:model-value="shortcut.value.command?.name ?? ''"
+					@update:model-value="change('name', shortcut.value, $event)"
+				/>
+			</td>
+			<td>
+				<lib-input
+					:border="false"
+					:recording="recordingIndex === i ? true : false"
+					:recorder="recordingIndex === i ? recorder : {}"
+					:recording-value="recordingIndex === i ? recordingValue : ''"
+					:model-value="shortcut.value.stringifier.stringify(shortcut.value.chain)"
+					@recorder:click="recorderClick($event, i)"
+					@recorder:blur="recorderBlur($event, i)"
+				/>
+			</td>
+			<td>
+				<lib-button
+					title="Remove Shortcut"
+					@click="removeShortcut(i)"
+				>
+					<fa icon="trash"/>
+				</lib-button>
+			</td>
+		</tr>
+	</lib-table>
+</div>
 </template>
 
 <script setup lang="ts">
-import { unreachable } from "@alanscodelog/utils";
-import { notificationHandlerSymbol } from "../injectionSymbols.js";
-import { Command, Key, Manager, Shortcut } from "shortcuts-manager/classes";
-import { KnownError } from "shortcuts-manager/helpers";
-import { computed, inject, ref, type Ref } from "vue";
+import { unreachable } from "@alanscodelog/utils"
+import { type Command, type Key, type Manager, Shortcut } from "shortcuts-manager/classes"
+import { KnownError } from "shortcuts-manager/helpers"
+import { computed, inject, type Ref, ref } from "vue"
+
+import { notificationHandlerSymbol } from "../injectionSymbols.js"
+
 
 const notificationHandler = inject(notificationHandlerSymbol)
 if (notificationHandler === undefined) unreachable()
@@ -137,7 +139,7 @@ const saveRecordingHook: Parameters<Key["addHook"]>[1] = (prop, val) => {
 
 const updateRecordingValueHook: Parameters<Manager["addHook"]>[1] = (key, val) => {
 	if (key === "chain") {
-		console.log(recordingValue.value);
+		console.log(recordingValue.value)
 
 		recordingValue.value = props.manager.stringifier.stringify(val as any)
 	}
@@ -165,14 +167,13 @@ const saveRecording = (index: number) => {
 			} else {
 				newShortcutIsValid.value = newShortcut.value.chain.length === 0 ? "Cannot add shortcut, shortcut chain is not set." : "Cannot add shortcut, shortcut command is not set."
 			}
-
 		} else {
 			const shortcut = props.manager.shortcuts.entries[index]
 			const allowed = shortcut.allows("chain", chain)
 			if (allowed.isOk) {
 				shortcut.set("chain", chain)
 			} else {
-				console.log("Now Allowed", allowed.error);
+				console.log("Now Allowed", allowed.error)
 			}
 		}
 		props.manager.stopRecording()

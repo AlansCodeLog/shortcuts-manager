@@ -1,11 +1,4 @@
-import { Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
-import { HookableBase } from "bases/HookableBase.js"
-import { chainContainsKey } from "helpers/chainContainsKey.js"
-import { createInstance } from "helpers/createInstance.js"
-import { equalsKeys } from "helpers/equalsKeys.js"
-import { isValidChain } from "helpers/isValidChain.js"
-import { mapKeys } from "helpers/mapKeys.js"
-import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "types/shortcut.js"
+import { last, Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
 
 import type { Command } from "./Command.js"
 import { Condition } from "./Condition.js"
@@ -13,6 +6,16 @@ import type { Context } from "./Context.js"
 import type { Key } from "./Key.js"
 import { defaultSorter } from "./KeysSorter.js"
 import { defaultStringifier } from "./Stringifier.js"
+
+import { HookableBase } from "../bases/HookableBase.js"
+import { chainContainsKey } from "../helpers/chainContainsKey.js"
+import { chainContainsSubset } from "../helpers/chainContainsSubset.js"
+import { createInstance } from "../helpers/createInstance.js"
+import { dedupeKeys } from "../helpers/dedupeKeys.js"
+import { equalsKeys } from "../helpers/equalsKeys.js"
+import { isValidChain } from "../helpers/isValidChain.js"
+import { mapKeys } from "../helpers/mapKeys.js"
+import type { RawShortcut, ShortcutHooks, ShortcutOptions } from "../types/shortcut.js"
 
 
 export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOptions {
@@ -70,7 +73,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 			this === shortcut
 			||
 			(
-				this.equalsKeys(shortcut.chain)
+				this.equalsKeys(shortcut.chain, undefined, { allowVariants: true })
 				&& this.condition.equals(shortcut.condition)
 				&& (this.command?.equals(shortcut.command) || shortcut.command?.equals(this.command) || this.command === shortcut.command)
 			)
@@ -80,19 +83,40 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 	/**
 	 * A wrapper around {@link equalsKeys} for the instance.
 	 */
-	equalsKeys(keys: Key[][], length?: number): boolean {
-		return equalsKeys(this.chain, keys, length)
+	equalsKeys(keys: Key[][], length?: number, opts: Parameters<Key["equals"]>[1] = {}): boolean {
+		return equalsKeys(this.chain, keys, length, opts)
 	}
 
 	/**
-	 * A wrapper around {@link chainContainsKey} for the instance.
+	 * A wrapper around {@link chordContainsKey} for the entire shortcut chain.
 	 */
-	containsKey(key: Key): boolean {
-		return chainContainsKey(this.chain, key)
+	containsKey(key: Key, opts: Parameters<typeof chainContainsKey>[2] = {}): boolean {
+		return chainContainsKey(this.chain.flat(), key, opts)
+	}
+
+	/**
+	 * A wrapper around {@link chainContainsSubset} for the instance.
+	 */
+	containsSubset(
+		chain: Key[][],
+		opts: Parameters<typeof chainContainsSubset>[2] = {}
+	): boolean {
+		return chainContainsSubset(chain, this.chain, opts)
 	}
 
 	get opts(): ShortcutOptions {
 		return pick(this, ["command", "sorter", "enabled", "condition", "stringifier"])
+	}
+
+	canExecuteIn(context: Context, {
+		allowEmptyCommand = false,
+	}: {
+		allowEmptyCommand?: boolean
+	} = {}): boolean {
+		return this.enabled && (
+			(allowEmptyCommand && (this.command?.execute === undefined)) ||
+				this.command?.condition.eval(context) === true
+		) && this.condition.eval(context)
 	}
 
 	protected override _set<TKey extends keyof ShortcutHooks>(
@@ -121,11 +145,8 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 	}
 
 	triggerableBy(chain: Key[][], context: Context): boolean {
-		return this.enabled &&
-			this.command !== undefined &&
-			this.equalsKeys(chain) &&
-			this.condition.eval(context) &&
-			(this.command === undefined || this.command.condition.eval(context))
+		return this.canExecuteIn(context, { allowEmptyCommand: true }) &&
+			this.equalsKeys(chain, undefined, { allowVariants: true })
 	}
 
 	/** Create an instance from a raw entry. */
@@ -145,5 +166,9 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 			condition: this.condition.export(),
 			enabled: this.enabled,
 		}
+	}
+
+	toString(): string {
+		return this.stringifier.stringify(this)
 	}
 }

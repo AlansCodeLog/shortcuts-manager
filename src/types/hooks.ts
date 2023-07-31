@@ -1,5 +1,5 @@
 import type { Result } from "@alanscodelog/utils"
-import type { Manager } from "classes/index.js"
+import type { Manager } from "../classes/index.js"
 
 import type { Bases, Collections } from "./index.js"
 

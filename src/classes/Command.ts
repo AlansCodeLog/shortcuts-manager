@@ -1,7 +1,7 @@
 import { pick } from "@alanscodelog/utils"
-import { HookableBase } from "bases/HookableBase.js"
-import { createInstance } from "helpers/createInstance.js"
-import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "types/index.js"
+import { HookableBase } from "../bases/HookableBase.js"
+import { createInstance } from "../helpers/createInstance.js"
+import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "../types/index.js"
 
 import { Condition } from "./Condition.js"
 

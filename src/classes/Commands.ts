@@ -1,8 +1,8 @@
 import { type AnyClass, crop, Err, Ok, type Result } from "@alanscodelog/utils"
-import { HookableCollection } from "bases/HookableCollection.js"
-import { KnownError } from "helpers/KnownError.js"
-import { ERROR } from "types/enums.js"
-import type { CommandsHooks, RawCommand, RecordFromArray } from "types/index.js"
+import { HookableCollection } from "../bases/HookableCollection.js"
+import { KnownError } from "../helpers/KnownError.js"
+import { ERROR } from "../types/enums.js"
+import type { CommandsHooks, RawCommand, RecordFromArray } from "../types/index.js"
 
 import { Command } from "./Command.js"
 import { canAddToDictErrorText } from "./internal/canAddToDictError.js"

@@ -1,7 +1,7 @@
 import type { Mutable } from "@alanscodelog/utils"
-import type { Command, Commands, Condition, Shortcut } from "classes/index.js"
-import type { Manager } from "classes/Manager.js"
-import type { KnownError } from "helpers/index.js"
+import type { Command, Commands, Condition, Shortcut } from "../classes/index.js"
+import type { Manager } from "../classes/Manager.js"
+import type { KnownError } from "../helpers/index.js"
 
 import type { RawCondition } from "./condition.js"
 import type { ERROR } from "./enums.js"

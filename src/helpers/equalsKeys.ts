@@ -1,4 +1,7 @@
-import type { Key } from "classes/index.js"
+import { chordContainsKey } from "./chordContainsKey.js"
+import { dedupeKeys } from "./dedupeKeys.js"
+
+import type { Key } from "../classes/index.js"
 
 
 /**
@@ -14,9 +17,14 @@ import type { Key } from "classes/index.js"
  * equalsKeys([[k.a], [k.b]], [[k.a], [k.b], [k.c]], 3) // false
  * equalsKeys([[k.a], [k.b]], [[k.b]], 1) // false
  * ```
+ * Can also pass options to {@link Keys.equals}:
+ *
+ * ```ts
+ * equalsKeys([[k.a], [k.b]], [[k.aVariant], [k.b]], 2, { allowVariants: true }) // true
+ * ```
  *
  */
-export function equalsKeys(keys: Key[][], base: Key[][], length?: number): boolean {
+export function equalsKeys(keys: Key[][], base: Key[][], length?: number, opts: Parameters<Key["equals"]>[1] = {}): boolean {
 	// Since they're pre-sorted this should be quite fast
 	if (
 		(length === undefined && base.length !== keys.length) ||
@@ -25,12 +33,13 @@ export function equalsKeys(keys: Key[][], base: Key[][], length?: number): boole
 
 	return keys.slice(0, length ?? keys.length)
 		.find((thisChord, c) => {
-			const otherChord = base[c]
-			if (!otherChord || otherChord.length !== thisChord.length) return true
-			return thisChord.find((thisKey, i) => {
-				const shortcutKey = otherChord[i]
-				if (!shortcutKey) return true
-				return !thisKey.equals(shortcutKey)
-			}) !== undefined
+			if (!base[c]) return true
+			const otherChord = dedupeKeys(base[c], opts)
+			thisChord = dedupeKeys(thisChord, opts)
+			if (otherChord.length !== thisChord.length) return true
+			for (const otherKey of otherChord) {
+				if (!chordContainsKey(thisChord, otherKey, opts)) return true
+			}
+			return false
 		}) === undefined
 }

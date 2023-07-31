@@ -19,6 +19,14 @@ describe(testName(), () => {
 		const key3 = new Key("b")
 		expect(key1.equals(key3)).to.be.false
 	})
+	it("should compare equality properly with variants", () => {
+		const key1 = new Key("variant1", {variants: ["a"]})
+		const key2 = new Key("variant2", {variants:["a"]})
+		expect(key1.equals(key2)).to.be.true
+		expect(key2.equals(key1)).to.be.true
+		expect(key1.equals(key2, {allowVariants:false})).to.be.false
+		expect(key2.equals(key1, {allowVariants:false})).to.be.false
+	})
 	it("should create toggle key properly", () => {
 		const key2 = new Key("a", { is: { toggle: false } })
 		expect(key2.on).to.not.exist

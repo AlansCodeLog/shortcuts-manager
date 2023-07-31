@@ -1,4 +1,4 @@
-import type { ERROR, ErrorInfo, TYPE_ERROR } from "types/index.js"
+import type { ERROR, ErrorInfo, TYPE_ERROR } from "../types/index.js"
 
 
 /**

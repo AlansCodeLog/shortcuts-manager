@@ -1,6 +1,6 @@
 import { crop, Err, findDuplicates, indent, Ok, type Result } from "@alanscodelog/utils"
-import type { Key, Manager, Shortcut, Stringifier } from "classes/index.js"
-import { ERROR } from "types/index.js"
+import type { Key, Manager, Shortcut, Stringifier } from "../classes/index.js"
+import { ERROR } from "../types/index.js"
 
 import { isNormalKey } from "./isNormalKey.js"
 import { isWheelKey } from "./isWheelKey.js"

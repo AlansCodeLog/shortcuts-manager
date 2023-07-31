@@ -1,18 +1,20 @@
 declare module "*.vue" {
 
 	const component: DefineComponent<{}, {}, any>
-	// eslint-disable-next-line import/no-default-export
+	 
 	export default component
 }
 export { }
 
-import { GlobalComponentTypes } from "@alanscodelog/vue-components"
+import { type GlobalComponentTypes } from "@alanscodelog/vue-components"
+
+
 declare module "@vue/runtime-core" {
 	export interface GlobalComponents extends GlobalComponentTypes { }
 }
 
-import { NavigatorWKeyboard } from "@lib/types"
-import { DefineComponent } from "vue"
+import { type NavigatorWKeyboard } from "@lib/types"
+import { type DefineComponent } from "vue"
 
 
 declare global {

@@ -178,6 +178,7 @@ describe(testName(), () => {
 			it("should call callback with unknown keys", () => {
 				const emulator = new Emulator()
 				manager.attach(emulator)
+				emulator.mouseenter()
 				expect(() => {
 					emulator.fire("Unknown")
 				}).to.throw() // only because callback throws
@@ -201,6 +202,24 @@ describe(testName(), () => {
 				emulator.fire("KeyA-")
 				expect(manager.chain).to.deep.equal([])
 			})
+			it("chain - multiple chord without command and release before trigger", () => {
+				console.log(manager.toString())
+				emulator.fire("ControlLeft+ KeyC", ["ControlLeft"])
+				emulator.fire("ControlLeft-", [])
+				console.log("===1")
+				expect(manager.chain).to.deep.equal([[ctrl, c]])
+				emulator.fire("ControlLeft", ["ControlLeft"])
+				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl]])
+				emulator.fire("ControlLeft-", [])
+				expect(manager.chain).to.deep.equal([[ctrl, c]])
+				// checking twice because there was a bug
+				console.log("===2")
+				emulator.fire("ControlLeft", ["ControlLeft"])
+				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl]])
+				emulator.fire("ControlLeft-", [])
+				expect(manager.chain).to.deep.equal([[ctrl, c]])
+			})
+
 
 			it("chain - multiple chord with command with self clear", () => {
 				emulator.fire("ControlLeft+ KeyC", ["ControlLeft"])
@@ -278,20 +297,7 @@ describe(testName(), () => {
 				expect(execute1.mock.calls.length).to.equal(0)
 				expect(execute2.mock.calls.length).to.equal(0)
 			})
-			// todo check if still needed
-			// it("out of focus simulated keyup", () => {
-			// 	emulator.fire("ControlLeft+ KeyA+", ["ControlLeft"])
-			// 	vi.advanceTimersByTime(250)
-			// 	expect(ctrl.pressed).to.equal(true)
-			// 	expect(a.pressed).to.equal(true)
-			// 	emulator.fire("ControlLeft+ KeyA+", ["ControlLeft"])
-			// 	vi.advanceTimersByTime(1000)
-			// 	expect(ctrl.pressed).to.equal(false)
-			// 	expect(a.pressed).to.equal(false)
-			//
-			// 	expect(manager.chain).to.deep.equal([])
-			// 	expect(execute1.mock.calls.length).to.equal(2)
-			// })
+			
 			it("hooks only fire on initial press and on final release", () => {
 				const hook = vi.fn(prop => {
 					if (prop === "pressed") { return true }
