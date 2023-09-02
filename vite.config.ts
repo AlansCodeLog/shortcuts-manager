@@ -45,6 +45,7 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 		alias: [
 			// absolute path needed because of https://github.com/vitest-dev/vitest/issues/2425
 			{ find: /^@\/(.*)/, replacement: `${path.resolve("src")}/$1/index.ts` },
+			{ find: "shortcut-manager", replacement: `${path.resolve("src")}/$1/index.ts` },
 		],
 	},
 	test: {

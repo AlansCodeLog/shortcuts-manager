@@ -1,6 +1,6 @@
-import type { RawCondition } from "../types/condition.js"
-
 import type { Context } from "./Context.js"
+
+import type { RawCondition } from "../types/condition.js"
 
 
 export class Condition {

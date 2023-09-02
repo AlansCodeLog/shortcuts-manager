@@ -24,7 +24,7 @@ import type { Key } from "../classes/index.js"
  * ```
  *
  */
-export function equalsKeys(keys: Key[][], base: Key[][], length?: number, opts: Parameters<Key["equals"]>[1] = {}): boolean {
+export function equalsKeys(keys: readonly Key[][], base: readonly Key[][], length?: number, opts: Parameters<Key["equals"]>[1] = {}): boolean {
 	// Since they're pre-sorted this should be quite fast
 	if (
 		(length === undefined && base.length !== keys.length) ||

@@ -5,6 +5,7 @@ module.exports = {
 		// ./node_modules/@alanscodelog/eslint-config/tests.js
 		"@alanscodelog/eslint-config/tests",
 	],
+
 	rules : {
 		"@typescript-eslint/no-restricted-imports": "off"
 	}

@@ -1,7 +1,7 @@
+import type { Key } from "./Key.js"
+
 import { keyOrder } from "../helpers/keyOrder.js"
 import { KEY_SORT_POS, type KeysSorterOptions } from "../types/index.js"
-
-import type { Key } from "./Key.js"
 
 
 const sDefaultSort = Symbol("defaultSort")

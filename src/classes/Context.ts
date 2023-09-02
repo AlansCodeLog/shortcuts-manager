@@ -1,6 +1,6 @@
-import type { RecursiveRecord } from "../types/index.js"
-
 import type { Condition } from "./Condition.js"
+
+import type { RecursiveRecord } from "../types/index.js"
 
 
 function fastIsEqual(obj: RecursiveRecord, other: RecursiveRecord): boolean {

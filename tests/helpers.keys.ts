@@ -1,4 +1,4 @@
-import { Key } from "classes/Key.js"
+import { Key } from "shortcuts-manager/classes/Key.js"
 
 
 const a = new Key("a", { variants: ["aVariant"]})

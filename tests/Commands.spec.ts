@@ -1,7 +1,8 @@
 import { inspectError, testName } from "@alanscodelog/utils"
-import { Command } from "classes/Command.js"
-import { Commands } from "classes/Commands.js"
 import { describe, expect, it, type Mock, vi } from "vitest"
+
+import { Command } from "shortcuts-manager/classes/Command.js"
+import { Commands } from "shortcuts-manager/classes/Commands.js"
 
 
 describe(testName(), () => {

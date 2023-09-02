@@ -5,11 +5,11 @@
 	"extends": "@alanscodelog/tsconfigs",
 	"compilerOptions": {
 		"outDir": "dist",
-		"baseUrl": "src",
+		// "baseUrl": "src",
 		"paths": {
 			// for ide for demo
 			"shortcuts-manager/*": [
-				"src/*"
+				"./src/*"
 			]
 		},
 		"types": [
@@ -27,6 +27,7 @@
 		"src/**/*.vue",
 		// so eslint doesn't bother us, we don't build with tsc anyways, and to emit types, there's tsconfig.types.json
 		"tests/**/*.ts",
+		"demo/**/*",
 		"*.ts",
 		"*.cjs",
 		"*.js"

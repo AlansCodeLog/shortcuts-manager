@@ -8,9 +8,9 @@ import { Shortcut } from "./Shortcut.js"
 
 type StringifierOptions = {
 	key?: (key: Key) => string
-	keys?: (key: string[]) => string
-	chord?: (key: string[]) => string
-	chain?: (key: string[]) => string
+	keys?: (key: readonly string[]) => string
+	chord?: (key: readonly string[]) => string
+	chain?: (key: readonly string[]) => string
 	shortcut?: (shortcut: Shortcut) => string
 	command?: (command?: Command) => string
 	condition?: (condition?: Condition) => string

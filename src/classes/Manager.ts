@@ -10,7 +10,6 @@ import type { Keys } from "./Keys.js"
 import { defaultSorter, type KeysSorter } from "./KeysSorter.js"
 import type { Shortcut } from "./Shortcut.js"
 import type { Shortcuts } from "./Shortcuts.js"
-import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { checkManagerShortcuts } from "../helpers/checkManagerShortcuts.js"
@@ -23,31 +22,40 @@ import { isTriggerKey } from "../helpers/isTriggerKey.js"
 import { isValidChain } from "../helpers/isValidChain.js"
 import { KnownError } from "../helpers/KnownError.js"
 import { mapKeys } from "../helpers/mapKeys.js"
+import type { HookableOpts } from "../types/base.js"
 import { ERROR, TYPE_ERROR } from "../types/enums.js"
 import type { AnyInputEvent, AttachTarget, BaseHook, CollectionHook, CommandsHooks, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "../types/index.js"
 
 
 const defaultLabelFilter = (): boolean => true
 
-export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
+export class Manager<
+	TKeys extends Keys= Keys,
+	TShortcuts extends Shortcuts = Shortcuts,
+	TCommands extends Commands = Commands,
+	TContext extends Context = Context,
+> extends HookableBase<ManagerHook> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
 	/**
-	 * Disabled triggering of shortcuts. The manager otherwise works as normal.
+	 * Enable/disable triggering of shortcuts. The manager otherwise works as normal.
 	 */
-	enabled: boolean = true
+	enableShortcuts: boolean = true
+
+	/** Enable/disable listeners. Listeners will remain attached but do nothing. */
+	enableListeners: boolean = true
 
 	/** @RequiresSet @AllowsHookable @SetHookable */
-	readonly keys!: Keys
+	readonly keys!: TKeys
 
 	/** @RequiresSet @AllowsHookable @SetHookable */
-	readonly commands!: Commands
+	readonly commands!: TCommands
 
 	/** @RequiresSet @AllowsHookable @SetHookable */
-	readonly shortcuts!: Shortcuts
+	readonly shortcuts!: TShortcuts
 
 	/**
 	 * The current chain of chords.
 	 *
-	 * It can be set with `set("chain", ...)` if you really need to, but I would avoid it. The manager will take care of adjusting itself to the chain set, but it can seem to do odd things. Also the property does not allow `allows` hooks (though there are internal ones).
+	 * It can be set with `safeSet("chain", ...)` if you really need to, but I would avoid it. The manager will take care of adjusting itself to the chain set, but it can seem to do odd things. Also the property does not allow `allows` hooks (though there are internal ones).
 	 *
 	 * Notes:
 	 * - You should also always check if a chain is allowed to be set first.
@@ -62,7 +70,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	readonly chain: Key[][] = []
 
-	context: Context
+	context: TContext
 
 	sorter: KeysSorter
 
@@ -238,24 +246,18 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * - Add a set hook to listen to key presses to display that for the user.
 	 */
 	constructor(
-		keys: Keys,
-		commands: Commands,
-		shortcuts: Shortcuts,
-		context: Context,
+		keys: TKeys,
+		commands: TCommands,
+		shortcuts: TShortcuts,
+		context: TContext,
 		cb?: Manager["cb"],
-		{
-			stringifier,
-			sorter,
-			labelStrategy = true,
-			labelFilter,
-		}: {
-			stringifier?: Stringifier
+		opts: Partial<HookableOpts > & {
 			sorter?: KeysSorter
 			labelStrategy?: Manager["labelStrategy"]
 			labelFilter?: Manager["labelFilter"]
 		} = {},
 	) {
-		super()
+		super(opts)
 		this._boundKeydown = this._keydown.bind(this)
 		this._boundKeyup = this._keyup.bind(this)
 		this._boundMousedown = this._mousedown.bind(this)
@@ -273,14 +275,11 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		if (cb) this.cb = cb
 
 		this.context = context
-		this.stringifier = stringifier ?? defaultStringifier
 		this.sorter = sorter ?? defaultSorter
 		if (labelFilter) this.labelFilter = labelFilter
-		this.set("labelStrategy", labelStrategy)
+		this.safeSet("labelStrategy", labelStrategy)
 		this.safeSet("replace", { shortcuts, keys, commands }).unwrap()
 	}
-
-	stringifier: Stringifier
 
 	private get _labelWNavigator(): boolean {
 		return [true, "both", "navigator"].includes(this.labelStrategy as string)
@@ -313,7 +312,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 				const label = map.get(code)
 				if (label) {
 					if (this.labelFilter({ key: label }, key)) {
-						key.set("label", label)
+						key.safeSet("label", label)
 						this._selfKeyboardMap.set(key, true)
 					}
 				}
@@ -341,7 +340,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 							default:
 								unreachable()
 						}
-						key.set("label", label)
+						key.safeSet("label", label)
 					}
 				}
 			}
@@ -397,13 +396,16 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * Detach the manager from an element and remove all it's event listeners.
 	 */
 	detach(el: AttachTarget): void {
-		this._els.splice(this._els.indexOf(el))
-		el.removeEventListener("keydown", this._boundKeydown)
-		el.removeEventListener("keyup", this._boundKeyup)
-		el.removeEventListener("wheel", this._boundWheel)
-		el.removeEventListener("mousedown", this._boundMousedown)
-		el.removeEventListener("mouseup", this._boundMouseup)
-		if (this.checkStateOnAllEvents) el.removeEventListener("mouseenter", this._boundMouseEnter)
+		this._els.splice(this._els.indexOf(el), 1)
+		// todo totest an element might be bound to twice
+		if (!this._els.includes(el)) {
+			el.removeEventListener("keydown", this._boundKeydown)
+			el.removeEventListener("keyup", this._boundKeyup)
+			el.removeEventListener("wheel", this._boundWheel)
+			el.removeEventListener("mousedown", this._boundMousedown)
+			el.removeEventListener("mouseup", this._boundMouseup)
+			if (this.checkStateOnAllEvents) el.removeEventListener("mouseenter", this._boundMouseEnter)
+		}
 	}
 
 	private readonly _listeners: ManagerListener[] = []
@@ -456,17 +458,17 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	/**
 	 * Puts the manager into recording mode.
 	 *
-	 * This clears the chain then disables triggering shortcuts, but still handles key events and adding them to the chain.
+	 * This clears the chain (their is an option to not do this) then disables triggering shortcuts, but still handles key events and adding them to the chain.
 	 *
 	 *
 	 * To allow users to stop the recording with a certain key regardless of the chain's state, the following is suggested. You can also do something like have an input element that on focus starts recording and stops when focused is blurred. In such a case, you can have a {@link Manager.eventListener} that allows clicks through when clicking outside the input. See {@link Manager.eventListener} for an example.
 	 *
 	 * ```ts
 	 * manager.startRecording()
-	 * const stopRecordingHook = (prop, val) => {
+	 * const escapeRecordingHook = (prop, val) => {
 	 * 	if (prop === "pressed" && val === true) {
 	 * 		manager.stopRecording()
-	 * 		manager.keys.entries.Escape.removeHook("set", stopRecordingHook)
+	 * 		manager.keys.entries.Escape.removeHook("set", escapeRecordingHook)
 	 * 	}
 	 * }
 	 * const saveRecordingHook = (prop, val) => {
@@ -478,21 +480,25 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * 		manager.keys.entries.Enter.removeHook("set", saveRecordingHook)
 	 * 	}
 	 * }
-	 * manager.keys.entries.Escape.addHook("set", stopRecordingHook)
+	 * manager.keys.entries.Escape.addHook("set", escapeRecordingHook)
 	 * manager.keys.entries.Enter.addHook("set", saveRecordingHook)
 	 * ```
 	 * You will also probably want to `preventDefault` all events while recording with {@link Manager.eventListener}.
 	 */
-	startRecording(): void {
-		this.clearChain()
+	startRecording({ clearChain = true }: { clearChain?: boolean } = {}): void {
+		if (clearChain) {
+			this.clearChain()
+		}
 		setReadOnly(this, "isRecording", true)
 	}
 
 	/**
-	 * Clears the chain and stops recording.
+	 * Clears the chain (there is an option to not do this) and stops recording.
 	 */
-	stopRecording(): void {
-		this.clearChain()
+	stopRecording({ clearChain = true }: { clearChain?: boolean } = {}): void {
+		if (clearChain) {
+			this.clearChain()
+		}
 		setReadOnly(this, "isRecording", false)
 	}
 
@@ -520,9 +526,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 * chain.map(chord => [...chord])
 	 * ```
 	 *
-	 * Used internally so that `set("chain")` always sets fresh arrays.
+	 * Used internally so that `safeSet("chain")` always sets fresh arrays.
 	 */
-	static cloneChain(chain: Key[][]): Key[][] {
+	// todo move to helpers
+	static cloneChain(chain: readonly Key[][]): Key[][] {
 		const clone: Key[][] = []
 		for (const chord of chain) {
 			const cloneChord = []
@@ -531,23 +538,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		}
 		return clone
 	}
-
-	/** Returns a clone of the chain with duplicate keys in chords deduped by their labels. The first instance in the chain is left, the others removed. */
-	// TODO
-	// not sure if this is a good idea. should shortcuts contain duplicate keys and just be displayed different?
-	static dedupeChain(chain: Key[][]): Key[][] {
-		const clone: Key[][] = []
-		for (const chord of chain) {
-			const cloneChord = []
-			for (const key of chord) {
-				if (cloneChord.find(existing => existing.label === key.label) === undefined) {
-					cloneChord.push(key)
-				}
-			}
-			clone.push(cloneChord)
-		}
-		return clone
-	}
+	
 
 	/**
 	 * Clears the chain.
@@ -556,7 +547,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 */
 	clearChain(): void {
-		this.set("chain", [])
+		this.safeSet("chain", [])
 	}
 
 	/**
@@ -564,7 +555,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * You'll probably want to use this on the keyup trigger of most of your shortcuts.
 	 *
-	 * You could use {@link Manager.clearChain()}/`set("chain", [[]])`, but this forces users to always release all keys before another shortcut can be triggered.
+	 * You could use {@link Manager.clearChain()}/`safeSet("chain", [[]])`, but this forces users to always release all keys before another shortcut can be triggered.
 	 *
 	 * If we only clear the chain when it's longer than one chord we get more reasonable behaviour.
 	 *
@@ -572,7 +563,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 *
 	 * Only shortcuts with chains longer than one chord would reasonably require the user to release all keys. Suppose the bold/italic shortcuts were `Ctrl+X Ctrl+B/I`. It does not make much sense in that case to allow the `Ctrl` only shortcut to still trigger after.
 	 *
-	 * You could `set("chain", [[ctrl,b/i]])` for each and still allow `Ctrl`
+	 * You could `safeSet("chain", [[ctrl,b/i]])` for each and still allow `Ctrl`
 	 */
 	smartClearChain(): void {
 		if (this.chain.length > 1) this.clearChain()
@@ -592,13 +583,12 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		this._untrigger = false
 		setReadOnly(this, "isAwaitingKeyup", false)
 
-		console.log("setting1", false)
 		for (const key of Object.values(this.keys.entries)) {
 			if ((key.is.modifier === "native" || key.is.toggle === "native") && ignoreNative) return
-			key.set("pressed", false)
+			key.safeSet("pressed", false)
 			if (isToggleRootKey(key)) {
-				key.on!.set("pressed", false)
-				key.off!.set("pressed", false)
+				key.on!.safeSet("pressed", false)
+				key.off!.safeSet("pressed", false)
 			}
 		}
 	}
@@ -608,7 +598,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	 */
 	private _setChain(chain: Key[][]): void {
 		this._bypassChainSet = true
-		this.set("chain", chain)
+		this.safeSet("chain", chain)
 		this._bypassChainSet = false
 	}
 
@@ -617,14 +607,14 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			const untrigger: TriggerableShortcut = this._untrigger
 			// MUST be set to false first or we can get into an infinite loop if the user uses `set(chain)` from inside the command execute function
 			this._untrigger = false
-			if (!this.enabled) return
+			if (!this.enableShortcuts) return
 			untrigger.command.execute?.({ isKeydown: false, command: untrigger.command, shortcut: untrigger, manager: this, event: e })
 		}
 	}
 
 	private _checkTrigger(e?: AnyInputEvent): void {
 		this._checkUntrigger(e)
-		if (!this.enabled) return
+		if (!this.enableShortcuts) return
 		const res = this._getTriggerableShortcut()
 		if (res.isError) {
 			if (res.error.code !== ERROR.RECORDING) {
@@ -635,14 +625,12 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			res.value.command.execute?.({ isKeydown: true, command: res.value.command, shortcut: res.value, manager: this, event: e })
 		}
 		const triggerKey = this.lastChord()?.find(key => isTriggerKey(key))
-		const nonTriggerKey = this.lastChord()!.find(key => !isTriggerKey(key))
-		console.log({ triggerKey: triggerKey?.toString(), nonTriggerKey: nonTriggerKey?.toString() })
+		const nonTriggerKey = this.lastChord()?.find(key => !isTriggerKey(key))
 		if (triggerKey) {
 			if (this.inChain() || this.isRecording) {
 				this._nextIsChord = true
 				if (nonTriggerKey) {
 					setReadOnly(this, "isAwaitingKeyup", true)
-					console.log("setting2", true)
 				}
 			} else
 				if (!this.isRecording && !this.inChain() && (res.isOk && !res.value) && this.chain.length > 1) {
@@ -657,7 +645,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		const shortcuts = this.shortcuts.query(shortcut => shortcut.triggerableBy(this.chain, this.context))
 		if (shortcuts.length === 0) return Ok(false)
 		if (shortcuts.length > 1) {
-			return Err(new KnownError(ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.stringifier.stringify(this.chain)}:
+			return Err(new KnownError(ERROR.MULTIPLE_MATCHING_SHORTCUTS, crop`Multiple commands are assigned to the key combination ${this.toString()}:
 			${indent(shortcuts.map(shortcut => shortcut.command!.name).join("\n"), 4)}
 			`, { shortcuts }))
 		} else {
@@ -670,7 +658,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		// the chain was just cleared
 		// the user could have released only part of the keys then pressed others
 		// we should ignore all keypresses until they are all released
-		console.log(this.isAwaitingKeyup)
 		if (this.isAwaitingKeyup) return
 		if (this._nextIsChord) {
 			this._setChain([...this.chain, []])
@@ -682,7 +669,6 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			if (!lastChord.includes(key) && !this.isAwaitingKeyup) {
 				lastChord.push(key)
 				this._setChain([...this.chain.slice(0, length), this.sorter.sort(lastChord)])
-				console.log(this.stringifier.stringify(this.chain))
 				this._checkTrigger(e)
 			}
 		}
@@ -690,12 +676,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 
 	private _removeFromChain(keys: Key[], e?: AnyInputEvent): void {
 		if (keys.length === 0) return
-		console.log(this.isAwaitingKeyup)
 		if (this.isAwaitingKeyup) {
 			this._checkUntrigger(e)
 			if (this.pressedNonModifierKeys().length === 0) {
 				setReadOnly(this, "isAwaitingKeyup", false)
-				console.log("setting3", false)
 			}
 		} else {
 			if (this._nextIsChord) return
@@ -705,7 +689,13 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 
 				if (i > -1) {
 					lastChord.splice(i, 1)
-					this._setChain([...this.chain.slice(0, this.chain.length - 1), ...(lastChord.length > 0 ? [lastChord] : [])])
+					const precedingChords = this.chain.slice(0, this.chain.length === 0 ? 0 : this.chain.length - 1)
+					const spreadableLastChord =
+						precedingChords.length === 0 &&
+						lastChord.length === 0
+						? []
+						: [lastChord]
+					this._setChain([...precedingChords, ...spreadableLastChord])
 				}
 			}
 			this._checkTrigger(e)
@@ -713,8 +703,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _setEmulatedToggleState(key: Key, value: boolean): void {
-		key.on!.set("pressed", value)
-		key.off!.set("pressed", !value)
+		key.on!.safeSet("pressed", value)
+		key.off!.safeSet("pressed", !value)
 	}
 
 	private _setKeyState(keys: Key[], state: boolean): void {
@@ -722,7 +712,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			if (key.pressed === state) {
 				continue
 			}
-			key.set("pressed", state)
+			const res = key.safeSet("pressed", state)
+			if (res.isError) return
 
 			if (state) {
 				// toggles are considered active on keydown
@@ -774,13 +765,13 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			if (modifierState === null) continue
 			if (modifierState) {
 				if (!key.on.pressed) {
-					key.on.set("pressed", true)
-					key.off.set("pressed", false)
+					key.on.safeSet("pressed", true)
+					key.off.safeSet("pressed", false)
 				}
 			} else {
 				if (key.on.pressed) {
-					key.on.set("pressed", false)
-					key.off.set("pressed", true)
+					key.on.safeSet("pressed", false)
+					key.off.safeSet("pressed", true)
 				}
 			}
 		}
@@ -791,13 +782,17 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			if (modifierState === null) continue
 			if (modifierState) {
 				if (!key.pressed) {
-					key.set("pressed", true)
-					added.push(key)
+					const res = key.safeSet("pressed", true)
+					if (res.isOk) {
+						added.push(key)
+					}
 				}
 			} else {
 				if (key.pressed) {
-					key.set("pressed", false)
-					removed.push(key)
+					const res = key.safeSet("pressed", false)
+					if (res.isOk) {
+						removed.push(key)
+					}
 				}
 			}
 		}
@@ -861,8 +856,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		}
 	}
 
+
 	private _keydown(e: KeyboardEvent): void {
-		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
+		if (!this.enableListeners) return
+		const keys = this.keys.query(key => key.enabled && (key.id === e.code || key.variants?.includes(e.code)))!
 
 		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
 
@@ -874,7 +871,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _keyup(e: KeyboardEvent): void {
-		const keys = this.keys.query(key => (key.id === e.code || key.variants?.includes(e.code)))!
+		if (!this.enableListeners) return
+		const keys = this.keys.query(key => key.enabled && (key.id === e.code || key.variants?.includes(e.code)))!
 
 		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: false })
 
@@ -886,9 +884,10 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _wheel(e: WheelEvent): void {
+		if (!this.enableListeners) return
 		const dir = e.deltaY < 0 ? "Up" : "Down"
 		const code = `Wheel${dir}`
-		const keys = this.keys.query(key => (key.id === code || key.variants?.includes(code)) && !key.pressed)!
+		const keys = this.keys.query(key => key.enabled && (key.id === code || key.variants?.includes(code)) && !key.pressed)!
 
 		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
 
@@ -901,8 +900,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _mousedown(e: MouseEvent): void {
+		if (!this.enableListeners) return
 		const button = e.button.toString()
-		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && !key.pressed)!
+		const keys = this.keys.query(key => key.enabled && (key.id === button || key.variants?.includes(button)) && !key.pressed)!
 
 		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: true })
 
@@ -913,8 +913,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _mouseup(e: MouseEvent): void {
+		if (!this.enableListeners) return
 		const button = e.button.toString()
-		const keys = this.keys.query(key => (key.id === button || key.variants?.includes(button)) && key.pressed)!
+		const keys = this.keys.query(key => key.enabled && (key.id === button || key.variants?.includes(button)) && key.pressed)!
 
 		for (const listener of this._listeners) listener({ event: e, keys, isKeydown: false })
 
@@ -925,6 +926,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 	}
 
 	private _mouseenter(e: MouseEvent): void {
+		if (!this.enableListeners) return
 		for (const listener of this._listeners) listener({ event: e, keys: [], isKeydown: false })
 		this._checkSpecialKeys(e, [])
 	}
@@ -1027,12 +1029,9 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 			}
 			case "chain": {
 				const isEmpty = value.length === 0
-				console.log("bypassed", this._bypassChainSet)
 				if (!this._bypassChainSet) {
 					if (this.pressedNonModifierKeys().length > 0) {
 						setReadOnly(this, "isAwaitingKeyup", true)
-
-						console.log("setting4", true)
 					}
 					this._checkUntrigger()
 				}
@@ -1068,7 +1067,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 						this.shortcuts.removeHook("remove", this._boundShortcutRemoveHook)
 						for (const entry of this.shortcuts.entries) entry.removeHook("allows", this._boundShortcutAllowsHook)
 					}
-					setReadOnly(this, "shortcuts", value.shortcuts)
+					setReadOnly(this, "shortcuts", value.shortcuts as any)
 					this.shortcuts.stringifier = this.stringifier
 					this.shortcuts.stringifier = this.stringifier
 					this.shortcuts.sorter = this.sorter
@@ -1083,7 +1082,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 						this.keys.removeHook("allowsRemove", this._boundKeysAllowsRemoveHook)
 					}
 
-					setReadOnly(this, "keys", value.keys)
+					setReadOnly(this, "keys", value.keys as any)
 					this.keys.stringifier = this.stringifier
 					this._nativeToggleKeys = this.keys.query(k => k.is.toggle === "native" && isToggleRootKey(k), true) as ToggleRootKey[]
 					this._nativeModifierKeys = this.keys.query(k => k.is.modifier === "native", true)
@@ -1103,7 +1102,7 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 					if (this.commands) {
 						this.commands.removeHook("allowsRemove", this._boundCommandsAllowsRemoveHook)
 					}
-					setReadOnly(this, "commands", value.commands)
+					setReadOnly(this, "commands", value.commands as any)
 					this.commands.addHook("allowsRemove", this._boundCommandsAllowsRemoveHook)
 				}
 				break
@@ -1241,6 +1240,8 @@ export class Manager extends HookableBase<ManagerHook> implements Pick<ShortcutO
 		if (state) {
 			res.push(`	inChain: ${this.inChain()}`)
 			res.push(`	isAwaitingKeyup: ${this.isAwaitingKeyup}`)
+			res.push(`	isRecording: ${this.isRecording}`)
+			res.push(`	_nextIsChord: ${this._nextIsChord}`)
 			res.push(`	pressedKeys: ${this.pressedKeys().map(key => key.toString()).join(", ")}`)
 			res.push(`	pressedModifierKeys: ${this.pressedModifierKeys().map(key => key.toString()).join(", ")}`)
 			res.push(`	pressedNonModifierKeys: ${this.pressedNonModifierKeys().map(key => key.toString()).join(", ")}`)

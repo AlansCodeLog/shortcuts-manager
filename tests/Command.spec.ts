@@ -1,8 +1,9 @@
 import { testName } from "@alanscodelog/utils"
-import { Command } from "classes/Command.js"
-import { Condition } from "classes/Condition.js"
-import type { CommandOptions } from "types/command.js"
 import { describe, expect, it } from "vitest"
+
+import { Command } from "shortcuts-manager/classes/Command.js"
+import { Condition } from "shortcuts-manager/classes/Condition.js"
+import type { CommandOptions } from "shortcuts-manager/types/command.js"
 
 
 describe(testName(), () => {

@@ -1,7 +1,7 @@
 import { castType, Err, Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
 
+import { defaultStringifier } from "./base.js"
 import type { Stringifier } from "./index.js"
-import { defaultStringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { createInstance } from "../helpers/createInstance.js"
@@ -12,17 +12,33 @@ import { ERROR, type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } fr
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
 
+
 export class Key<
 	TId extends
 		string =
 		string,
 > extends HookableBase<KeyHooks> implements KeyOptions {
+	protected override _set<
+		TKey extends
+			keyof KeyHooks =
+			keyof KeyHooks,
+	>(
+		key: TKey,
+		value: KeyHooks[TKey]["value"],
+	): void {
+		(this as any)[key] = value
+	}
+	
+
 	/**
 	 * Wether the key is currently being *held* down.
 	 *
 	 * @RequiresSet @SetHookable
 	 */
 	readonly pressed: boolean = false
+
+	/** @inheritdoc */
+	enabled: boolean = true
 
 	/** @inheritdoc */
 	checkStateOnAllEvents: boolean = true
@@ -81,19 +97,19 @@ export class Key<
 		id: TId,
 		opts: RawKey["opts"] = { },
 	) {
-		super()
+		super(opts)
 
 		this.stringifier = opts.stringifier as Stringifier ?? defaultStringifier
 
 		setReadOnly(this, "id", id)
 		this.label = opts.label ?? this.id
 
-		this.classes = opts.classes ?? []
+		this.classes = [...(opts.classes as any ?? [])]
 		this.x = opts.x ?? this.x
 		this.y = opts.y ?? this.y
 		this.width = opts.width ?? this.width
 		this.height = opts.height ?? this.height
-
+		this.enabled = opts.enabled ?? this.enabled
 
 		this.is = {
 			toggle: false,
@@ -116,11 +132,10 @@ export class Key<
 		}
 		Object.freeze(this.is)
 		if (opts.variants) {
-			this.safeSet("variants", opts.variants).unwrap()
+			this.safeSet("variants", [...opts.variants]).unwrap()
 		}
 	}
 
-	stringifier: Stringifier
 
 	/**
 	 * On toggle keys, allows easily toggling the state of the toggles.
@@ -133,11 +148,14 @@ export class Key<
 		rootKey.off!.set("pressed", onValue)
 	}
 
-	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT>> {
+	protected override _allows(key: string, value: any): Result<true, KnownError<ERROR.INVALID_VARIANT | ERROR.CANNOT_SET_WHILE_DISABLED>> {
 		if (key === "variants") {
 			if (value.includes(this.id)) {
-				return Err(new KnownError(ERROR.INVALID_VARIANT, `Attempted to set the variants of key ${this.stringifier.stringify(this)} to: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id }))
+				return Err(new KnownError(ERROR.INVALID_VARIANT, `Attempted to set the variants of key ${this.toString()} to: [${value.join(", ")}], but one of the variants is the key id itself.`, { variants: value, id: this.id }))
 			}
+		}
+		if (key === "pressed" && !this.enabled) {
+			return Err(new KnownError(ERROR.CANNOT_SET_WHILE_DISABLED, `The "pressed" property cannot be set while a key is disabled. (Key: ${this.toString()}) `, { instance: this }))
 		}
 		return Ok(true)
 	}
@@ -206,7 +224,8 @@ export class Key<
 					this.variants &&
 					key.variants &&
 					this.variants
-						.find((variant: string) => key.variants!.includes(variant)) !== undefined) === true
+						.some((variant: string) => key.variants!.includes(variant))
+				) === true
 			)
 	}
 	

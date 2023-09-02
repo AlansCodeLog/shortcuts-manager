@@ -1,10 +1,10 @@
-import type { Key } from "../classes/index.js"
-import type { KEY_SORT_POS } from "../types/index.js"
-
 import { isModifierKey } from "./isModifierKey.js"
 import { isMouseKey } from "./isMouseKey.js"
 import { isToggleKey } from "./isToggleKey.js"
 import { isWheelKey } from "./isWheelKey.js"
+
+import type { Key } from "../classes/index.js"
+import type { KEY_SORT_POS } from "../types/index.js"
 
 
 /**

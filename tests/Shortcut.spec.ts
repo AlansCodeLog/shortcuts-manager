@@ -1,10 +1,11 @@
 import { catchError, testName } from "@alanscodelog/utils"
-import { defaultSorter } from "classes/KeysSorter.js"
-import { Shortcut } from "classes/Shortcut.js"
-import { ERROR } from "types/enums.js"
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 
 import { k, properOrder } from "./helpers.keys.js"
+
+import { defaultSorter } from "shortcuts-manager/classes/KeysSorter.js"
+import { Shortcut } from "shortcuts-manager/classes/Shortcut.js"
+import { ERROR } from "shortcuts-manager/types/enums.js"
 
 
 describe(testName(), () => {
@@ -138,12 +139,11 @@ describe(testName(), () => {
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 1)).to.equal(true)
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 2)).to.equal(false)
 	})
-	it("containsSubset",() => {
-
+	it("containsSubset", () => {
 		expect((new Shortcut([[k.a]]).containsSubset([]))).to.equal(true)
 		expect((new Shortcut([[k.a]]).containsSubset([[k.a]]))).to.equal(true)
 
-		expect((new Shortcut([[k.a]]).containsSubset([[k.a],[k.b]]))).to.equal(false)
+		expect((new Shortcut([[k.a]]).containsSubset([[k.a], [k.b]]))).to.equal(false)
 		// expect((new Shortcut([[k.a]]).containsSubset([[k.a]], {onlySubset: true}))).to.equal(false)
 		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.modA]]))).to.equal(true)
 		expect((new Shortcut([[k.a], [k.b]]).containsSubset([[k.a]]))).to.equal(true)
@@ -156,24 +156,21 @@ describe(testName(), () => {
 		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.b]]))).to.equal(true)
 
 
+		expect((new Shortcut([[k.a], [k.b], [k.c]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
 
+		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.a], [k.b], [k.c]]).containsSubset([[k.a]], {onlyPressable: true}))).to.equal(false)
+		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.modA]], { onlyPressable: true }))).to.equal(true)
 
-		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.a]], {onlyPressable:true}))).to.equal(false)
+		expect((new Shortcut([[k.modA, k.modB, k.a]]).containsSubset([[k.modA]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.modA]], {onlyPressable:true}))).to.equal(true)
+		expect((new Shortcut([[k.modA, k.modB, k.a]]).containsSubset([[k.modA]], { onlyPressable: true }))).to.equal(false)
+		expect((new Shortcut([[k.modA, k.modB, k.a]]).containsSubset([[k.modA, k.modB]], { onlyPressable: true }))).to.equal(true)
 
-		expect((new Shortcut([[k.modA,k.modB, k.a]]).containsSubset([[k.modA]], {onlyPressable:true}))).to.equal(false)
+		expect((new Shortcut([[k.modA, k.modB, k.a]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.modA,k.modB, k.a]]).containsSubset([[k.modA]], {onlyPressable:true}))).to.equal(false)
-		expect((new Shortcut([[k.modA,k.modB, k.a]]).containsSubset([[k.modA, k.modB]], {onlyPressable:true}))).to.equal(true)
+		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.b]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.modA,k.modB, k.a]]).containsSubset([[k.a]], {onlyPressable:true}))).to.equal(false)
-
-		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.b]], {onlyPressable:true}))).to.equal(false)
-
-		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.modA]], {onlyPressable:true}))).to.equal(true)
-
+		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.modA]], { onlyPressable: true }))).to.equal(true)
 	})
 })

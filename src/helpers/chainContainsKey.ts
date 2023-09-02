@@ -6,5 +6,5 @@ import type { Key } from "../classes/index.js"
 export function chainContainsKey(chordOrChain: Key[][] | Key[], key: Key, opts: Parameters<Key["equals"]>[1] = {}): boolean {
 	return chordOrChain
 		.flat()
-		.find(existing => existing.equals(key, opts)) !== undefined
+		.some(existing => existing.equals(key, opts))
 }

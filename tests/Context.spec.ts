@@ -1,7 +1,8 @@
 import { testName } from "@alanscodelog/utils"
-import { Condition } from "classes/Condition.js"
-import { Context } from "classes/Context.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
+
+import { Condition } from "shortcuts-manager/classes/Condition.js"
+import { Context } from "shortcuts-manager/classes/Context.js"
 
 
 describe(testName(), () => {

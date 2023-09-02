@@ -1,11 +1,11 @@
-import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "../classes/index.js"
-import type { Stringifier } from "../classes/Stringifier.js"
-import type { KnownError } from "../helpers/index.js"
-
+import type { HookableOpts } from "./base.js"
 import type { RawCondition } from "./condition.js"
 import type { ERROR } from "./enums.js"
 import type { BaseHookType, CollectionHookType } from "./hooks.js"
 import type { Optional } from "./utils.js"
+
+import type { Command, Condition, Key, KeysSorter, Shortcut, Shortcuts } from "../classes/index.js"
+import type { KnownError } from "../helpers/index.js"
 
 
 /**
@@ -24,7 +24,7 @@ export type ExportedShortcut =
 		command: string
 	}
 
-export type ShortcutOptions = {
+export type ShortcutOptions = HookableOpts & {
 	/**
 	 * The {@link Command} to associate with the shortcut.
 	 *
@@ -47,15 +47,15 @@ export type ShortcutOptions = {
 	enabled: boolean
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
-	/** See {@link Stringifier} */
-	stringifier: Stringifier
 }
 
-export type ShortcutsOptions = {
+export type ShortcutsOptions = HookableOpts & {
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
-	/** See {@link Stringifier} */
-	stringifier: Stringifier
+	/** See {@link Shortcuts["conflictsWith"]} */
+	ignoreModifierConflicts: boolean
+	/** See {@link Shortcuts["conflictsWith"]} */
+	ignoreChainConflicts: boolean
 }
 
 export type TriggerableShortcut = Shortcut & { command: Command & { execute: Command["execute"] } }

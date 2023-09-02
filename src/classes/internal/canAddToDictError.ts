@@ -5,8 +5,8 @@ export function canAddToDictErrorText(type: string, existingIdentifier: string, 
 	return crop`
 		${type} ${existingIdentifier} is already registered.
 			Existing ${type}:
-			${indent(existingEntry, 3)}
+			${indent(existingEntry.toString(), 3)}
 			New ${type}:
-			${indent(newEntry, 3)}
+			${indent(newEntry.toString(), 3)}
 		`
 }

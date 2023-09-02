@@ -1,10 +1,11 @@
 import { crop, Err, findDuplicates, indent, Ok, type Result } from "@alanscodelog/utils"
-import type { Key, Manager, Shortcut, Stringifier } from "../classes/index.js"
-import { ERROR } from "../types/index.js"
 
 import { isNormalKey } from "./isNormalKey.js"
 import { isWheelKey } from "./isWheelKey.js"
 import { KnownError } from "./KnownError.js"
+
+import type { Key, Manager, Shortcut, Stringifier } from "../classes/index.js"
+import { ERROR } from "../types/index.js"
 
 
 /**
@@ -61,7 +62,7 @@ export function isValidChord(
 	const prettyNormalKeys = stringifier.stringifyKeys(normalKeys)
 	if (normalKeys.length > 1) {
 		return Err(new KnownError(ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS, crop`
-			CHain "${prettyShortut}" is impossible.
+			Chain "${prettyShortut}" is impossible.
 			Chord #${i + 1} "${prettyChord}" contains multiple normal (non-modifier/mouse/wheel/toggle) keys: ${prettyNormalKeys}
 			Chords can only contain one.
 		`, { self, chord, i, keys: normalKeys }))

@@ -1,16 +1,17 @@
 import type { AnyClass, Result } from "@alanscodelog/utils"
 import { crop, Err, indent, Ok } from "@alanscodelog/utils"
+
+import { defaultStringifier } from "./base.js"
+import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
+import type { Key } from "./Key.js"
+import { defaultSorter } from "./KeysSorter.js"
+import { Shortcut } from "./Shortcut.js"
+
 import { HookableCollection } from "../bases/HookableCollection.js"
 import { equalsKeys } from "../helpers/equalsKeys.js"
 import { KnownError } from "../helpers/KnownError.js"
 import { mapKeys } from "../helpers/mapKeys.js"
 import { ERROR, type RawShortcut, type ShortcutOptions, type ShortcutsHooks, type ShortcutsOptions } from "../types/index.js"
-
-import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
-import type { Key } from "./Key.js"
-import { defaultSorter } from "./KeysSorter.js"
-import { Shortcut } from "./Shortcut.js"
-import { defaultStringifier } from "./Stringifier.js"
 
 
 export class Shortcuts<
@@ -23,7 +24,7 @@ export class Shortcuts<
 	TEntries extends
 		TShortcut[] =
 		TShortcut[],
-> extends HookableCollection<ShortcutsHooks> implements Pick<ShortcutOptions, "stringifier" | "sorter"> {
+> extends HookableCollection<ShortcutsHooks> implements Pick<ShortcutsOptions, "stringifier" | "sorter" | "ignoreChainConflicts" | "ignoreModifierConflicts"> {
 	protected _basePrototype: AnyClass<Shortcut> & { create(...args: any[]): Shortcut } = Shortcut
 
 	override entries: TEntries
@@ -32,6 +33,12 @@ export class Shortcuts<
 
 	/** @inheritdoc */
 	sorter: ShortcutOptions["sorter"] = defaultSorter
+
+	/** @inheritdoc */
+	ignoreChainConflicts: ShortcutsOptions["ignoreChainConflicts"] = false
+
+	/** @inheritdoc */
+	ignoreModifierConflicts: ShortcutsOptions["ignoreModifierConflicts"] = false
 
 	/**
 	 * # Shortcut
@@ -56,6 +63,8 @@ export class Shortcuts<
 		super()
 		this.stringifier = opts.stringifier ?? defaultStringifier
 		if (opts.sorter) this.sorter = opts.sorter
+		if (opts.ignoreChainConflicts) this.ignoreChainConflicts = opts.ignoreChainConflicts
+		if (opts.ignoreModifierConflicts) this.ignoreModifierConflicts = opts.ignoreModifierConflicts
 		this.entries = [] as any
 		this._boundAllowsHook = this._allowsHook.bind(this)
 		for (const rawEntry of shortcuts) {
@@ -76,10 +85,19 @@ export class Shortcuts<
 
 	protected _canAddToDict(entries: Shortcut[], entry: Shortcut): Result<true, KnownError<ERROR.DUPLICATE_SHORTCUT>> {
 		const existingIdentifier = JSON.stringify(mapKeys((entry).chain))
-		const existing = (entries).find(item => (entry).equals(item))
+		const opts = {
+			ignoreModifierConflicts: this.ignoreModifierConflicts,
+			ignoreChainConflicts: this.ignoreChainConflicts,
+		}
+		const existing = (entries).find(item => (entry).equals(item, { ignoreCommand: true }) || entry.conflictsWith(item, opts))
 
 		if (existing) {
-			const text = canAddToDictErrorText("shortcut", existingIdentifier, this.stringifier.stringify(existing), this.stringifier.stringify(entry))
+			const thisAsString = `[\n${
+				this.entries
+					.map(_ => this.stringifier.stringify(_)).join("\n")
+			}\n]`
+			// todo toString
+			const text = canAddToDictErrorText("shortcut", existingIdentifier, thisAsString, this.stringifier.stringify(entry))
 			const error = new KnownError(ERROR.DUPLICATE_SHORTCUT, text, { existing: (existing as any), self: this as any as Shortcuts })
 
 			return Err(error) as any
@@ -108,7 +126,12 @@ export class Shortcuts<
 				return Reflect.get(target, prop, receiver)
 			},
 		}) as any
-		const existing = this.query(entry => entry.equals(proxy.proxy) && entry !== instance, false)
+		const opts = {
+			ignoreModifierConflicts: this.ignoreModifierConflicts,
+			ignoreChainConflicts: this.ignoreChainConflicts,
+		}
+		// todo use uuid compare so proxies aren't an issue?
+		const existing = this.query(entry => entry !== instance && (entry.equals(proxy.proxy, { ignoreCommand: true }) || entry.conflictsWith(proxy.proxy, opts)), false)
 		proxy.revoke()
 		if (existing !== undefined) {
 			return Err(new KnownError(ERROR.DUPLICATE_SHORTCUT, crop`There is already an existing instance in this collection that would conflict when changing the "${key}" prop of this instance to ${this.stringifier.stringifyPropertyValue(value)}.
@@ -199,6 +222,19 @@ export class Shortcuts<
 	 * But if, for example, you use the filter to ignore disabled shortcuts, this wouldn't be a problem because you'd get two unequal shortcuts (A and A(disabled)), though re/dis-abling one of them would trigger a conflict.
 	 *
 	 * Note: Certain types of chords cannot be swapped, like empty chords, or chords which share a base. See canSwapChords.
+	 *
+	 * If using the experimental {@link ignoreModifierConflicts  Shortcuts["ignoreModifierConflicts"]}, note that you cannot use this to swap the base modifiers.
+	 *
+	 * For example, say you had:
+	 * ```
+	 * Ctrl+A
+	 *	Ctrl
+	 * ```
+	 * If you do `swapChords([Ctrl],[Shift])`, `Ctrl+A` is not considered to match the `[Ctrl]` chord and you will get:
+	 * ```
+	 * Ctrl+A
+	 *	Shift
+	 * ```
 	 */
 	swapChords(
 		chordsA: Key[][], chordsB: Key[][],
@@ -278,7 +314,7 @@ export class Shortcuts<
 	 *
 	 * Uses forceUnequal to be able to check each set of matching shortcuts in turn.
 	 *
-	 * Also checks the parameters are valid (Certain types of chords cannot be swapped, like empty chords, or chords which share a base. See canSwapChords.)
+	 * Also checks the parameters are valid. Certain types of chords cannot be swapped, like empty chords, or chords which share a base.
 	 */
 	canSwapChords(
 		chainA: Key[][], chainB: Key[][],
@@ -303,7 +339,8 @@ export class Shortcuts<
 		}
 
 		for (const shortcutB of shortcutsB) {
-			const res = shortcutB.allows("chain", [...chainA.filter(chord => chord.length > 0), ...shortcutB.chain.slice(chainA.length, shortcutB.chain.length)])
+			const newChain = [...chainA, ...shortcutB.chain.slice(chainA.length, shortcutB.chain.length)]
+			const res = shortcutB.allows("chain", newChain)
 			if (res.isError) {
 				can = res as any
 				break
@@ -321,7 +358,7 @@ export class Shortcuts<
 
 
 			for (const shortcutA of shortcutsA) {
-				const res = shortcutA.allows("chain", [...chainB.filter(chord => chord.length > 0), ...shortcutA.chain.slice(chainB.length, shortcutA.chain.length)])
+				const res = shortcutA.allows("chain", [...chainB, ...shortcutA.chain.slice(chainB.length, shortcutA.chain.length)])
 				if (res.isError) {
 					can = res as any
 					break
@@ -374,4 +411,9 @@ export class Shortcuts<
 		}
 		return Ok(true)
 	}
+
+	// toString(): string {
+	// TODO for strings and keys
+	// 	return this.entries.map(_ => this.stringifier.stringify(_)).join("\n")
+	// }
 }

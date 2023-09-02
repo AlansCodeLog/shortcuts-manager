@@ -10,7 +10,6 @@ module.exports = {
 		"dist",
 		"docs",
 		"*.html",
-		"demo/src/main.d.ts", // whyyyy
 	],
 	parserOptions: {
 		project: "./tsconfig.json"
@@ -25,7 +24,7 @@ module.exports = {
 	},
 	overrides: [
 		{
-			files: ["./*.{js,cjs,ts,vue}"],
+			files: ["./*.{js,cjs,ts,vue}", "./demo/**/*.{js,cjs,ts,vue}"],
 			rules: {
 				"@typescript-eslint/explicit-function-return-type": "off"
 			}
@@ -36,7 +35,14 @@ module.exports = {
 		{
 			files: ["**/*.js", "**/*.ts", "**/.vue"],
 			rules: {
-				"jsdoc/check-tag-names": ["warn", {definedTags: ["RequiresSet", "SetHookable"]}]
+				"jsdoc/check-tag-names": [
+					"warn",
+					{ definedTags: [
+						"RequiresSet",
+						"SetHookable",
+						"experimental"
+					] },
+				]
 			},
 		},
 		{

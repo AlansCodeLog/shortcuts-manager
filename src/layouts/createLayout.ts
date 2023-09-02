@@ -3,6 +3,10 @@ import { calculateAndSetPositionAndWidth } from "../helpers/calculateAndSetPosit
 
 const start = 0
 const mediaKey = { height: 0.5, width: 4 / 3 }
+const setY = <T>(yVal: number) => (val: T):(T & { opts: { y: number } }) => {
+	(val as any).opts.y = yVal
+	return val as any
+}
 
 /**
  * Creates the given keyboard layout, assiging the correct sizes and positions to keys.
@@ -26,6 +30,7 @@ const mediaKey = { height: 0.5, width: 4 / 3 }
  * const manager = new Manager(new Keys(layout))
  * ```
  */
+// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 export function createLayout(
 	type: "ansi" | "iso" | "" = "ansi",
 	{
@@ -36,144 +41,144 @@ export function createLayout(
 		arrowKeys = true,
 	}:
 	Partial<Record<"numpad" | "mediaKeys" | "fn" | "navigation" | "arrowKeys", boolean>> = {}
-): ReturnType<typeof calculateAndSetPositionAndWidth> {
+) {
 	return [
 		...calculateAndSetPositionAndWidth([
-			{ id: "Escape", opts: { label: "Esc" } },
+			{ id: "Escape" as const, opts: { label: "Esc" } },
 			...(fn
 				? [
-					{ id: "F1", opts: { x: 2 } },
-					{ id: "F2" },
-					{ id: "F3" },
-					{ id: "F4" },
-					{ id: "F5", opts: { x: 6.5 } },
-					{ id: "F6" },
-					{ id: "F7" },
-					{ id: "F8" },
-					{ id: "F9", opts: { x: 11 } },
-					{ id: "F10" },
-					{ id: "F11" },
-					{ id: "F12" },
+					{ id: "F1" as const, opts: { x: 2 } },
+					{ id: "F2" as const },
+					{ id: "F3" as const },
+					{ id: "F4" as const },
+					{ id: "F5" as const, opts: { x: 6.5 } },
+					{ id: "F6" as const },
+					{ id: "F7" as const },
+					{ id: "F8" as const },
+					{ id: "F9" as const, opts: { x: 11 } },
+					{ id: "F10" as const },
+					{ id: "F11" as const },
+					{ id: "F12" as const },
 				]
 				: []
 			),
-		]).map(key => { key.opts.y = start + 0; return key }),
+		]).map(setY(start + 0)),
 		...calculateAndSetPositionAndWidth([
-			{ id: "Backquote", opts: { label: "`" } },
-			{ id: "Digit1", opts: { label: "1" } },
-			{ id: "Digit2", opts: { label: "2" } },
-			{ id: "Digit3", opts: { label: "3" } },
-			{ id: "Digit4", opts: { label: "4" } },
-			{ id: "Digit5", opts: { label: "5" } },
-			{ id: "Digit6", opts: { label: "6" } },
-			{ id: "Digit7", opts: { label: "7" } },
-			{ id: "Digit8", opts: { label: "8" } },
-			{ id: "Digit9", opts: { label: "9" } },
-			{ id: "Digit0", opts: { label: "0" } },
-			{ id: "Minus", opts: { label: "-" } },
-			{ id: "Equal", opts: { label: "=" } },
-			{ id: "Backspace", opts: { width: 2 } },
-		]).map(key => { key.opts.y = start + 2; return key }),
+			{ id: "Backquote" as const, opts: { label: "`" } },
+			{ id: "Digit1" as const, opts: { label: "1" } },
+			{ id: "Digit2" as const, opts: { label: "2" } },
+			{ id: "Digit3" as const, opts: { label: "3" } },
+			{ id: "Digit4" as const, opts: { label: "4" } },
+			{ id: "Digit5" as const, opts: { label: "5" } },
+			{ id: "Digit6" as const, opts: { label: "6" } },
+			{ id: "Digit7" as const, opts: { label: "7" } },
+			{ id: "Digit8" as const, opts: { label: "8" } },
+			{ id: "Digit9" as const, opts: { label: "9" } },
+			{ id: "Digit0" as const, opts: { label: "0" } },
+			{ id: "Minus" as const, opts: { label: "-" } },
+			{ id: "Equal" as const, opts: { label: "=" } },
+			{ id: "Backspace" as const, opts: { width: 2 } },
+		]).map(setY(start + 2)),
 		...calculateAndSetPositionAndWidth([
-			{ id: "Tab", opts: { width: 1.5 } },
-			{ id: "KeyQ", opts: { label: "q" } },
-			{ id: "KeyW", opts: { label: "w" } },
-			{ id: "KeyE", opts: { label: "e" } },
-			{ id: "KeyR", opts: { label: "r" } },
-			{ id: "KeyT", opts: { label: "t" } },
-			{ id: "KeyY", opts: { label: "y" } },
-			{ id: "KeyU", opts: { label: "u" } },
-			{ id: "KeyI", opts: { label: "i" } },
-			{ id: "KeyO", opts: { label: "o" } },
-			{ id: "KeyP", opts: { label: "p" } },
-			{ id: "BracketLeft", opts: { label: "[" } },
-			{ id: "BracketRight", opts: { label: "]" } },
+			{ id: "Tab" as const, opts: { width: 1.5 } },
+			{ id: "KeyQ" as const, opts: { label: "q" } },
+			{ id: "KeyW" as const, opts: { label: "w" } },
+			{ id: "KeyE" as const, opts: { label: "e" } },
+			{ id: "KeyR" as const, opts: { label: "r" } },
+			{ id: "KeyT" as const, opts: { label: "t" } },
+			{ id: "KeyY" as const, opts: { label: "y" } },
+			{ id: "KeyU" as const, opts: { label: "u" } },
+			{ id: "KeyI" as const, opts: { label: "i" } },
+			{ id: "KeyO" as const, opts: { label: "o" } },
+			{ id: "KeyP" as const, opts: { label: "p" } },
+			{ id: "BracketLeft" as const, opts: { label: "[" } },
+			{ id: "BracketRight" as const, opts: { label: "]" } },
 			type === "ansi"
-			? { id: "Backslash", opts: { label: "\\", width: 1.5 } }
+			? { id: "Backslash" as const, opts: { label: "\\", width: 1.5 } }
 			: type === "iso"
-			? { id: "Enter", opts: { width: 1.5, height: 2, classes: ["iso-enter"]} }
+			? { id: "Enter" as const, opts: { width: 1.5, height: 2, classes: ["iso-enter"]} }
 			: {} as never,
-		]).map(key => { key.opts.y = start + 3; return key }),
+		]).map(setY(start + 3)),
 		...calculateAndSetPositionAndWidth([
-			{ id: "CapsLock", opts: { width: 1.75, is: { toggle: true } } },
-			{ id: "KeyA", opts: { label: "a" } },
-			{ id: "KeyS", opts: { label: "s" } },
-			{ id: "KeyD", opts: { label: "d" } },
-			{ id: "KeyF", opts: { label: "f" } },
-			{ id: "KeyG", opts: { label: "g" } },
-			{ id: "KeyH", opts: { label: "h" } },
-			{ id: "KeyJ", opts: { label: "j" } },
-			{ id: "KeyK", opts: { label: "k" } },
-			{ id: "KeyL", opts: { label: "l" } },
-			{ id: "Semicolon", opts: { label: ";" } },
-			{ id: "Quote", opts: { label: "'" } },
+			{ id: "CapsLock" as const, opts: { width: 1.75, is: { toggle: true } } },
+			{ id: "KeyA" as const, opts: { label: "a" } },
+			{ id: "KeyS" as const, opts: { label: "s" } },
+			{ id: "KeyD" as const, opts: { label: "d" } },
+			{ id: "KeyF" as const, opts: { label: "f" } },
+			{ id: "KeyG" as const, opts: { label: "g" } },
+			{ id: "KeyH" as const, opts: { label: "h" } },
+			{ id: "KeyJ" as const, opts: { label: "j" } },
+			{ id: "KeyK" as const, opts: { label: "k" } },
+			{ id: "KeyL" as const, opts: { label: "l" } },
+			{ id: "Semicolon" as const, opts: { label: ";" } },
+			{ id: "Quote" as const, opts: { label: "'" } },
 			type === "ansi"
-			? { id: "Enter", opts: { width: 2.25 } }
+			? { id: "Enter" as const, opts: { width: 2.25 } }
 			: type === "iso"
-			? { id: "Backslash", opts: { label: "#", width: 1 } }
+			? { id: "Backslash" as const, opts: { label: "#", width: 1 } }
 			: {} as never,
-		]).map(key => { key.opts.y = start + 4; return key }),
+		]).map(setY(start + 4)),
 		...calculateAndSetPositionAndWidth([
 			...(type === "ansi"
 			? [
-				{ id: "VirtualShiftLeft", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.25 } },
+				{ id: "VirtualShiftLeft" as const, opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.25 } },
 			]
 			: type === "iso"
 			? [
-				{ id: "VirtualShiftLeft", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 1.25 } },
-				{ id: "IntlBackslash", opts: { label: "\\", width: 1 } },
+				{ id: "VirtualShiftLeft" as const, opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 1.25 } },
+				{ id: "IntlBackslash" as const, opts: { label: "\\", width: 1 } },
 			]
-			: [] as never),
-			{ id: "KeyZ", opts: { label: "z" } },
-			{ id: "KeyX", opts: { label: "x" } },
-			{ id: "KeyC", opts: { label: "c" } },
-			{ id: "KeyV", opts: { label: "v" } },
-			{ id: "KeyB", opts: { label: "b" } },
-			{ id: "KeyN", opts: { label: "n" } },
-			{ id: "KeyM", opts: { label: "m" } },
-			{ id: "Comma", opts: { label: "," } },
-			{ id: "Period", opts: { label: "." } },
-			{ id: "Slash", opts: { label: "/" } },
-			{ id: "VirtualShiftRight", opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.75 } },
-		]).map(key => { key.opts.y = start + 5; return key }),
+			: []),
+			{ id: "KeyZ" as const, opts: { label: "z" } },
+			{ id: "KeyX" as const, opts: { label: "x" } },
+			{ id: "KeyC" as const, opts: { label: "c" } },
+			{ id: "KeyV" as const, opts: { label: "v" } },
+			{ id: "KeyB" as const, opts: { label: "b" } },
+			{ id: "KeyN" as const, opts: { label: "n" } },
+			{ id: "KeyM" as const, opts: { label: "m" } },
+			{ id: "Comma" as const, opts: { label: "," } },
+			{ id: "Period" as const, opts: { label: "." } },
+			{ id: "Slash" as const, opts: { label: "/" } },
+			{ id: "VirtualShiftRight" as const, opts: { is: { modifier: true }, label: "Shift", variants: ["ShiftLeft", "ShiftRight", "Shift"], width: 2.75 } },
+		]).map(setY(start + 5)),
 		...calculateAndSetPositionAndWidth([
-			{ id: "VirtualControlLeft", opts: { is: { modifier: true }, label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], width: 1.25 } },
-			{ id: "VirtualMetaLeft", opts: { is: { modifier: true }, label: "Meta", variants: ["MetaLeft", "MetaRight", "Meta"], width: 1.25 } },
-			{ id: "VirtualAltLeft", opts: { is: { modifier: true }, label: "Alt", variants: ["AltLeft", "AltRight", "Alt"], width: 1.25 } },
-			{ id: "Space", opts: { label: "", width: 6.25 } },
-			{ id: "VirtualAltRight", opts: { is: { modifier: true }, label: "Alt", variants: ["AltLeft", "AltRight", "Alt"], width: 1.25 } },
-			{ id: "VirtualMetaRight", opts: { is: { modifier: true }, label: "Meta", variants: ["MetaLeft", "MetaRight", "Meta"], width: 1.25 } },
-			{ id: "ContextMenu", opts: { label: "Menu", width: 1.25 } },
-			{ id: "VirtualControlRight", opts: { is: { modifier: true }, label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], width: 1.25 } },
-		]).map(key => { key.opts.y = start + 6; return key }),
+			{ id: "VirtualControlLeft" as const, opts: { is: { modifier: true }, label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], width: 1.25 } },
+			{ id: "VirtualMetaLeft" as const, opts: { is: { modifier: true }, label: "Meta", variants: ["MetaLeft", "MetaRight", "Meta"], width: 1.25 } },
+			{ id: "VirtualAltLeft" as const, opts: { is: { modifier: true }, label: "Alt", variants: ["AltLeft", "AltRight", "Alt"], width: 1.25 } },
+			{ id: "Space" as const, opts: { label: "", width: 6.25 } },
+			{ id: "VirtualAltRight" as const, opts: { is: { modifier: true }, label: "Alt", variants: ["AltLeft", "AltRight", "Alt"], width: 1.25 } },
+			{ id: "VirtualMetaRight" as const, opts: { is: { modifier: true }, label: "Meta", variants: ["MetaLeft", "MetaRight", "Meta"], width: 1.25 } },
+			{ id: "ContextMenu" as const, opts: { label: "Menu", width: 1.25 } },
+			{ id: "VirtualControlRight" as const, opts: { is: { modifier: true }, label: "Ctrl", variants: ["ControlLeft", "ControlRight", "Control"], width: 1.25 } },
+		]).map(setY(start + 6)),
 		...calculateAndSetPositionAndWidth([
-			{ id: "PrintScreen", opts: { label: "PrtScn", x: 15.5 } },
-			{ id: "ScrollLock", opts: { label: "Scroll\nLock", is: { toggle: true } } },
-			{ id: "Pause", opts: { label: "Pause\nBreak" } },
-		]).map(key => { key.opts.y = start; return key }),
+			{ id: "PrintScreen" as const, opts: { label: "PrtScn", x: 15.5 } },
+			{ id: "ScrollLock" as const, opts: { label: "Scroll\nLock", is: { toggle: true } } },
+			{ id: "Pause" as const, opts: { label: "Pause\nBreak" } },
+		]).map(setY(start)),
 		...(navigation
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "Insert", opts: { x: 15.5 } },
-					{ id: "Home" },
-					{ id: "PageUp", opts: { label: "Pg\nUp" } },
-				]).map(key => { key.opts.y = start + 2; return key }),
+					{ id: "Insert" as const, opts: { x: 15.5 } },
+					{ id: "Home" as const },
+					{ id: "PageUp" as const, opts: { label: "Pg\nUp" } },
+				]).map(setY(start + 2)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "Delete", opts: { x: 15.5 } },
-					{ id: "End" },
-					{ id: "PageDown", opts: { label: "Pg\nDown" } },
-				]).map(key => { key.opts.y = start + 3; return key }),
-				{ id: "ArrowUp", opts: { label: "▲", x: 16.5, y: start + 5, classes: ["center-label"]} },
+					{ id: "Delete" as const, opts: { x: 15.5 } },
+					{ id: "End" as const },
+					{ id: "PageDown" as const, opts: { label: "Pg\nDown" } },
+				]).map(setY(start + 3)),
+				{ id: "ArrowUp" as const, opts: { label: "▲", x: 16.5, y: start + 5, classes: ["center-label"]} },
 			]
 			: []
 		),
 		...(arrowKeys
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "ArrowLeft", opts: { label: "◄", x: 15.5, classes: ["center-label"]} },
-					{ id: "ArrowDown", opts: { label: "▼", classes: ["center-label"]} },
-					{ id: "ArrowRight", opts: { label: "►", classes: ["center-label"]} },
-				]).map(key => { key.opts.y = start + 6; return key }),
+					{ id: "ArrowLeft" as const, opts: { label: "◄", x: 15.5, classes: ["center-label"]} },
+					{ id: "ArrowDown" as const, opts: { label: "▼", classes: ["center-label"]} },
+					{ id: "ArrowRight" as const, opts: { label: "►", classes: ["center-label"]} },
+				]).map(setY(start + 6)),
 			]
 			: []
 		),
@@ -181,49 +186,49 @@ export function createLayout(
 			mediaKeys
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "AudioVolumeMute", opts: { label: "🔇", x: 19, ...mediaKey, classes: ["center-label"]} },
-					{ id: "AudioVolumeDown", opts: { label: "🔉", ...mediaKey, classes: ["center-label"]} },
-					{ id: "AudioVolumeUp", opts: { label: "🔊", ...mediaKey, classes: ["center-label"]} },
-				]).map(key => { key.opts.y = start; return key }),
+					{ id: "AudioVolumeMute" as const, opts: { label: "🔇", x: 19, ...mediaKey, classes: ["center-label"]} },
+					{ id: "AudioVolumeDown" as const, opts: { label: "🔉", ...mediaKey, classes: ["center-label"]} },
+					{ id: "AudioVolumeUp" as const, opts: { label: "🔊", ...mediaKey, classes: ["center-label"]} },
+				]).map(setY(start)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "MediaTrackPrevious", opts: { label: "⏮️", x: 19, ...mediaKey, classes: ["center-label"]} },
-					{ id: "MediaTrackPause", opts: { label: "⏯️", ...mediaKey, classes: ["center-label"]} },
-					{ id: "MediaTrackNext", opts: { label: "⏭️", ...mediaKey, classes: ["center-label"]} },
-				]).map(key => { key.opts.y = start + 0.5; return key }),
+					{ id: "MediaTrackPrevious" as const, opts: { label: "⏮️", x: 19, ...mediaKey, classes: ["center-label"]} },
+					{ id: "MediaTrackPause" as const, opts: { label: "⏯️", ...mediaKey, classes: ["center-label"]} },
+					{ id: "MediaTrackNext" as const, opts: { label: "⏭️", ...mediaKey, classes: ["center-label"]} },
+				]).map(setY(start + 0.5)),
 			]
 			: []
 		),
 		...(numpad
 			? [
 				...calculateAndSetPositionAndWidth([
-					{ id: "NumLock", opts: { label: "Num\nLock", x: 19, is: { toggle: true } } },
-					{ id: "NumpadDivide", opts: { label: "/" } },
-					{ id: "NumpadMultiply", opts: { label: "*" } },
-					{ id: "NumpadSubtract", opts: { label: "-" } },
-				]).map(key => { key.opts.y = start + 2; return key }),
+					{ id: "NumLock" as const, opts: { label: "Num\nLock", x: 19, is: { toggle: true } } },
+					{ id: "NumpadDivide" as const, opts: { label: "/" } },
+					{ id: "NumpadMultiply" as const, opts: { label: "*" } },
+					{ id: "NumpadSubtract" as const, opts: { label: "-" } },
+				]).map(setY(start + 2)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "Numpad7", opts: { label: "7", x: 19 } },
-					{ id: "Numpad8", opts: { label: "8" } },
-					{ id: "Numpad9", opts: { label: "9" } },
-					{ id: "NumpadAdd", opts: { label: "+", height: 2 } },
-				]).map(key => { key.opts.y = start + 3; return key }),
+					{ id: "Numpad7" as const, opts: { label: "7", x: 19 } },
+					{ id: "Numpad8" as const, opts: { label: "8" } },
+					{ id: "Numpad9" as const, opts: { label: "9" } },
+					{ id: "NumpadAdd" as const, opts: { label: "+", height: 2 } },
+				]).map(setY(start + 3)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "Numpad4", opts: { label: "4", x: 19 } },
-					{ id: "Numpad5", opts: { label: "5" } },
-					{ id: "Numpad6", opts: { label: "6" } },
-				]).map(key => { key.opts.y = start + 4; return key }),
+					{ id: "Numpad4" as const, opts: { label: "4", x: 19 } },
+					{ id: "Numpad5" as const, opts: { label: "5" } },
+					{ id: "Numpad6" as const, opts: { label: "6" } },
+				]).map(setY(start + 4)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "Numpad1", opts: { label: "1", x: 19 } },
-					{ id: "Numpad2", opts: { label: "2" } },
-					{ id: "Numpad3", opts: { label: "3" } },
-					{ id: "NumpadEnter", opts: { label: "+", height: 2 } },
-				]).map(key => { key.opts.y = start + 5; return key }),
+					{ id: "Numpad1" as const, opts: { label: "1", x: 19 } },
+					{ id: "Numpad2" as const, opts: { label: "2" } },
+					{ id: "Numpad3" as const, opts: { label: "3" } },
+					{ id: "NumpadEnter" as const, opts: { label: "+", height: 2 } },
+				]).map(setY(start + 5)),
 				...calculateAndSetPositionAndWidth([
-					{ id: "Numpad0", opts: { label: "0", x: 19, width: 2 } },
-					{ id: "NumpadDecimal", opts: { label: "." } },
-				]).map(key => { key.opts.y = start + 6; return key }),
+					{ id: "Numpad0" as const, opts: { label: "0", x: 19, width: 2 } },
+					{ id: "NumpadDecimal" as const, opts: { label: "." } },
+				]).map(setY(start + 6)),
 			]
 			: []
 		),
-	] as any
+	]
 }

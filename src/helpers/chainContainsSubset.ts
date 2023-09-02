@@ -10,8 +10,8 @@ import type { Key } from "../classes/Key.js"
  */
 
 export const chainContainsSubset = (
-	chainSubset: Key[][],
-	chain: Key[][],
+	chainSubset: readonly Key[][],
+	chain: readonly Key[][],
 	{
 		onlySubset = false,
 		onlyPressable = false,

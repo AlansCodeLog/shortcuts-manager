@@ -1,10 +1,10 @@
-import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "../classes/index.js"
-import type { Manager } from "../classes/Manager.js"
-import type { KnownError } from "../helpers/index.js"
-
 import type { BaseHook } from "./hooks.js"
 import type { ManagerListener } from "./index.js"
 import type { AnyInputEvent } from "./manager.js"
+
+import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "../classes/index.js"
+import type { Manager } from "../classes/Manager.js"
+import type { KnownError } from "../helpers/index.js"
 
 
 /**
@@ -32,6 +32,7 @@ export enum ERROR {
 
 	// === other
 	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
+	CANNOT_SET_WHILE_DISABLED = "CANNOT_SET_WHILE_DISABLED",
 
 	// === manager
 	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
@@ -162,6 +163,11 @@ type ERROR_Info = {
 	{
 		chordsA: Key[][]
 		chordsB: Key[][]
+	}
+
+	[ERROR.CANNOT_SET_WHILE_DISABLED]:
+	{
+		instance: { id: string, label: string, enabled: boolean }
 	}
 
 	// === manager

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-shadow */
 import { testName } from "@alanscodelog/utils"
-import { Command, Commands, Context, Emulator, Key, Keys, Manager, Shortcut, Shortcuts, Stringifier } from "classes/index.js"
-import { KeysSorter } from "classes/KeysSorter.js"
-import { ERROR } from "types/enums.js"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+import { Command, Commands, Context, Emulator, Key, Keys, Manager, Shortcut, Shortcuts, Stringifier } from "shortcuts-manager/classes/index.js"
+import { KeysSorter } from "shortcuts-manager/classes/KeysSorter.js"
+import { ERROR } from "shortcuts-manager/types/enums.js"
 
 
 vi.useFakeTimers()
@@ -493,7 +494,7 @@ describe(testName(), () => {
 				new Shortcut([[ctrl, i]], { command: commandMakeItalic }),
 				new Shortcut([[ctrl, x], [ctrl, b]], { command: commandMakeBold }),
 				new Shortcut([[ctrl, x], [ctrl, i]], { command: commandMakeItalic }),
-			]),
+			], { ignoreModifierConflicts: true }),
 			new Context({}),
 			callback
 		)

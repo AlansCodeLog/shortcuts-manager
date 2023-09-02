@@ -1,9 +1,10 @@
 import { crop, testName } from "@alanscodelog/utils"
-import { Key } from "classes/Key.js"
-import { Shortcut } from "classes/Shortcut.js"
-import { Shortcuts } from "classes/Shortcuts.js"
-import { defaultStringifier, Stringifier } from "classes/Stringifier.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
+
+import { Key } from "shortcuts-manager/classes/Key.js"
+import { Shortcut } from "shortcuts-manager/classes/Shortcut.js"
+import { Shortcuts } from "shortcuts-manager/classes/Shortcuts.js"
+import { defaultStringifier, Stringifier } from "shortcuts-manager/classes/Stringifier.js"
 
 
 describe(testName(), () => {

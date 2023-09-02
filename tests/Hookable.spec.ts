@@ -1,10 +1,11 @@
 import { catchError, Err, Ok, type Result, testName } from "@alanscodelog/utils"
-import { Shortcut } from "classes/Shortcut.js"
-import { Shortcuts } from "classes/Shortcuts.js"
-import { TYPE_ERROR } from "types/enums.js"
 import { describe, expect, it, type Mock, vi } from "vitest"
 
 import { k } from "./helpers.keys.js"
+
+import { Shortcut } from "shortcuts-manager/classes/Shortcut.js"
+import { Shortcuts } from "shortcuts-manager/classes/Shortcuts.js"
+import { TYPE_ERROR } from "shortcuts-manager/types/enums.js"
 
 
 describe(testName(), () => {

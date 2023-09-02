@@ -1,10 +1,11 @@
 import { crop, Err, indent, Ok, type Result } from "@alanscodelog/utils"
-import type { Commands, Keys, Shortcut, Shortcuts, Stringifier } from "../classes/index.js"
-import { ERROR } from "../types/index.js"
 
 import { checkShortcutCommands } from "./checkShortcutCommands.js"
 import { checkShortcutKeys } from "./checkShortcutKeys.js"
 import { KnownError } from "./KnownError.js"
+
+import type { Commands, Keys, Shortcut, Shortcuts, Stringifier } from "../classes/index.js"
+import { ERROR } from "../types/index.js"
 
 
 /**

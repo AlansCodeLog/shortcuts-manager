@@ -1,8 +1,9 @@
 import { crop, Err, Ok, type Result } from "@alanscodelog/utils"
-import type { Key, Keys, Shortcut, Stringifier } from "../classes/index.js"
-import { ERROR } from "../types/index.js"
 
 import { KnownError } from "./KnownError.js"
+
+import type { Key, Keys, Shortcut, Stringifier } from "../classes/index.js"
+import { ERROR } from "../types/index.js"
 
 
 export function checkShortcutKeys(shortcut: Shortcut, keys: Keys, s: Stringifier): Result<true, KnownError<ERROR.UNKNOWN_KEYS_IN_SHORTCUT>>

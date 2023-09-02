@@ -1,8 +1,9 @@
 import { catchError, testName } from "@alanscodelog/utils"
-import { Key } from "classes/Key.js"
-import { Keys } from "classes/Keys.js"
-import { ERROR } from "types/enums.js"
 import { describe, expect, it, vi } from "vitest"
+
+import { Key } from "shortcuts-manager/classes/Key.js"
+import { Keys } from "shortcuts-manager/classes/Keys.js"
+import { ERROR } from "shortcuts-manager/types/enums.js"
 
 
 describe(testName(), () => {

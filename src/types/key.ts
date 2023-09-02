@@ -1,16 +1,18 @@
 import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
-import type { Key, Keys, Stringifier } from "../classes/index.js"
-import type { KnownError } from "../helpers/index.js"
 
+import type { HookableOpts } from "./base.js"
 import type { ERROR, KEY_SORT_POS } from "./enums.js"
 import type { BaseHookType, CollectionHookType } from "./hooks.js"
+
+import type { Key, Keys } from "../classes/index.js"
+import type { KnownError } from "../helpers/index.js"
 
 
 /**
  * Same as {@link KeyOptions} except you're allowed to just pass true to toggle.
  */
-export type RawKey = {
-	id: string
+export type RawKey<T extends string = string> = {
+	id: T
 	opts?: Mutable<DeepPartial<Omit<KeyOptions, "is">>>
 	& {
 		is?: {
@@ -41,17 +43,21 @@ export type ToggleRootKey<
 
 export type AnyKey = Key | ToggleKey<any>
 
-export type KeyOptions = {
+export type KeyOptions = HookableOpts & {
+	/**
+	 * Whether the key is enabled.
+	 *
+	 * If it's disabled, `.allows("pressed", ...)` will return an error.
+	 *
+	 * Useful for preventing the Meta/Super key from being pressed, but still allowing the manager to manage it's position so it's still visible.
+	 */
+	enabled: boolean
 	/**
 	 * The label to use for the key when stringifying it. If no label is specified, it's left blank.
 	 *
 	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
 	readonly label: string
-	/**
-	 * See {@link Stringifier}
-	 */
-	stringifier: Stringifier
 	/**
 	 * Variants are a list of fallback codes that will also trigger a key.
 	 *
@@ -88,7 +94,7 @@ export type KeyOptions = {
 	 *
 	 * @RequiresSet @AllowsHookable @SetHookable
 	 */
-	readonly variants: string[] | undefined
+	readonly variants: readonly string [] | string[] | undefined
 	/**
 	 * Whether the key should be rendered. See {@link Manager.layout}.
 	 *
@@ -122,7 +128,7 @@ export type KeyOptions = {
 	 */
 	readonly y: number
 	/** A list of css classes the key should be rendered with. */
-	classes: string[]
+	classes: readonly string [] | string[]
 	readonly is: {
 		/**
 		 * Whether the key is a modifier. A modifier can be either `"native"` (event.getModifierState will always be used on all events to get it's true state) or `"emulated"`.
@@ -226,11 +232,7 @@ export type KeyOptions = {
 	checkStateOnAllEvents: boolean
 }
 
-export type KeysOptions = {
-	/**
-	 * See {@link Stringifier}
-	 */
-	stringifier?: Stringifier
+export type KeysOptions = HookableOpts & {
 	/**
 	 * Whether the instance automatically calculates the layout size ({@link Keys.layout}) from it's keys and adjusts to size/position changes using {@link Keys.recalculateLayout}.
 	 *

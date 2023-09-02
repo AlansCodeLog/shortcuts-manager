@@ -1,14 +1,14 @@
 import { type AnyClass, crop, Err, indent, Ok, type Result } from "@alanscodelog/utils"
+
+import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
+import { Key } from "./Key.js"
+
 import { HookableCollection } from "../bases/HookableCollection.js"
 import { isToggleKey } from "../helpers/isToggleKey.js"
 import { isToggleRootKey } from "../helpers/isToggleRootKey.js"
 import { KnownError } from "../helpers/KnownError.js"
 import { ERROR } from "../types/enums.js"
 import type { BaseHook, KeyHooks, KeyOptions, KeysBaseHooks, KeysCollectionHooks, KeysOptions, RawKey, RecordFromArray } from "../types/index.js"
-
-import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
-import { Key } from "./Key.js"
-import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 
 export class Keys<
@@ -78,9 +78,8 @@ export class Keys<
 		keys: TRawKeys,
 		opts?: Partial<KeysOptions>,
 	) {
-		super()
+		super(opts)
 		this._boundKeyManageLayoutHook = this._keyManageLayoutHook.bind(this)
-		this.stringifier = opts?.stringifier ?? defaultStringifier
 
 		this.entries = {} as TEntries
 
@@ -92,7 +91,6 @@ export class Keys<
 		}
 	}
 
-	stringifier: Stringifier
 
 	protected override _add(rawEntry: RawKey): void {
 		const entry = this.create(rawEntry)

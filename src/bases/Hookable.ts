@@ -1,6 +1,9 @@
 import { crop, indent, pretty } from "@alanscodelog/utils"
+
 import type { Stringifier } from "../classes/Stringifier.js"
+import { defaultStringifier } from "../classes/Stringifier.js"
 import { KnownError } from "../helpers/KnownError.js"
+import type { HookableOpts } from "../types/base.js"
 import { TYPE_ERROR } from "../types/enums.js"
 
 
@@ -8,12 +11,13 @@ export class Hookable<
 	THooks extends Record<string, any>,
 	TTypes extends keyof THooks = keyof THooks,
 > {
-	stringifier!: Stringifier
+	stringifier: Stringifier = defaultStringifier
 
 	hooks: {[K in keyof THooks]: THooks[K][] } = {} as any
 
-	constructor(keys: TTypes[]) {
+	constructor(keys: TTypes[], opts: Partial<HookableOpts> = {}) {
 		for (const key of keys) this.hooks[key] = [] as any
+		if (opts.stringifier) this.stringifier = opts.stringifier
 	}
 
 	/**
@@ -45,11 +49,12 @@ export class Hookable<
 		THook extends
 			THooks[TType] =
 			THooks[TType],
-	>(type: TType, hook: THook): void {
+	>(type: TType, hook: THook): THook {
 		if (typeof hook !== "function") {
 			throw new KnownError(TYPE_ERROR.ILLEGAL_OPERATION, "Hook is not a function.", undefined)
 		}
 		this.hooks[type].push(hook as any)
+		return hook
 	}
 
 	/**

@@ -1,7 +1,8 @@
 import { Ok, Result } from "@alanscodelog/utils"
-import type { BaseHook, BaseHookType } from "../types/index.js"
 
 import { Hookable } from "./Hookable.js"
+
+import type { BaseHook, BaseHookType, HookableOpts } from "../types/index.js"
 
 
 export class HookableBase<
@@ -14,8 +15,8 @@ export class HookableBase<
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsHook, set: TSetHook }> {
-	constructor() {
-		super(["allows", "set"])
+	constructor(opts: Partial<HookableOpts> = {}) {
+		super(["allows", "set"], opts)
 	}
 
 	protected _set<
@@ -65,6 +66,7 @@ export class HookableBase<
 		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
 		const self = this as any
+
 		for (const hook of this.hooks.allows) {
 			const response = hook(key as any, value, self[key], self)
 			if (response.isError) return response
@@ -107,7 +109,7 @@ export class HookableBase<
 	 */
 	safeSet< TKey extends keyof THooks = keyof THooks>(
 		key: TKey,
-		value: THooks[TKey]["excludeAllows"] extends true ? never : THooks[TKey]["value"],
+		value: THooks[TKey]["excludeSet"] extends true ? never : THooks[TKey]["value"],
 	): Result<true, THooks[TKey]["error"] | Error> {
 		const res = this.allows(key, value)
 		if (res.isError) return res

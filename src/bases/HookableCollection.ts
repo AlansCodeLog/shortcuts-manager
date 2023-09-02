@@ -1,8 +1,9 @@
 import { type Result, unreachable } from "@alanscodelog/utils"
-import type { KnownError } from "../helpers/KnownError.js"
-import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "../types/index.js"
 
 import { Hookable } from "./Hookable.js"
+
+import type { KnownError } from "../helpers/KnownError.js"
+import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR, HookableOpts } from "../types/index.js"
 
 
 export class HookableCollection<
@@ -40,8 +41,8 @@ export class HookableCollection<
 		set: TSetHook
 	},
 > extends Hookable<THooks> {
-	constructor() {
-		super(["add", "remove", "allowsAdd", "allowsRemove", "set"])
+	constructor(opts: Partial<HookableOpts> = {}) {
+		super(["add", "remove", "allowsAdd", "allowsRemove", "set"], opts)
 	}
 
 	entries!: TEntries
@@ -152,6 +153,26 @@ export class HookableCollection<
 		for (const hook of this.hooks.remove) {
 			hook(self, this.entries, entry)
 		}
+	}
+
+	safeRemove(
+		entry: TCollectionHook["removeArgs"]
+	): Result<true, TCollectionHook["error"] | Error> {
+		const res = this.allows("remove", entry)
+		if (res.isOk) {
+			this.remove(entry)
+		}
+		return res
+	}
+
+	safeAdd(
+		entry: TCollectionHook["allowArgs"]
+	): Result<true, TCollectionHook["error"] | Error> {
+		const res = this.allows("add", entry)
+		if (res.isOk) {
+			this.add(entry)
+		}
+		return res
 	}
 
 	/**

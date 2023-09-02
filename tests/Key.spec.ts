@@ -1,8 +1,9 @@
 import { catchError, testName } from "@alanscodelog/utils"
-import { Stringifier } from "classes/index.js"
-import { Key } from "classes/Key.js"
-import { ERROR } from "types/enums.js"
 import { afterEach, describe, expect, it, vi } from "vitest"
+
+import { Stringifier } from "shortcuts-manager/classes/index.js"
+import { Key } from "shortcuts-manager/classes/Key.js"
+import { ERROR } from "shortcuts-manager/types/enums.js"
 
 
 describe(testName(), () => {
@@ -20,12 +21,12 @@ describe(testName(), () => {
 		expect(key1.equals(key3)).to.be.false
 	})
 	it("should compare equality properly with variants", () => {
-		const key1 = new Key("variant1", {variants: ["a"]})
-		const key2 = new Key("variant2", {variants:["a"]})
+		const key1 = new Key("variant1", { variants: ["a"]})
+		const key2 = new Key("variant2", { variants: ["a"]})
 		expect(key1.equals(key2)).to.be.true
 		expect(key2.equals(key1)).to.be.true
-		expect(key1.equals(key2, {allowVariants:false})).to.be.false
-		expect(key2.equals(key1, {allowVariants:false})).to.be.false
+		expect(key1.equals(key2, { allowVariants: false })).to.be.false
+		expect(key2.equals(key1, { allowVariants: false })).to.be.false
 	})
 	it("should create toggle key properly", () => {
 		const key2 = new Key("a", { is: { toggle: false } })
