@@ -1,4 +1,3 @@
-// @ts-expect-error
 import vue from "@vitejs/plugin-vue"
 import path from "path"
 import { externalizeDeps } from "vite-plugin-externalize-deps"
@@ -6,6 +5,7 @@ import tsconfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
 
 import postcss from "./postcss.config.js"
+
 
 // https://vitejs.dev/config/
 export default async ({ mode }: { mode: string }) => defineConfig({

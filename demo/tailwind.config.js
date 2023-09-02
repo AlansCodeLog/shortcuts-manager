@@ -1,5 +1,5 @@
 import { config } from "@alanscodelog/vue-components/tailwind/config.js"
-import tailwindPlugin from "tailwindcss/plugin.js"
+// import tailwindPlugin from "tailwindcss/plugin.js"
 
 
 export default {

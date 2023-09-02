@@ -3,3 +3,4 @@ import type { InjectionKey } from "vue"
 
 
 export const notificationHandlerSymbol: InjectionKey<NotificationHandler> = Symbol("notificationHandler")
+

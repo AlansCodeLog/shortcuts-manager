@@ -5,8 +5,9 @@ This should not have any overscroll hidden or it will hide the scrolling indicat
 All css variables are set here for maximum flexibility.
 -->
 
-<div :class="twMerge(`
-		m-[var(--scrollMargin)]
+<div
+	:class="twMerge(`
+		p-2
 		container-styles
 		relative
 		border
@@ -19,25 +20,36 @@ All css variables are set here for maximum flexibility.
 		after:inset-[-2px]
 		after:border-4
 	`,
-	/* after:inset-[calc(-1*var(--outerScrollMargin))]
+		/* after:inset-[calc(-1*var(--outerScrollMargin))]
 		after:[border-width:var(--scrollBorder)] */
-	isDragging && ` border-red-500 `,
-	scrollIndicator.right && `after:border-r-accent-500/60`,
-	scrollIndicator.down && `after:border-b-accent-500/60`,
-	scrollIndicator.left && `after:border-l-accent-500/60`,
-	scrollIndicator.up && `after:border-t-accent-500/60`,
+		isDragging && ` border-accent-500 `,
+		scrollIndicator.right && `after:border-r-accent-500/60`,
+		scrollIndicator.down && `after:border-b-accent-500/60`,
+		scrollIndicator.left && `after:border-l-accent-500/60`,
+		scrollIndicator.up && `after:border-t-accent-500/60`,
 	)"
 	:style="`
 		--keyW: ${keyW};
 		--padding: calc(var(--keyW)*0.05px);
 		--shadow: calc(var(--padding) - 1px);
-		--fontSize: calc(var(--keyW)*0.25px);
+		--fontSize: calc(var(--keyW)*0.24px);
 		--scrollMargin: ${scrollMargin}px;
 		--outerScrollMargin: ${outerScrollMargin}px;
 		--scrollBorder: ${scrollMargin + outerScrollMargin}px;
 		--height:${height}px;
 	`"
 >
+	<div class="flex justify-between after:content-vertical-holder" @mouseenter="isDragging ? manager.clearChain() : undefined">
+		<div class="flex-1">
+			{{ manager.stringifier.stringify(chain) }}
+			{{ isDragging && chain.length > 0 ? "(Hover over to clear chain.)" : "" }}
+		</div>
+		<div class="">
+			{{
+				newChainText
+			}}
+		</div>
+	</div>
 	<!--
 	This is a container to allow scrolling.
 	It should not have any margins or borders since the drag calculations do not include them.
@@ -86,9 +98,9 @@ All css variables are set here for maximum flexibility.
 				:key-id="key.value.id"
 				v-for="key of displayedKeys"
 				:key="key.value.id"
-				@click="toggleKey(key.value)"
+				@click="toggleKeyState(key.value)"
 				@mouseenter="openKey(key.value.id)"
-				@mouseleave="closeKey()"
+				@mouseleave="closeKey"
 			>
 				<div :id="'key-'+key.value.id"
 					:class="twMerge(`
@@ -99,315 +111,352 @@ All css variables are set here for maximum flexibility.
 						h-full
 						whitespace-pre
 						shadow-[0_var(--shadow)_var(--shadow)_rgb(0_0_0/50%)]
-						flex flex-col
 						rounded-[var(--padding)]
 						relative
 						bg-bg
+						grid
+						grid-rows-[min-content,1fr]
+						grid-cols-1
+						before:border-[3px]
+						before:border-transparent
+						before:inset-[-3px]
+						before:absolute
+						before:rounded
+						before:z-[-1]
 					`,
 						key.value.pressed && `
 						border-accent-600
-						bg-neutral-300
+						bg-accent-100
 						before:bg-neutral-300
 					`,
-						key.value.on?.pressed && `border-red-600`,
-						key.value.is.modifier &&
-							shortcutsList[key.value.id]?.bases !== undefined && `
-							before:border-[3px]
-							before:inset-[-3px]
-							before:absolute
+						key.value.on?.pressed && `border-accent-600`,
+						shortcutsList[key.value.id]?.isModifierHint && `
 							before:border-neutral-300
-							before:rounded
-							before:z-[-1]
+						`,
+						candidateKey && key.value.equals(candidateKey) && canDrop === true && `
+							border-accent-600
+							bg-accent-200
+						`,
+						candidateKey && key.value.equals(candidateKey) && canDrop !== true && `
+							border-red-600
+							bg-red-200
 						`
-
 					)"
 					:title="key.value.label"
 				>
 					<div :class="twMerge(`
 						label
 						px-1
-						z-1
-						w-full
-						flex
-						justify-between
 					`)"
 					>
 						<div class="truncate">
 							{{ key.value.label }}
-						</div>
-						<div
-
-							v-if="!key.value.is.modifier && shortcutsList[key.value.id]?.bases !== undefined"
-						>
-							<fa class="block" icon="fa link"/>
 						</div>
 					</div>
 					<!-- The padding needs to be on the shortcuts container and not the parent so that on hover we can still have the background with padding. -->
 					<div :class="twMerge(`
 							shortcuts
 							truncate
-							shrink-1
-							px-1
-							ml-[-1px]
-							mt-[-1px]
+							flex flex-col
 							w-full
-							flex
-							flex-col
 							overflow-hidden
-							z-10
+							gap-[3px]
+							px-[1px]
+							pb-[1px]
 						`,
-						canOpen[key.value.id] && `
-							hovered
+
+						canOpen[key.value.id] && !isDragging && `
+							z-[2]
+							m-[-3px]
+							mt-[-3.5px]
+							min-w-[calc(100%+6px)]
+							p-[3px]
 							[overflow:unset]
 							w-[min-content]
 							rounded
 							bg-bg
-							border
-							border-neutral-500
+							border-[1px]
+							border-neutral-300
 						`,
-						/* Small indicator there are more shortcuts */
-						!canOpen[key.value.id] &&
-							(shortcutsList[key.value.id]?.shortcuts?.length ?? 0) > 1 && `
-							after:border-b-2
-							after:border-b-neutral-300
-							after:content-['...']
-							after:translate-y-[-50%]
-							after:text-accent-600
-						`,
-						
-					)"
+						)"
+						:data-contains-conflicting="shortcutsList[key.value.id]?.containsConflicting"
 					>
 						<div
 							:class="twMerge(`
-								shortcut
-							`,
+									${shortcutClass}
+									truncate
+									rounded-sm
+									px-1
+									flex-1
+									border-2
+									border-neutral-300
+									hover:cursor-pointer
+									flex
+									items-center
+									user-select-none
+								`,
+								!isDragging && `
+									hover:border-accent-500
+								`,
 								!canOpen[key.value.id] && `
-								[&:not(:first-of-type)]:hidden
-							`,
+									[&:not(:first-of-type)]:hidden
+								`,
+								shortcutsList[key.value.id]?.containsConflicting && `
+									border-red-400
+								`,
+								isPressableChain && `
+									border-transparent
+									justify-center items-center
+								`,
+								isPressable && `
+													`,
+
 							)
 
 							"
-							v-for="shortcut, i in shortcutsList[key.value.id]?.shortcuts"
+							:data-is-pressable="isPressable"
+							:data-is-pressable-chain="isPressableChain"
+							:title="getTitle(shortcutsList[key.value.id]?.entries, i)"
+							:shortcut-index="i"
+							v-for="{entry:shortcut, isPressable, isPressableChain }, i in shortcutsList[key.value.id]?.entries"
 							:key="shortcut.toString()"
 						>
-							{{ shortcut.value?.command?.name ?? "(None)" }}
+							<template v-if="isPressable && !isPressableChain">
+								{{ shortcut?.command?.name ?? "(None)" }}
+							</template>
+							<!-- <lib-debug :value="{isPressable, isPressableChain}"/> -->
+							<fa v-if="isPressableChain" icon="fa link" class="pointer-events-none"/>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
 	</div>
-	<div>
-		{{ manager.stringifier.stringify(m.chain) }}
-		<div v-for="shortcut in pressableShortcuts" :key="shortcut.value.toString()">
-			{{ shortcut.value.toString() }}
-		</div>
-		---
-		<div v-for="shortcut in chainBases" :key="shortcut.value.toString()">
-			{{ shortcut.value.toString() }}
+	<div
+		v-if="grabbedShortcut && isDragging"
+		class="
+			fixed
+			no-touch-action
+			pointer-events-none
+			z-[4]
+			cursor-grab
+			"
+		:style="`left:${coords.x}px; top:${coords.y}px;`"
+	>
+		<div class="relative">
+			<div v-if="typeof canDrop === 'string' && grabbedShortcut"
+				class="
+					whitespace-pre-wrap
+					translate-y-[calc(-100%-4px)]
+					absolute
+					w-[300px]
+					text-sm
+					bg-bg
+					border-2
+					rounded
+					border-neutral-300
+					px-2
+				"
+			>
+				{{ canDrop }}
+			</div>
+			<div
+				class="
+					border-2
+					border-neutral-300
+					bg-bg
+					px-2
+					rounded
+				"
+			>
+				<!-- {{ grabbedShortcut.entry?.command?.name ?? "(None)" }} -->
+				<template v-if="grabbedShortcut.isPressable && !grabbedShortcut.isPressableChain">
+					{{ grabbedShortcut?.entry.command?.name ?? "(None)" }}
+				</template>
+				<fa v-if="grabbedShortcut.isPressableChain" icon="fa link" class="pointer-events-none"/>
+			</div>
 		</div>
 	</div>
-	<lib-debug>{{ shortcutsList }}</lib-debug>
-<!-- 	</div> -->
-<!-- 	<div -->
-<!-- 		v-if="candidateShortcut && isDragging" -->
-<!-- 		class="shortcut shortcut-dragging" -->
-<!-- 		:style="`left:${coords.x}px; top:${coords.y}px;`" -->
-<!-- 	> -->
-<!-- 		{{ candidateShortcut?.command?.name ?? "(None)" }} -->
 </div>
 </template>
 
 <script setup lang="ts">
-import { castType, keys, last } from "@alanscodelog/utils"
+import { castType, last } from "@alanscodelog/utils"
 import { twMerge } from "tailwind-merge"
-import { computed, onBeforeUnmount, onMounted, onUnmounted, reactive, type Ref, ref } from "vue"
+import { computed, onMounted, onUnmounted, type Ref, ref, shallowRef, toRefs } from "vue"
+import { inject } from "vue"
 
-import { Emulator, type Key, type Keys, type Manager, type Shortcut } from "shortcuts-manager/classes/index.js"
-import { chordContainsKey, isToggleKey, isToggleRootKey, removeKeys } from "shortcuts-manager/helpers/index.js"
+import { type Key, Manager } from "shortcuts-manager/classes/index.js"
+import { isToggleKey, isToggleRootKey, isTriggerKey } from "shortcuts-manager/helpers/index.js"
 
+import { createDropChain } from "../common/createDropChain.js"
+import { transformShortcutAllowsChainRes } from "../common/transformShortcutAllowsChainRes.js"
+import { useKeysLayout } from "../composables/useKeysLayout.js"
+import { useManagerChain } from "../composables/useManagerChain.js"
+import { usePointerCoords } from "../composables/usePointerCoords.js"
 import { useScrollNearContainerEdges } from "../composables/useScrollNearContainerEdges.js"
+import { type ShortcutInfo, useShortcutsList } from "../composables/useShortcutsList.js"
+import { notificationHandlerSymbol } from "../injectionSymbols.js"
 
-
-const keyClass = "container-key"
 
 const props = defineProps<{
 	keys: Ref<Key<any>>[]
-	shortcuts: Ref<Shortcut>[]
+	// shortcuts: Ref<Shortcut>[]
 	manager: Manager
 }>()
 
+const notificationHandler = inject(notificationHandlerSymbol)
 
+const keyClass = "container-key"
+const shortcutClass = "shortcut"
+
+
+const chain = useManagerChain(props.manager)
 const displayedKeys = computed(() => props.keys.filter(key => !isToggleKey(key.value) || isToggleRootKey(key.value)))
 
 const keyboardEl = ref<HTMLElement | null>(null)
 const containerEl = ref<HTMLElement | null>(null)
 
-const m = reactive({
-	chain: props.manager.chain,
-	rows: props.manager.keys.layout.rows,
-	columns: props.manager.keys.layout.columns,
-})
+const { height, keyWidth: keyW } = useKeysLayout(props.manager.keys, keyboardEl)
 
-props.manager.addHook("set", (prop: any, val: any) => {
-	if (prop === "chain") {
-		console.log(val)
-		m.chain = val
-	}
-})
-props.manager.keys.addHook("set", (prop: string, val: any) => {
-	if (prop === "layout") {
-		castType<Keys["layout"]>(val)
-		m.rows = val.rows
-		m.columns = val.columns
-	}
-})
+const openedKey = shallowRef<string | undefined>()
+const grabbedKey = shallowRef<Key | undefined>()
+const grabbedShortcut = shallowRef<ShortcutInfo | undefined>()
+const candidateKey = shallowRef<Key | undefined>()
+const isDragging = ref<boolean>(false)
+const chainBeforeDrag = shallowRef<Key[][]>([])
+const { manager, keys } = toRefs(props)
+const shortcutsList = useShortcutsList(manager, keys, chain)
 
-const width = ref(0)
-const keyW = computed(() => {
-	const val = width.value / m.columns
-	return Number.isNaN(val) ? 1 : val
-})
-const ratio = computed(() => m.columns / m.rows)
-const height = computed(() => width.value / ratio.value)
+const getKeyEl = (e: PointerEvent): HTMLElement | undefined => (e?.target as HTMLElement).closest(`.${keyClass}`) as HTMLElement | undefined
+
+const getShortcutEl = (e: PointerEvent): HTMLElement | undefined => (e?.target as HTMLElement).closest(`.${shortcutClass}`) as HTMLElement | undefined
 
 
-const openedKey = ref<string>()
-const candidateKey = ref<Key>()
-const candidateShortcut = ref<Shortcut>()
-const isDragging = ref<boolean>()
-const canDrag = ref<boolean>()
+const getKeyByElIdProp = (el?: HTMLElement): Key | undefined => {
+	if (!el) return
+	const id = el.getAttribute("key-id")
+	return id ? props.manager.keys.entries[id] : undefined
+}
+
+const getShortcutByElIndexProp = (
+	el?: HTMLElement,
+	keyId?: string,
+): ShortcutInfo | undefined => {
+	if (!el || !keyId) return
+	let i: string | number | null = el.getAttribute("shortcut-index")
+	i = typeof i === "string" ? parseInt(i, 10) : i
+	return i !== null && i > -1 ? shortcutsList.value[keyId].entries[i] : undefined
+}
 
 
-const pressableShortcuts = computed(() => props.shortcuts.filter(({ value: shortcut }) =>
-	shortcut.canExecuteIn(props.manager.context, { allowEmptyCommand: true }) &&
-	shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: true })),
-)
+const openKey = (id: string): void => { openedKey.value = id }
 
-const chainBases = computed(() => props.shortcuts.filter(({ value: shortcut }) => shortcut.canExecuteIn(props.manager.context, { allowEmptyCommand: true }) &&
-	shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: false }) &&
-	!shortcut.containsSubset(m.chain, { onlySubset: true, onlyPressable: true })))
+const closeKey = (): void => { openedKey.value = undefined }
 
-
-const shortcutsList = computed(() => {
-	const obj: Record<string, {
-		bases?: Ref<Shortcut>[]
-		shortcuts?: Ref<Shortcut>[]
-	}> = {}
-	for (const { value: key } of props.keys) {
-		const index = m.chain.length === 0 ? 0 : m.chain.length - 1
-		
-		const bases = chainBases.value.filter(({ value: shortcut }: Ref<Shortcut>): boolean =>
-			chordContainsKey(shortcut.chain[index], key, { allowVariants: true }) &&
-			(key.is.modifier || removeKeys(shortcut.chain[index], m.chain[index] ?? [])[0] === key),
-			// (!m.chain[index] || !chordContainsKey(m.chain[index], key, { allowVariants: true }))
-		)
-
-		if (bases.length > 0) {
-			obj[key.id] ??= {}
-			obj[key.id].bases = bases
-		}
-		const shortcuts = pressableShortcuts.value.filter(({ value: shortcut }: Ref<Shortcut>): boolean =>
-			chordContainsKey(shortcut.chain[index], key, { allowVariants: true }) &&
-			(!m.chain[index] || !chordContainsKey(m.chain[index], key, { allowVariants: true })))
-		if (shortcuts.length > 0) {
-			obj[key.id] ??= {}
-			obj[key.id].shortcuts = shortcuts
-		}
-	}
-	
-	return obj
-})
+const draggingClear = (): void => {
+	isDragging.value = false
+	grabbedKey.value = undefined
+	grabbedShortcut.value = undefined
+	candidateKey.value = undefined
+}
 
 const canOpen = computed(() => {
 	const obj: Record<string, boolean> = {}
 	for (const { value: key } of props.keys) {
-		obj[key.id] = (shortcutsList.value[key.id]?.shortcuts?.length ?? 0) > 0 && openedKey.value === key.id
+		obj[key.id] = (shortcutsList.value[key.id]?.entries.length) > 0 && openedKey.value === key.id
 	}
 	return obj
 })
-const emulator = new Emulator()
-// emulator.mouseenter()
 
-const toggleKey = (key: Key): void => {
+const newDragChain = computed(() => createDropChain(
+	manager.value,
+	chain.value,
+	candidateKey.value,
+	// grabbedShortcut.value?.isPressableChain ? chainBeforeDrag.value.length : undefined
+))
+const getOldChainBase = () => {
+	if (chainBeforeDrag.value && grabbedKey.value) {
+		return [...chainBeforeDrag.value, [grabbedKey.value]]
+	}
+	return undefined
+}
+
+const canDrop = computed(() => {
+	if (isDragging.value && newDragChain.value) {
+		if (grabbedShortcut.value?.isPressable) {
+			const res = grabbedShortcut.value.entry.allows("chain", newDragChain.value)
+
+			return transformShortcutAllowsChainRes(res, grabbedShortcut.value.entry.chain, newDragChain.value, props.manager.stringifier)
+		}
+		if (grabbedShortcut.value?.isPressableChain && newDragChain.value) {
+			const oldChain = getOldChainBase()
+			if (!oldChain) return false
+			const res = props.manager.shortcuts.canSwapChords(oldChain, newDragChain.value)
+			return transformShortcutAllowsChainRes(res, oldChain, newDragChain.value, props.manager.stringifier)
+		}
+	}
+	return false
+})
+
+
+const newChainText = computed(() => {
+	if (newDragChain.value && canDrop.value === true) {
+		const chainText = props.manager.stringifier.stringify(newDragChain.value)
+		if (grabbedShortcut.value?.isPressableChain) {
+			return `(New chain base: ${chainText})`
+		} else if (grabbedShortcut.value?.isPressable) {
+			return `(New shortcut: ${chainText})`
+		}
+	}
+	return ""
+})
+
+
+// const debugShortcutsList = computed(() => process.env.NODE_ENV === "development" && Object.fromEntries(keys(shortcutsList.value).map(key => [key, shortcutsList.value[key].entries.map(_ => ({ ..._, entry: _.entry.toString() }))])))
+
+const getTitle = (entries: ShortcutInfo[] | undefined, i: number): string => {
+	if (!entries) return ""
+	const name = entries[i]?.entry.command?.name ?? "(None)"
+	const isChain = entries[i].isPressableChain
+	if (entries.length === 1) return isChain ? "Chain" : name
+	if (entries.length > 1) return isChain ? "Conflicting Chain" : `Conflicting Shortcut: ${name}`
+	return ""
+}
+
+const toggleKeyState = (key: Key): void => {
+	// key will be pressed
 	if (!key.pressed) {
-		key.set("checkStateOnAllEvents", false)
-	} else {
-		key.set("checkStateOnAllEvents", true)
+		// only allow one trigger key to be pressed at a time
+		const pressedTriggerKeys = (last(chain.value) ?? []).filter(_ => _.pressed && isTriggerKey(_))
+		for (const pressedConflicting of pressedTriggerKeys) {
+			props.manager.release(pressedConflicting)
+		}
+		// prevent the key from getting unpressed until it's released again
+		key.checkStateOnAllEvents = false
+	} else { // key will be released
+		key.checkStateOnAllEvents = true
 	}
 	props.manager.toggle(key)
 }
 
+const ignoreClick = (e: MouseEvent): void => {
+	// prevent the click from propagating to children
+	// requires the listener be attached in capture mode
+	e.stopPropagation()
+}
+const capture = true
 
-const pointerCoords = reactive<{ x: number, y: number }>({ x: 0, y: 0 })
-const offsetCoords = reactive<{ x: number, y: number }>({ x: 0, y: 0 })
-const coords = computed(() => ({ x: pointerCoords.x - offsetCoords.x, y: pointerCoords.y - offsetCoords.y }))
+const {
+	coords,
+	setPointerCoords,
+	setInitialPointerOffset,
+} = usePointerCoords()
 
-const setCoords = (e: PointerEvent): void => {
-	pointerCoords.x = e.clientX
-	pointerCoords.y = e.clientY
-}
-
-const getKeyByElIdProp = (el: HTMLElement): Key | undefined => {
-	const id = el.getAttribute("keyId")
-
-	return id ? props.manager.keys.entries[id] : undefined
-}
-const getShortcutByElIndexProp = (el: HTMLElement, keyId: string): [shortcut: Shortcut, index: number] | [shortcut: undefined, index: undefined] => {
-	let i: string | number | null = el.getAttribute("shortcutIndex")
-	i = typeof i === "string" ? parseInt(i) : i
-	return [i !== null && i > -1 ? shortcutsList.value[keyId][i].value : undefined, i ?? undefined] as [Shortcut, number] | [undefined, undefined]
-}
-const setOffset = (e: PointerEvent, el: HTMLElement): void => {
-	setCoords(e)
-	const clientRect = el.getBoundingClientRect()
-	offsetCoords.x = pointerCoords.x - clientRect.x
-	offsetCoords.y = pointerCoords.y - clientRect.y
-}
-const openKey = (id?: string): void => {
-	const keyId = id ?? candidateKey.value?.id
-	if (!isDragging.value && keyId) {
-		canDrag.value = true
-		openedKey.value = keyId
-	}
-}
-const closeKey = (): void => {
-	openedKey.value = undefined
-}
-const draggingEnd = (): void => {
-	isDragging.value = false
-	candidateKey.value = undefined
-	candidateShortcut.value = undefined
-	closeKey()
-}
-
-const onDragStart = (e: PointerEvent): void => {
-	if (e.target instanceof HTMLElement) {
-		e.target.releasePointerCapture(e.pointerId)
-		e.preventDefault()
-		const keyEl = e.target.closest(`.${keyClass}`)
-		const shortcutEl = e.target.closest(".shortcut")
-		if (!(keyEl instanceof HTMLElement)) return
-		const key = getKeyByElIdProp(keyEl)
-		candidateKey.value = key
-		if (!openedKey.value) {
-			openKey()
-		}
-
-		if (key && shortcutEl instanceof HTMLElement) {
-			const [shortcut] = getShortcutByElIndexProp(shortcutEl, key.id)
-			candidateShortcut.value = shortcut
-			setOffset(e, shortcutEl)
-		}
-
-		window.addEventListener("pointermove", onDragMove)
-		window.addEventListener("pointerup", onDragEnd)
-	}
-}
 const scrollMargin = 20
 const outerScrollMargin = 15
 const {
-	 scrollEdges,
+	scrollEdges,
 	isScrolling,
 	scrollIndicator,
 	endScroll,
@@ -417,50 +466,96 @@ const {
 	outerScrollMargin,
 })
 
-const onDragMove = (e: PointerEvent): void => {
+function onDragStart(e: PointerEvent): void {
+	if (e.target instanceof HTMLElement) {
+		e.preventDefault()
+
+		const key = getKeyByElIdProp(getKeyEl(e))
+		if (!key) return
+		grabbedKey.value = key
+
+		const shortcutEl = getShortcutEl(e)
+		const shortcutInfo = getShortcutByElIndexProp(shortcutEl, key.id)
+		if (!shortcutEl || !shortcutInfo) return
+
+		grabbedShortcut.value = shortcutInfo
+		setInitialPointerOffset(e, shortcutEl)
+
+		isDragging.value = true
+		chainBeforeDrag.value = Manager.cloneChain(chain.value)
+		props.manager.startRecording({ clearChain: false })
+		// while dragging allow the manager to listen to key events on the document to change the chain
+		props.manager.attach(document)
+
+		// todo try pointer capture
+		window.addEventListener("pointermove", onDragMove)
+		window.addEventListener("pointerup", onDragEnd)
+		window.addEventListener("click", ignoreClick, capture)
+	}
+}
+
+
+function onDragMove(e: PointerEvent): void {
 	scrollEdges(e.clientX, e.clientY)
 	if (isScrolling.value) {
 		e.preventDefault()
 		return
 	}
 
-	// console.log(coords.y, rightLimit)
-	if (canDrag.value) {
-		setCoords(e)
-		isDragging.value = true
+	if (isDragging.value) {
+		setPointerCoords(e)
+		const key = getKeyByElIdProp(getKeyEl(e))
+		if (key) {
+			candidateKey.value = key
+		} else {
+			candidateKey.value = undefined
+		}
 		e.preventDefault()
 	}
 }
 
-const onDragEnd = (_e: PointerEvent): void => {
+function onDragEnd(e: PointerEvent): void {
 	endScroll()
-	if (!isDragging.value) {
-		openKey()
-	} else {
-		draggingEnd()
+	if (isDragging.value) {
+		if (grabbedShortcut.value && newDragChain.value && canDrop.value === true) {
+			let message: string | undefined
+			if (grabbedShortcut.value.isPressable) {
+				const res = grabbedShortcut.value.entry.safeSet("chain", newDragChain.value)
+				const transformedRes = transformShortcutAllowsChainRes(res, grabbedShortcut.value.entry.chain, newDragChain.value, props.manager.stringifier) as string | boolean
+				if (typeof transformedRes === "string") {message = transformedRes}
+			} else if (grabbedShortcut.value.isPressableChain) {
+				const oldChain = getOldChainBase()
+				if (oldChain) {
+					const res = props.manager.shortcuts.swapChords(oldChain, newDragChain.value)
+					const transformedRes = transformShortcutAllowsChainRes(res, oldChain, newDragChain.value, props.manager.stringifier)
+					if (typeof transformedRes === "string") {message = transformedRes}
+				}
+			}
+
+			if (message) { void notificationHandler?.notify({ message }) }
+		}
+		draggingClear()
+		closeKey()
+		props.manager.stopRecording({ clearChain: false })
+		props.manager.safeSet("chain", chainBeforeDrag.value)
+		props.manager.detach(document)
+		e.preventDefault()
 	}
+	chainBeforeDrag.value = []
 	window.removeEventListener("pointermove", onDragMove)
 	window.removeEventListener("pointerup", onDragEnd)
+	window.removeEventListener("click", ignoreClick)
 }
 
 
-const updateSize = (): void => {
-	castType<Ref<HTMLElement>>(keyboardEl.value)
-	width.value = Math.max(keyboardEl.value.offsetWidth, 1000)
-}
-let observer: ResizeObserver | undefined
 onMounted(() => {
 	castType<Ref<HTMLElement>>(keyboardEl.value)
-	observer = new ResizeObserver(updateSize)
-	// observer = new ResizeObserver(throttle(updateSize, 50))
-	observer.observe(keyboardEl.value)
 	keyboardEl.value.addEventListener("pointerdown", onDragStart, { passive: false })
 })
 
 
 onUnmounted(() => {
 	castType<Ref<HTMLElement>>(keyboardEl.value)
-	observer!.disconnect()
 	keyboardEl.value!.removeEventListener("pointerdown", onDragStart)
 	window.removeEventListener("pointermove", onDragMove)
 	window.removeEventListener("pointerup", onDragEnd)
@@ -468,65 +563,6 @@ onUnmounted(() => {
 
 </script>
 
-<!-- <style scoped lang="scss"> -->
-<!-- .keyboard { -->
-<!-- 	--padding: calc(v-bind(keyW) * 0.05px); -->
-<!-- 	--shadow: calc(var(--padding) - 1px); -->
-<!-- 	overflow: hidden; -->
-<!-- 	font-size: calc(v-bind(keyW) * 0.25px); -->
-<!-- 	// margin: 3px; -->
-<!-- 	width: 100%; -->
-<!-- 	// display:flex; -->
-<!-- 	// justify-content: center; -->
-<!-- 	position: relative; -->
-<!---->
-<!-- 	// .keyboard-width { -->
-<!-- 	// } -->
-<!-- 	&.isDragging { -->
-<!-- 		border: 1px solid red; -->
-<!-- 		user-select: none; -->
-<!-- 	} -->
-<!---->
-<!-- 	overflow:scroll; -->
-<!-- 	touch-action:manipulation; -->
-<!-- } -->
-<!---->
-<!-- .key-connertainer { -->
-<!-- 	position: absolute; -->
-<!-- 	word-break: break-all; -->
-<!-- 	padding: var(--padding); -->
-<!-- } -->
-<!---->
-<!-- .key { -->
-<!-- 	border: 1px solid black; -->
-<!-- 	border-radius: var(--padding); -->
-<!-- 	height: 100%; -->
-<!-- 	white-space: pre; -->
-<!-- 	box-shadow: 0 var(--shadow) var(--shadow) rgb(0 0 0 / 50%); -->
-<!-- 	@include flex-col(nowrap); -->
-<!---->
-<!-- 	.label { -->
-<!-- 		padding-left: var(--padding); -->
-<!-- 		z-index: 1; -->
-<!-- 		overflow: hidden; -->
-<!-- 		width: 100%; -->
-<!-- 		flex-shrink: 0; -->
-<!-- 		// padding-left: calc(var(--padding) * 2); -->
-<!-- 		// padding-top: calc(var(--padding) * 1.5); -->
-<!-- 	} -->
-<!---->
-<!-- 	// .center-label & { -->
-<!-- 	// 	align-items: center; -->
-<!-- 	// 	justify-content: center; -->
-<!-- 	// } -->
-<!-- 	.pressed & { -->
-<!-- 		background: gray; -->
-<!---->
-<!-- 		&::before { -->
-<!-- 			background: gray !important; -->
-<!-- 		} -->
-<!-- 	} -->
-<!---->
 <!-- 	.iso-enter & { -->
 <!-- 		box-shadow: none; -->
 <!-- 		border: none; -->
@@ -567,50 +603,4 @@ onUnmounted(() => {
 <!-- 		} -->
 <!-- 	} -->
 <!-- } -->
-<!---->
-<!-- .shortcuts { -->
-<!-- 	flex-shrink: 1; -->
-<!-- 	width: 100%; -->
-<!-- 	// hide overflowing shortcuts -->
-<!-- 	@include flex-row(wrap); -->
-<!-- 	overflow: hidden; -->
-<!---->
-<!-- 	&.hovered { -->
-<!---->
-<!-- 		// position: absolute; -->
-<!-- 		background: var(--bg); -->
-<!-- 		z-index: 2; -->
-<!-- 		// padding: var(--paddingXS); -->
-<!-- 		// min-height: 100%; -->
-<!-- 		overflow: unset; -->
-<!-- 		width: min-content; -->
-<!-- 		@include border(); -->
-<!-- 		border-radius: var(--padding); -->
-<!-- 		box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular); -->
-<!-- 		// margin-left: calc(-1 * var(--paddingXS)); -->
-<!-- 		// margin-top: calc(-1 * var(--paddingXS)); -->
-<!-- 	} -->
-<!-- } -->
-<!---->
-<!-- .shortcut { -->
-<!-- 	@include flex(1, 0, calc(100% - var(--paddingXS) * 2)); -->
-<!-- 	border-radius: var(--paddingXS); -->
-<!-- 	background: var(--cGray2); -->
-<!-- 	margin: var(--paddingXS); -->
-<!-- 	padding: 0 var(--paddingXS); -->
-<!-- 	user-select: none; -->
-<!---->
-<!-- 	.hovered & { -->
-<!-- 		cursor: pointer; -->
-<!-- 	} -->
-<!-- } -->
-<!---->
-<!-- .shortcut-dragging { -->
-<!-- 	position: fixed; -->
-<!-- 	z-index: 2; -->
-<!-- 	@include border(); -->
-<!-- 	border-radius: var(--padding); -->
-<!-- 	box-shadow: 0 0 var(--shadowWidth) var(--shadowRegular); -->
-<!-- 	touch-action: none; -->
-<!-- } -->
-<!-- </style> -->
+

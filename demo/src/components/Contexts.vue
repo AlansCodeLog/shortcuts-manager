@@ -6,8 +6,6 @@
 		flex-col
 		align-center
 		justify-center
-		p-2
-
 	"
 >
 	<div class="flex flex-wrap gap-2 items-start justify-between">
@@ -76,12 +74,13 @@
 		</div>
 		<div class="flex-1 flex flex-col items-stretch gap-2 ">
 			<lib-input
-				class="min-w-[0] w-[13ch]"
+				class="min-w-[0] w-[20ch]"
 				placeholder="Add Context"
 				wrapper-class="pr-0"
 				:valid="!contexts.has(tempValue)"
 				v-model="tempValue"
-				@submit="emit('add', tempValue); tempValue = ''"
+				@submit="addContext"
+				@enter.prevent
 			>
 				<template #right>
 					<lib-button
@@ -89,7 +88,8 @@
 						auto-title-from-aria
 						:border="false"
 						class="whitespace-nowrap p-0"
-						@click="emit('add', tempValue); tempValue = ''"
+						:disabled="isBlank(tempValue)"
+						@click="addContext"
 					>
 						<fa icon="fa plus" :fixed-width="false"/>
 					</lib-button>
@@ -101,8 +101,11 @@
 </template>
 
 <script setup lang="ts">
+import { isBlank } from "@alanscodelog/utils"
 import { twMerge } from "tailwind-merge"
-import { computed, type PropType, ref } from "vue"
+import { computed, inject, type PropType, ref } from "vue"
+
+import { notificationHandlerSymbol } from "../injectionSymbols.js"
 
 
 const props = defineProps({
@@ -115,7 +118,18 @@ const emit = defineEmits<{
 	remove: [val:string]
 }>()
 
+const notificationHandler = inject(notificationHandlerSymbol)
 const tempValue = ref("")
+const addContext = (): void => {
+	if (!isBlank(tempValue.value)) {
+		emit("add", tempValue.value)
+		tempValue.value = ""
+	} else {
+		void notificationHandler?.notify({
+			message: "Context cannot be empty value.",
+		})
+	}
+}
 
 const activeContexts = computed(() => [...props.contexts.entries()]
 	.filter(([_, isActive]) => isActive)

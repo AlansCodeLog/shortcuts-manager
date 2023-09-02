@@ -37,7 +37,7 @@ import { reactive, type Ref, ref } from "vue"
  * }
  * ```
  */
-// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
+ 
 export const useScrollNearContainerEdges = ({
 	containerEl,
 	scrollMargin = 10,
@@ -172,12 +172,12 @@ export const useScrollNearContainerEdges = ({
 		resetMove()
 	}
 	return {
-		 scrollEdges,
+		scrollEdges,
 		scrollIndicator,
-		 resetScrollIndicator,
-		 clearScrollInterval,
+		resetScrollIndicator,
+		clearScrollInterval,
 		isScrolling,
-		 endScroll,
+		endScroll,
 		/* resetMove does not need to be returned since the user cannot call the timer interval manually and the scrollContainer function resets it before starting. */
 	}
 }

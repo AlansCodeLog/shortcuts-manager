@@ -9,13 +9,13 @@
 		"target": "esnext",
 		"moduleResolution": "bundler",
 		"outDir": "dist",
-		"baseUrl": "src",
+		// "baseUrl": "src",
 		"paths": {
 			"shortcuts-manager/*": [
 				"../src/*"
 			],
 			"@alanscodelog/*": [
-				"node_modules/@alanscodelog/*"
+				"./node_modules/@alanscodelog/*"
 			]
 		}
 	},
@@ -30,8 +30,6 @@
 		"src/**/*.ts",
 		"src/**/*.js",
 		"src/**/*.vue",
-		"tests/**/*.ts",
-		"tests/**/*.vue",
 		// so eslint doesn't bother us, we don't build with tsc anyways, and to emit types, there's tsconfig.types.json
 		"*.ts",
 		"*.cjs",

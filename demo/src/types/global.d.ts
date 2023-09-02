@@ -1,17 +1,10 @@
 declare module "*.vue" {
 
 	const component: DefineComponent<{}, {}, any>
-	 
+	
 	export default component
 }
 export { }
-
-import { type GlobalComponentTypes } from "@alanscodelog/vue-components"
-
-
-declare module "@vue/runtime-core" {
-	export interface GlobalComponents extends GlobalComponentTypes { }
-}
 
 import { type NavigatorWKeyboard } from "@lib/types"
 import { type DefineComponent } from "vue"
@@ -25,3 +18,9 @@ declare global {
 	}
 }
 
+import { type GlobalComponentTypes } from "@alanscodelog/vue-components"
+
+
+declare module "@vue/runtime-core" {
+	export interface GlobalComponents extends GlobalComponentTypes { }
+}
