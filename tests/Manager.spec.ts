@@ -206,18 +206,16 @@ describe(testName(), () => {
 				console.log(manager.toString())
 				emulator.fire("ControlLeft+ KeyC", ["ControlLeft"])
 				emulator.fire("ControlLeft-", [])
-				console.log("===1")
 				expect(manager.chain).to.deep.equal([[ctrl, c]])
-				emulator.fire("ControlLeft", ["ControlLeft"])
+				emulator.fire("ControlLeft+", ["ControlLeft"])
 				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl]])
 				emulator.fire("ControlLeft-", [])
-				expect(manager.chain).to.deep.equal([[ctrl, c]])
+				expect(manager.chain).to.deep.equal([[ctrl, c], []])
 				// checking twice because there was a bug
-				console.log("===2")
-				emulator.fire("ControlLeft", ["ControlLeft"])
+				emulator.fire("ControlLeft+", ["ControlLeft"])
 				expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl]])
 				emulator.fire("ControlLeft-", [])
-				expect(manager.chain).to.deep.equal([[ctrl, c]])
+				expect(manager.chain).to.deep.equal([[ctrl, c], []])
 			})
 
 
