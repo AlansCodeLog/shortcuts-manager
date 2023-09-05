@@ -1,6 +1,4 @@
 import vue from "@vitejs/plugin-vue"
-import path from "path"
-import { externalizeDeps } from "vite-plugin-externalize-deps"
 import tsconfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
 
@@ -10,8 +8,6 @@ import postcss from "./postcss.config.js"
 // https://vitejs.dev/config/
 export default async ({ mode }: { mode: string }) => defineConfig({
 	plugins: [
-		// it isn't enough to just pass the deps list to rollup.external since it will not exclude subpath exports
-		externalizeDeps(),
 		tsconfigPaths(),
 		vue({
 			script: {
@@ -30,10 +26,11 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 		}),
 	},
 	resolve: {
-		alias: [
-			{ find: "shortcuts-manager", replacement: path.resolve("../src") },
-		],
+		// getting duplicate imports otherwise i think because of pnpm
+		// https://vitejs.dev/config/shared-options.html#resolve-dedupevite
+		dedupe: ["@alanscodelog/utils"],
 	},
+
 	server: {
 		// for locally linked repos when using vite server (i.e. not needed for libraries)
 		fs: {

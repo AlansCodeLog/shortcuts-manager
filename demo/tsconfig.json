@@ -10,14 +10,7 @@
 		"moduleResolution": "bundler",
 		"outDir": "dist",
 		// "baseUrl": "src",
-		"paths": {
-			"shortcuts-manager/*": [
-				"../src/*"
-			],
-			"@alanscodelog/*": [
-				"./node_modules/@alanscodelog/*"
-			]
-		}
+		"paths": {}
 	},
 	"types": [
 		// "node"

@@ -60,7 +60,7 @@ export class Command<
 		name: TName,
 		opts: Partial<TOpts> = {},
 	) {
-		super()
+		super("Command")
 		this.name = name
 		if (opts.execute) this.execute = opts.execute as TExec
 		if (opts.description) this.description = opts.description as string

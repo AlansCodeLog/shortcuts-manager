@@ -1,15 +1,26 @@
 import "./assets/tailwind.css"
 
-import { VueComponentsPlugin } from "@alanscodelog/vue-components"
 import { library } from "@fortawesome/fontawesome-svg-core"
-import { far } from "@fortawesome/free-regular-svg-icons"
-import { fas } from "@fortawesome/free-solid-svg-icons"
-import { createApp } from "vue"
+import { faGithub } from "@fortawesome/free-brands-svg-icons"
+// import {  } from "@fortawesome/free-regular-svg-icons"
+// todo add exports needed list to component lib
+import { faChevronUp, faPlus, faTimes, faTrash } from "@fortawesome/free-solid-svg-icons"
+import { type App as AppType, createApp } from "vue"
 
 import App from "./App.vue"
 
+import { registerComponents } from "@alanscodelog/vue-components"
+import { fa, LibButton, LibCheckbox, LibInput, LibNotifications, LibRecorder } from "@alanscodelog/vue-components/components"
 
-library.add(fas, far)
+
+const components = { LibInput, LibRecorder, LibButton, fa, LibCheckbox, LibNotifications }
+// @ts-expect-error ...wat
+library.add(faPlus, faTrash, faGithub, faTimes, faChevronUp)
 createApp(App)
-	.use(VueComponentsPlugin)
+	// .use(VueComponentsPlugin)
+	.use({
+		install(app: AppType) {
+			registerComponents(app, components)
+		},
+	})
 	.mount("#app")

@@ -257,7 +257,7 @@ export class Manager<
 			labelFilter?: Manager["labelFilter"]
 		} = {},
 	) {
-		super(opts)
+		super("Manager", opts)
 		this._boundKeydown = this._keydown.bind(this)
 		this._boundKeyup = this._keyup.bind(this)
 		this._boundMousedown = this._mousedown.bind(this)
@@ -275,9 +275,9 @@ export class Manager<
 		if (cb) this.cb = cb
 
 		this.context = context
-		this.sorter = sorter ?? defaultSorter
-		if (labelFilter) this.labelFilter = labelFilter
-		this.safeSet("labelStrategy", labelStrategy)
+		this.sorter = opts.sorter ?? defaultSorter
+		if (opts.labelFilter) this.labelFilter = opts.labelFilter
+		if (opts.labelStrategy) this.safeSet("labelStrategy", opts.labelStrategy)
 		this.safeSet("replace", { shortcuts, keys, commands }).unwrap()
 	}
 

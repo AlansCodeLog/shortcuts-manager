@@ -2,13 +2,14 @@
 <div
 	id="shortcuts-manager"
 	:class="twMerge(`
-		p-2
+		p-4
 		dark:bg-neutral-900
 		dark:text-white
 		min-h-screen
 		min-h-100dvh
 		flex
 		flex-col
+		gap-2
 	`,
 		outline ? 'group outlined outlined-visible' : '[&_*]:outline-none',
 		darkMode && `dark`
@@ -16,15 +17,27 @@
 	@mouseenter="mouseenter()"
 	@mouseleave="mouseleave()"
 >
-	<k-context
-		class="p-2"
-		:contexts="contexts"
-		@add="(contexts.has($event) ? undefined : contexts.set($event, false))"
-		@remove="contexts.delete($event)"
-		@activate="contexts.has($event) && contexts.set($event, true)"
-		@deactivate="contexts.set($event, false)"
-	/>
-	<div class="active-area p-2"
+		<div>
+
+	<a :href="githubLink" class="
+		hover:text-accent-600
+		focus:text-accent-600
+	">
+
+		<div class="text-xl text-center">Shortcut Manager Demo</div>
+		</a>
+		<div class="text-xs text-center">* Please note the library is still very alpha and there is no way to save on this demo yet.</div>
+		</div>
+	<GithubCorner :href="githubLink"/>
+	<!-- <k-context -->
+	<!-- 	class="" -->
+	<!-- 	:contexts="contexts" -->
+	<!-- 	@add="(contexts.has($event) ? undefined : contexts.set($event, false))" -->
+	<!-- 	@remove="contexts.delete($event)" -->
+	<!-- 	@activate="contexts.has($event) && contexts.set($event, true)" -->
+	<!-- 	@deactivate="contexts.set($event, false)" -->
+	<!-- /> -->
+	<div class="active-area "
 		tabindex="0"
 		ref="el"
 		@click="el?.focus()"
@@ -32,28 +45,55 @@
 		<k-keyboard
 			:keys="keys"
 			:manager="manager"
+			:shortcuts="shortcuts"
 		/>
 	</div>
-	<list-shortcuts class="p-2"
+	<div class="
+		
+		gap-2
+		flex
+		justify-start
+		items-center
+	"
+	>
+		<LibButton :disabled="listContextActive === type"
+			v-for="type of ['Shortcuts', 'Commands']"
+			:key="type"
+			@click="listContextActive = type"
+		>
+			{{ type }}
+		</LibButton>
+	</div>
+	<list-shortcuts v-show="listContextActive === 'Shortcuts'"
+		class=""
 		:keys="keys"
 		:manager="manager"
 		:commands="commands"
 		:shortcuts="shortcuts"
 	/>
 	<list-commands
-		class="p-2"
+		v-show="listContextActive === 'Commands'"
+		class=""
 		:manager="manager"
 		:commands="commands"
 	/>
+	<div class=" flex">
+		<LibButton
+			v-if="commands.length ===0 && shortcuts.length === 0"
+			class="flex-1"
+		
+			@click="addExampleData()"
+		>
+			Add Example Data
+		</LibButton>
+	</div>
 	<lib-notifications :handler="notificationHandler"/>
 </div>
 </template>
 
 <script setup lang="ts">
-import { castType, keys as objectKeys } from "@alanscodelog/utils"
-import { useAccesibilityOutline, useDarkMode } from "@alanscodelog/vue-components/composables"
 import { twMerge } from "tailwind-merge"
-import { onMounted, onUnmounted, type Ref, ref, shallowReactive, shallowRef, triggerRef } from "vue"
+import { onMounted, onUnmounted, provide, reactive, type Ref, ref, shallowReactive, shallowRef, triggerRef } from "vue"
 
 import { notificationHandler } from "./common/notificationHandler.js"
 import KContext from "./components/Contexts.vue"
@@ -61,18 +101,25 @@ import KContext from "./components/Contexts.vue"
 import KKeyboard from "./components/Keyboard.vue"
 import ListCommands from "./components/ListCommands.vue"
 import ListShortcuts from "./components/ListShortcuts.vue"
+import GithubCorner from "./components/GithubCorner.vue"
+import { notificationHandlerSymbol } from "./injectionSymbols.js"
 
-// import { notificationHandlerSymbol } from "./injectionSymbols.js"
 import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "shortcuts-manager/classes"
 import { createLayout } from "shortcuts-manager/layouts/index.js"
 import type { ManagerListener } from "shortcuts-manager/types/manager.js"
+import { castType, keys as objectKeys } from "@alanscodelog/utils"
+import { useAccesibilityOutline, useDarkMode } from "@alanscodelog/vue-components/composables"
 
-// provide(notificationHandlerSymbol, notificationHandler)
+
+provide(notificationHandlerSymbol, notificationHandler)
 
 const el = ref<HTMLElement | null>(null)
 
 const { outline } = useAccesibilityOutline(el)
 const { darkMode } = useDarkMode()
+const listContextActive = ref<"Shortcuts" | "Commands">("Shortcuts")
+
+const githubLink= "https://alanscodelog.github.io/shortcuts-manager/demo"
 
 // #region Manager
 const layout = createLayout("ansi")
@@ -115,9 +162,9 @@ For shortcuts, we need to trigger on any updates to it's properties, plus any of
 
 While the manager could provide, or we could implement a shortcut hook that adds a hook to any keys/commands it uses, this can result in a lot of listeners registered (think of keys, where one key might be in use by hundreds of shortcuts), that would be hundreds of listeners added.
 */
-const keys: Ref<Key>[] = shallowReactive([])
-const commands: Ref<Command>[] = shallowReactive([])
-const shortcuts: Ref<Shortcut>[] = shallowReactive([])
+const keys: Ref<Key>[] = reactive([])
+const commands: Ref<Command>[] = reactive([])
+const shortcuts: Ref<Shortcut>[] = reactive([])
 const contexts = ref<Map<string, boolean>>(new Map())
 // #region Keys
 
@@ -200,7 +247,8 @@ manageHooks(manager, "commands", commands, { set: commandSet })
 
 
 const triggerState = ref(false)
-const defaultCommandExec = () => {
+const defaultCommandExec = (...args) => {
+	console.log(args)
 	triggerState.value = true
 	setTimeout(() => {
 		triggerState.value = false
@@ -220,26 +268,21 @@ manageHooks(manager, "shortcuts", shortcuts, { set: shortcutSet })
 
 
 const k = manager.keys.entries
-const K = {
+const m = {
 	ctrl: k.VirtualControlLeft,
 	alt: k.VirtualAltLeft,
 	shift: k.VirtualShiftLeft,
 }
-//
-manager.commands.add(new Command("Test", { execute: defaultCommandExec }))
-manager.commands.add(new Command("Test2", { execute: defaultCommandExec }))
-manager.commands.add(new Command("Test3", { execute: defaultCommandExec }))
-manager.commands.add(new Command("Test4 Very Long Name", { execute: defaultCommandExec }))
-manager.commands.add(new Command("Ctrl+A", { execute: defaultCommandExec }))
-manager.shortcuts.add(new Shortcut([[k.Digit1]], { command: manager.commands.entries.Test }))
-manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test2 }))
-manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries.Test3 }))
-manager.shortcuts.add(new Shortcut([[k.KeyA]], { command: manager.commands.entries["Test4 Very Long Name"] }))
-manager.shortcuts.add(new Shortcut([[K.ctrl, k.KeyA]], { command: manager.commands.entries.Test2 }))
-manager.shortcuts.add(new Shortcut([[k.KeyB], [K.ctrl, k.KeyA]], { command: manager.commands.entries.Test }))
-
-manager.shortcuts.add(new Shortcut([[k.KeyC], [K.ctrl, k.KeyA]], { command: manager.commands.entries.Test2 }))
-manager.shortcuts.add(new Shortcut([[K.ctrl, k.KeyB], [K.ctrl, k.KeyA]], { command: manager.commands.entries.Test2 }))
+function addExampleData() {
+	const c1 = new Command("Command", { execute: defaultCommandExec })
+	const c2 = new Command("Command w Mod", { execute: defaultCommandExec })
+	const c3 = new Command("Command in Chain", { execute: defaultCommandExec })
+	for (const c of [c1, c2, c3]) { manager.commands.add(c) }
+	const s1 = new Shortcut([[k.KeyB]], { command: c1 })
+	const s2 = new Shortcut([[m.ctrl, k.KeyB]], { command: c2 })
+	const s3 = new Shortcut([[k.KeyV], [k.KeyB]], { command: c3 })
+	for (const s of [s1, s2, s3]) {manager.shortcuts.add(s)}
+}
 
 const eventListener: ManagerListener = ({ event }: { event: Event }) => {
 	if (

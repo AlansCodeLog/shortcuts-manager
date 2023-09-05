@@ -301,7 +301,7 @@ import { notificationHandlerSymbol } from "../injectionSymbols.js"
 
 const props = defineProps<{
 	keys: Ref<Key<any>>[]
-	// shortcuts: Ref<Shortcut>[]
+	shortcuts: Ref<Shortcut>[]
 	manager: Manager
 }>()
 
@@ -325,8 +325,8 @@ const grabbedShortcut = shallowRef<ShortcutInfo | undefined>()
 const candidateKey = shallowRef<Key | undefined>()
 const isDragging = ref<boolean>(false)
 const chainBeforeDrag = shallowRef<Key[][]>([])
-const { manager, keys } = toRefs(props)
-const shortcutsList = useShortcutsList(manager, keys, chain)
+const { manager, keys, shortcuts } = toRefs(props)
+const shortcutsList = useShortcutsList(manager, keys, shortcuts, chain)
 
 const getKeyEl = (e: PointerEvent): HTMLElement | undefined => (e?.target as HTMLElement).closest(`.${keyClass}`) as HTMLElement | undefined
 

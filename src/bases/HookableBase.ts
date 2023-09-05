@@ -15,8 +15,11 @@ export class HookableBase<
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsHook, set: TSetHook }> {
-	constructor(opts: Partial<HookableOpts> = {}) {
+	readonly _class: string
+
+	constructor(className: string, opts: Partial<HookableOpts> = {}) {
 		super(["allows", "set"], opts)
+		this._class = className
 	}
 
 	protected _set<

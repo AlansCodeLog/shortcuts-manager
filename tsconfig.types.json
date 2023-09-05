@@ -6,7 +6,7 @@
 		"rootDir": "src",
 		"declaration": true,
 		"declarationMap": true,
-		"emitDeclarationOnly": true,
+		// "emitDeclarationOnly": true,
 		"noEmit": false,
 		"allowJs": false,
 		"skipLibCheck": true, // ignore node modules
@@ -15,7 +15,7 @@
 	},
 	"exclude": [
 		"tests/**/*.ts",
-		"demo/**/*",
+		"demo/**/*.ts",
 		"*.ts",
 		"*.cjs",
 		"*.js"

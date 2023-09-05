@@ -1,9 +1,9 @@
 import { crop, dedupe, pretty, unreachable } from "@alanscodelog/utils"
 
-import { Command } from "./Command.js"
+import { type Command } from "./Command.js"
 import { Condition } from "./Condition.js"
-import { Key } from "./Key.js"
-import { Shortcut } from "./Shortcut.js"
+import { type Key } from "./Key.js"
+import { type Shortcut } from "./Shortcut.js"
 
 
 type StringifierOptions = {
@@ -77,10 +77,14 @@ export class Stringifier {
 	}
 
 	stringify(entry: Key | Key[] | Key[][] | Shortcut | Command | Key): string {
-		if (entry instanceof Command) return this.stringifyCommand(entry)
-		if (entry instanceof Shortcut) return this.stringifyShortcut(entry)
+		// todo fix this abomination
+		// @ts-expect-error .
+		if (entry._class === "Command") return this.stringifyCommand(entry as Command)
+		// @ts-expect-error .
+		if (entry._class === "Shortcut") return this.stringifyShortcut(entry as Shortcut)
 		if (entry instanceof Condition) return this.stringifyCondition(entry)
-		if (entry instanceof Key) return this.stringifyKey(entry)
+		// @ts-expect-error .
+		if (entry._class === "Key") return this.stringifyKey(entry as Key)
 		if (Array.isArray(entry)) {
 			if (entry.length === 0) return this.stringifyChord([] as Key[])
 			if (Array.isArray(entry[0])) return this.stringifyChain(entry as Key[][])

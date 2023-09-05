@@ -139,6 +139,7 @@ import { computed, reactive, type Ref, ref, toRaw } from "vue"
 import { Command, type Key, Manager, Shortcut } from "shortcuts-manager/classes/index.js"
 
 import { notifyIfError } from "../common/notifyIfError.js"
+import { shortcutToId } from "../common/shortcutToId.js"
 import { useManagerChain } from "../composables/useManagerChain.js"
 
 

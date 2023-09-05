@@ -9,13 +9,13 @@ import { removeKeys } from "shortcuts-manager/helpers/removeKeys.js"
 
 export type ShortcutInfo = { entry: Shortcut, isPressableChain: boolean, isPressable: boolean }
  
-export const useShortcutsList = (manager: Ref<Manager>, keys: Ref<Ref< Key >[]>, chain: Ref<Key[][]>) => {
+export const useShortcutsList = (manager: Ref<Manager>, keys: Ref<Ref< Key >[]>, shortcuts: Ref<Ref<Shortcut>[]>, chain: Ref<Key[][]>) => {
 	const shortcutsList = computed(() => {
 		const nextIsChord = manager.value._nextIsChord
 		const index = chain.value.length === 0 ? 0 : nextIsChord ? chain.value.length : chain.value.length - 1
 		// const stringify = manager.value?.stringifier.stringify.bind(manager.value?.stringifier)
 		const obj: Record<string, ({ entries: ShortcutInfo[], containsConflicting: boolean, isModifierHint: boolean })> = {}
-		for (const shortcut of manager.value.shortcuts.entries) {
+		for (const { value: shortcut } of shortcuts.value) {
 			for (const { value: key } of keys.value) {
 				const isExecutable = shortcut.canExecuteIn(manager.value.context, { allowEmptyCommand: true })
 				const containsSubset = shortcut.containsSubset(chain.value, { onlySubset: true, onlyPressable: false })

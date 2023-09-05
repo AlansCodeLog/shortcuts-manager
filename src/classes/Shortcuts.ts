@@ -1,7 +1,6 @@
 import type { AnyClass, Result } from "@alanscodelog/utils"
 import { crop, Err, indent, Ok } from "@alanscodelog/utils"
 
-import { defaultStringifier } from "./base.js"
 import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
 import type { Key } from "./Key.js"
 import { defaultSorter } from "./KeysSorter.js"
@@ -60,8 +59,7 @@ export class Shortcuts<
 		shortcuts: TRawShortcuts,
 		opts: Partial<ShortcutsOptions> = {},
 	) {
-		super()
-		this.stringifier = opts.stringifier ?? defaultStringifier
+		super(opts)
 		if (opts.sorter) this.sorter = opts.sorter
 		if (opts.ignoreChainConflicts) this.ignoreChainConflicts = opts.ignoreChainConflicts
 		if (opts.ignoreModifierConflicts) this.ignoreModifierConflicts = opts.ignoreModifierConflicts

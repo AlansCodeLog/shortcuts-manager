@@ -56,7 +56,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		chain: Key[][],
 		opts: RawShortcut["opts"] = {}
 	) {
-		super()
+		super("Shortcut")
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
 		if (opts.command) this.command = opts.command
