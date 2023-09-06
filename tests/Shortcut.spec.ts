@@ -139,7 +139,7 @@ describe(testName(), () => {
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 1)).to.equal(true)
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 2)).to.equal(false)
 	})
-	it.only("containsSubset", () => {
+	it("containsSubset", () => {
 		expect((new Shortcut([[k.a]]).containsSubset([]))).to.equal(true)
 		expect((new Shortcut([[k.a]]).containsSubset([[k.a]]))).to.equal(true)
 
