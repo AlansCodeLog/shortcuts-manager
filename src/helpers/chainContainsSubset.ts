@@ -40,20 +40,31 @@ export const chainContainsSubset = (
 	if (!precedingChordsEqual) return false
 	if (onlyPressable && index !== chain.length - 1) return false
 
-	const lastChord = dedupeKeys(chainSubset[index], opts)
+	const subsetLastChord = dedupeKeys(chainSubset[index], opts)
 	// not it might NOT be the last chord
 	const chainChord = dedupeKeys(chain[index], opts)
 
-	if (onlySubset && chainSubset.length === chain.length && lastChord.length === chainChord.length) return false
+	if (onlySubset && chainSubset.length === chain.length && subsetLastChord.length === chainChord.length) return false
 
-	for (const key of lastChord) {
+	for (const key of subsetLastChord) {
 		if (!chordContainsKey(chainChord, key, opts)) return false
 	}
 
-	const subsetModifiers = lastChord.filter(key => key.is.modifier)
+	const subsetModifiers = subsetLastChord.filter(key => key.is.modifier)
 	const modifiers = chainChord.filter(key => key.is.modifier)
 
-	if (onlySubset && subsetModifiers.length !== modifiers.length) return false
+	const modKeysDiff = modifiers.length - subsetModifiers.length
 
+	const subsetNonModKeysCount = subsetLastChord.length - subsetModifiers.length
+	const nonModKeysCount = chainChord.length - modifiers.length
+	const nonModKeysDiff = nonModKeysCount - subsetNonModKeysCount
+
+
+	if (onlySubset && modKeysDiff === 0 && nonModKeysDiff === 0) return false
+	if (onlyPressable && !(
+		(modKeysDiff === 0 && nonModKeysDiff === 1) ||
+		(modKeysDiff === 1 && nonModKeysDiff === 0)
+	)) {return false}
+	
 	return true
 }

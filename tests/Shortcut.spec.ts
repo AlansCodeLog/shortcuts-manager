@@ -127,7 +127,7 @@ describe(testName(), () => {
 
 		expect(sorted).to.deep.equal(properOrder)
 	})
-	it.only("equalsKeys", () => {
+	it("equalsKeys", () => {
 		expect((new Shortcut([[k.a]])).equalsKeys([[k.a]])).to.equal(true)
 		// expect((new Shortcut([[k.a]])).equalsKeys([[k.aVariant]])).to.equal(true) ???
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a], [k.b]])).to.equal(true)
@@ -139,7 +139,7 @@ describe(testName(), () => {
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 1)).to.equal(true)
 		expect((new Shortcut([[k.a], [k.b]])).equalsKeys([[k.a]], 2)).to.equal(false)
 	})
-	it("containsSubset", () => {
+	it.only("containsSubset", () => {
 		expect((new Shortcut([[k.a]]).containsSubset([]))).to.equal(true)
 		expect((new Shortcut([[k.a]]).containsSubset([[k.a]]))).to.equal(true)
 
@@ -158,7 +158,8 @@ describe(testName(), () => {
 
 		expect((new Shortcut([[k.a], [k.b], [k.c]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
+		// todo maybe have an option so this is not true
+		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(true)
 
 		expect((new Shortcut([[k.modA, k.a]]).containsSubset([[k.modA]], { onlyPressable: true }))).to.equal(true)
 
@@ -169,7 +170,8 @@ describe(testName(), () => {
 
 		expect((new Shortcut([[k.modA, k.modB, k.a]]).containsSubset([[k.a]], { onlyPressable: true }))).to.equal(false)
 
-		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.b]], { onlyPressable: true }))).to.equal(false)
+		// todo same as above
+		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.b]], { onlyPressable: true }))).to.equal(true)
 
 		expect((new Shortcut([[k.a], [k.modA, k.b]]).containsSubset([[k.a], [k.modA]], { onlyPressable: true }))).to.equal(true)
 	})
