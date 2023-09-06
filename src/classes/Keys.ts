@@ -2,6 +2,7 @@ import { type AnyClass, crop, Err, indent, Ok, type Result } from "@alanscodelog
 
 import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
 import { Key } from "./Key.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableCollection } from "../bases/HookableCollection.js"
 import { isToggleKey } from "../helpers/isToggleKey.js"
@@ -49,6 +50,9 @@ export class Keys<
 	 */
 	readonly layout: { rows: number, columns: number } = { rows: 0, columns: 0 }
 
+	/** @inheritdoc */
+	stringifier: Stringifier
+
 	/**
 	 * Creates a set of keys.
 	 *
@@ -76,9 +80,10 @@ export class Keys<
 	 */
 	constructor(
 		keys: TRawKeys,
-		opts?: Partial<KeysOptions>,
+		opts: Partial<KeysOptions> = {},
 	) {
-		super(opts)
+		super("Keys")
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		this._boundKeyManageLayoutHook = this._keyManageLayoutHook.bind(this)
 
 		this.entries = {} as TEntries

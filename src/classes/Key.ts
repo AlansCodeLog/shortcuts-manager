@@ -1,10 +1,13 @@
 import { castType, Err, Ok, pick, type Result, setReadOnly } from "@alanscodelog/utils"
 
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
+
 import { HookableBase } from "../bases/HookableBase.js"
 import { createInstance } from "../helpers/createInstance.js"
 import { isToggleRootKey } from "../helpers/isToggleRootKey.js"
 import { KnownError } from "../helpers/KnownError.js"
-import { ERROR, type HookableOpts, type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } from "../types/index.js"
+import { ERROR } from "../types/enums.js"
+import { type KeyHooks, type KeyOptions, type RawKey, type ToggleKey } from "../types/index.js"
 
 
 const BYPASS_TOGGLE_CREATION = Symbol("BYPASS_TOGGLE_CREATION")
@@ -77,6 +80,9 @@ export class Key<
 	/** @inheritdoc */
 	readonly variants: KeyOptions["variants"]
 
+	/** @inheritdoc */
+	stringifier: Stringifier
+
 	/**
 	 * # Key
 	 * Creates a key.
@@ -93,8 +99,9 @@ export class Key<
 		id: TId,
 		opts: RawKey["opts"] = { },
 	) {
-		super("Key", opts as HookableOpts) // it is hookableopts :/
+		super("Key")
 
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		setReadOnly(this, "id", id)
 		this.label = opts.label ?? this.id
 

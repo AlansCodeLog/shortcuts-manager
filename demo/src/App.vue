@@ -17,17 +17,17 @@
 	@mouseenter="mouseenter()"
 	@mouseleave="mouseleave()"
 >
-		<div>
-
-	<a :href="githubLink" class="
+	<div>
+		<a :href="githubLink"
+			class="
 		hover:text-accent-600
 		focus:text-accent-600
-	">
-
-		<div class="text-xl text-center">Shortcut Manager Demo</div>
+	"
+		>
+			<div class="text-xl text-center">Shortcut Manager Demo</div>
 		</a>
 		<div class="text-xs text-center">* Please note the library is still very alpha and there is no way to save on this demo yet.</div>
-		</div>
+	</div>
 	<GithubCorner :href="githubLink"/>
 	<!-- <k-context -->
 	<!-- 	class="" -->
@@ -92,23 +92,23 @@
 </template>
 
 <script setup lang="ts">
+import { castType, keys as objectKeys } from "@alanscodelog/utils"
+import { useAccesibilityOutline, useDarkMode } from "@alanscodelog/vue-components/composables"
 import { twMerge } from "tailwind-merge"
-import { onMounted, onUnmounted, provide, reactive, type Ref, ref, shallowReactive, shallowRef, triggerRef } from "vue"
+import { onMounted, onUnmounted, provide, reactive, type Ref, ref, shallowRef, triggerRef } from "vue"
 
 import { notificationHandler } from "./common/notificationHandler.js"
-import KContext from "./components/Contexts.vue"
+// import KContext from "./components/Contexts.vue"
+import GithubCorner from "./components/GithubCorner.vue"
 // import {theme} from "@alanscodelog/vue-components/theme.js"
 import KKeyboard from "./components/Keyboard.vue"
 import ListCommands from "./components/ListCommands.vue"
 import ListShortcuts from "./components/ListShortcuts.vue"
-import GithubCorner from "./components/GithubCorner.vue"
 import { notificationHandlerSymbol } from "./injectionSymbols.js"
 
 import { Command, Commands, Context, Key, Keys, Manager, Shortcut, Shortcuts } from "shortcuts-manager/classes"
 import { createLayout } from "shortcuts-manager/layouts/index.js"
 import type { ManagerListener } from "shortcuts-manager/types/manager.js"
-import { castType, keys as objectKeys } from "@alanscodelog/utils"
-import { useAccesibilityOutline, useDarkMode } from "@alanscodelog/vue-components/composables"
 
 
 provide(notificationHandlerSymbol, notificationHandler)
@@ -119,7 +119,7 @@ const { outline } = useAccesibilityOutline(el)
 const { darkMode } = useDarkMode()
 const listContextActive = ref<"Shortcuts" | "Commands">("Shortcuts")
 
-const githubLink= "https://alanscodelog.github.io/shortcuts-manager/demo"
+const githubLink = "https://alanscodelog.github.io/shortcuts-manager/demo"
 
 // #region Manager
 const layout = createLayout("ansi")
@@ -165,7 +165,7 @@ While the manager could provide, or we could implement a shortcut hook that adds
 const keys: Ref<Key>[] = reactive([])
 const commands: Ref<Command>[] = reactive([])
 const shortcuts: Ref<Shortcut>[] = reactive([])
-const contexts = ref<Map<string, boolean>>(new Map())
+// const contexts = ref<Map<string, boolean>>(new Map())
 // #region Keys
 
 /**
@@ -247,7 +247,8 @@ manageHooks(manager, "commands", commands, { set: commandSet })
 
 
 const triggerState = ref(false)
-const defaultCommandExec = (...args) => {
+const defaultCommandExec = (...args: any[]) => {
+	// eslint-disable-next-line no-console
 	console.log(args)
 	triggerState.value = true
 	setTimeout(() => {

@@ -1,7 +1,7 @@
 import { crop, dedupe, pretty, unreachable } from "@alanscodelog/utils"
 
 import { type Command } from "./Command.js"
-import { Condition } from "./Condition.js"
+import { type Condition } from "./Condition.js"
 import { type Key } from "./Key.js"
 import { type Shortcut } from "./Shortcut.js"
 
@@ -82,7 +82,8 @@ export class Stringifier {
 		if (entry._class === "Command") return this.stringifyCommand(entry as Command)
 		// @ts-expect-error .
 		if (entry._class === "Shortcut") return this.stringifyShortcut(entry as Shortcut)
-		if (entry instanceof Condition) return this.stringifyCondition(entry)
+		// @ts-expect-error .
+		if (entry._class === "Condition") return this.stringifyCondition(entry)
 		// @ts-expect-error .
 		if (entry._class === "Key") return this.stringifyKey(entry as Key)
 		if (Array.isArray(entry)) {

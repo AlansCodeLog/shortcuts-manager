@@ -2,7 +2,7 @@ import { Ok, Result } from "@alanscodelog/utils"
 
 import { Hookable } from "./Hookable.js"
 
-import type { BaseHook, BaseHookType, HookableOpts } from "../types/index.js"
+import type { BaseHook, BaseHookType } from "../types/index.js"
 
 
 export class HookableBase<
@@ -15,11 +15,8 @@ export class HookableBase<
 		BaseHook<"set", THooks> =
 		BaseHook<"set", THooks>,
 > extends Hookable<{ allows: TAllowsHook, set: TSetHook }> {
-	readonly _class: string
-
-	constructor(className: string, opts: Partial<HookableOpts> = {}) {
-		super(["allows", "set"], opts)
-		this._class = className
+	constructor(_className?: string) {
+		super(_className, ["allows", "set"])
 	}
 
 	protected _set<

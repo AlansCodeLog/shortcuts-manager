@@ -4,6 +4,8 @@ import type { RawCondition } from "../types/condition.js"
 
 
 export class Condition {
+	_class: string = "Condition"
+
 	/**
 	 * The main text representation of the condition. Note that this is NOT a unique identifier for conditions and cannot be used to compare them if you are using boolean expressions for your conditions. See {@link Condition.constructor} for an explanation.
 	 */

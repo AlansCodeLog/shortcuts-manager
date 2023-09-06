@@ -5,6 +5,7 @@ import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
 import type { Key } from "./Key.js"
 import { defaultSorter } from "./KeysSorter.js"
 import { Shortcut } from "./Shortcut.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableCollection } from "../bases/HookableCollection.js"
 import { equalsKeys } from "../helpers/equalsKeys.js"
@@ -39,6 +40,9 @@ export class Shortcuts<
 	/** @inheritdoc */
 	ignoreModifierConflicts: ShortcutsOptions["ignoreModifierConflicts"] = false
 
+	/** @inheritdoc */
+	stringifier: Stringifier
+
 	/**
 	 * # Shortcut
 	 *
@@ -59,7 +63,8 @@ export class Shortcuts<
 		shortcuts: TRawShortcuts,
 		opts: Partial<ShortcutsOptions> = {},
 	) {
-		super(opts)
+		super("Shortcuts")
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		if (opts.sorter) this.sorter = opts.sorter
 		if (opts.ignoreChainConflicts) this.ignoreChainConflicts = opts.ignoreChainConflicts
 		if (opts.ignoreModifierConflicts) this.ignoreModifierConflicts = opts.ignoreModifierConflicts

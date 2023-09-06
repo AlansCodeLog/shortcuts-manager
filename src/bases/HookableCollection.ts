@@ -3,7 +3,7 @@ import { type Result, unreachable } from "@alanscodelog/utils"
 import { Hookable } from "./Hookable.js"
 
 import type { KnownError } from "../helpers/KnownError.js"
-import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR, HookableOpts } from "../types/index.js"
+import type { BaseHook, BaseHookType, CollectionHook, CollectionHookType, ERROR } from "../types/index.js"
 
 
 export class HookableCollection<
@@ -41,8 +41,8 @@ export class HookableCollection<
 		set: TSetHook
 	},
 > extends Hookable<THooks> {
-	constructor(opts: Partial<HookableOpts> = {}) {
-		super(["add", "remove", "allowsAdd", "allowsRemove", "set"], opts)
+	constructor(_className?: string) {
+		super(_className, ["add", "remove", "allowsAdd", "allowsRemove", "set"])
 	}
 
 	entries!: TEntries

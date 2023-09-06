@@ -1,5 +1,7 @@
 import "./assets/tailwind.css"
 
+import { registerComponents } from "@alanscodelog/vue-components"
+import { fa, LibButton, LibCheckbox, LibInput, LibNotifications, LibRecorder } from "@alanscodelog/vue-components/components"
 import { library } from "@fortawesome/fontawesome-svg-core"
 import { faGithub } from "@fortawesome/free-brands-svg-icons"
 // import {  } from "@fortawesome/free-regular-svg-icons"
@@ -8,9 +10,6 @@ import { faChevronUp, faPlus, faTimes, faTrash } from "@fortawesome/free-solid-s
 import { type App as AppType, createApp } from "vue"
 
 import App from "./App.vue"
-
-import { registerComponents } from "@alanscodelog/vue-components"
-import { fa, LibButton, LibCheckbox, LibInput, LibNotifications, LibRecorder } from "@alanscodelog/vue-components/components"
 
 
 const components = { LibInput, LibRecorder, LibButton, fa, LibCheckbox, LibNotifications }

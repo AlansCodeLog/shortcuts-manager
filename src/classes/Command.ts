@@ -1,6 +1,7 @@
 import { pick } from "@alanscodelog/utils"
 
 import { Condition } from "./Condition.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { createInstance } from "../helpers/createInstance.js"
@@ -33,6 +34,9 @@ export class Command<
 	/** @inheritdoc */
 	description: string = ""
 
+	/** @inheritdoc */
+	stringifier: Stringifier
+ 
 	/**
 	 * # Command
 	 * Creates a command.
@@ -65,6 +69,7 @@ export class Command<
 		if (opts.execute) this.execute = opts.execute as TExec
 		if (opts.description) this.description = opts.description as string
 		if (opts.condition) this.condition = opts.condition as TCondition
+		this.stringifier = opts.stringifier ?? defaultStringifier
 	}
 
 	/**

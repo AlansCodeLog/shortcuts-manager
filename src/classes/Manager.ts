@@ -10,6 +10,7 @@ import type { Keys } from "./Keys.js"
 import { defaultSorter, type KeysSorter } from "./KeysSorter.js"
 import type { Shortcut } from "./Shortcut.js"
 import type { Shortcuts } from "./Shortcuts.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { checkManagerShortcuts } from "../helpers/checkManagerShortcuts.js"
@@ -22,7 +23,7 @@ import { isTriggerKey } from "../helpers/isTriggerKey.js"
 import { isValidChain } from "../helpers/isValidChain.js"
 import { KnownError } from "../helpers/KnownError.js"
 import { mapKeys } from "../helpers/mapKeys.js"
-import type { HookableOpts } from "../types/base.js"
+import type { StringifierOpts } from "../types/base.js"
 import { ERROR, TYPE_ERROR } from "../types/enums.js"
 import type { AnyInputEvent, AttachTarget, BaseHook, CollectionHook, CommandsHooks, ExportedManager, KeyboardLayoutMap, KeysCollectionHooks, ManagerErrorCallback, ManagerHook, ManagerListener, ManagerReplaceValue, NavigatorWKeyboard, RawCommand, RawShortcut, ShortcutHooks, ShortcutOptions, ShortcutsHooks, ToggleRootKey, TriggerableShortcut } from "../types/index.js"
 
@@ -108,7 +109,7 @@ export class Manager<
 
 	private _selfKeyboardMap: Map<Key, boolean> = new Map()
 
-	private readonly _timers: Map<Key, number | NodeJS.Timeout> = new Map()
+	// private readonly _timers: Map<Key, number | NodeJS.Timeout> = new Map()
 
 	private _labelPromise!: Promise<void>
 
@@ -152,6 +153,9 @@ export class Manager<
 	 * @RequiresSet
 	 */
 	readonly checkStateOnAllEvents: boolean = true
+
+	/** @inheritdoc */
+	stringifier: Stringifier
 
 	private readonly _els: AttachTarget[] = []
 
@@ -251,13 +255,14 @@ export class Manager<
 		shortcuts: TShortcuts,
 		context: TContext,
 		cb?: Manager["cb"],
-		opts: Partial<HookableOpts > & {
+		opts: Partial<StringifierOpts > & {
 			sorter?: KeysSorter
 			labelStrategy?: Manager["labelStrategy"]
 			labelFilter?: Manager["labelFilter"]
 		} = {},
 	) {
-		super("Manager", opts)
+		super()
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		this._boundKeydown = this._keydown.bind(this)
 		this._boundKeyup = this._keyup.bind(this)
 		this._boundMousedown = this._mousedown.bind(this)

@@ -1,6 +1,6 @@
 import type { Mutable } from "@alanscodelog/utils"
 
-import type { HookableOpts } from "./base.js"
+import type { StringifierOpts } from "./base.js"
 import type { RawCondition } from "./condition.js"
 import type { ERROR } from "./enums.js"
 import type { BaseHookType, CollectionHookType } from "./hooks.js"
@@ -27,7 +27,7 @@ export type CommandFunction = ({ isKeydown, command, shortcut, manager, event }:
 export type CommandOptions<
 	TExec extends CommandFunction | undefined = CommandFunction,
 	TCondition extends Condition = Condition,
-> = HookableOpts & {
+> = StringifierOpts & {
 	/**
 	 * The function to execute when a shortcut triggers it's command. It is executed both on keydown and keyup (of the first released key) so be sure to check the isKeydown parameter so you don't trigger commands twice.
 	 *

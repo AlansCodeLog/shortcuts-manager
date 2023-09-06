@@ -2,11 +2,12 @@ import { type AnyClass, crop, Err, Ok, type Result } from "@alanscodelog/utils"
 
 import { Command } from "./Command.js"
 import { canAddToDictErrorText } from "./internal/canAddToDictError.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableCollection } from "../bases/HookableCollection.js"
 import { KnownError } from "../helpers/KnownError.js"
 import { ERROR } from "../types/enums.js"
-import type { CommandsHooks, HookableOpts, RawCommand, RecordFromArray } from "../types/index.js"
+import type { CommandsHooks, RawCommand, RecordFromArray, StringifierOpts } from "../types/index.js"
 
 
 export class Commands<
@@ -21,6 +22,9 @@ export class Commands<
 		RecordFromArray<TRawCommands, "name", TCommand>,
 > extends HookableCollection<CommandsHooks> {
 	protected _basePrototype: AnyClass<Command> & { create(...args: any[]): Command } = Command
+
+	/** @inheritdoc */
+	stringifier: Stringifier
 
 	override entries: TEntries
 
@@ -39,9 +43,10 @@ export class Commands<
 	 */
 	constructor(
 		commands: TRawCommands,
-		opts: Partial<HookableOpts> = {},
+		opts: Partial<StringifierOpts> = {},
 	) {
-		super(opts)
+		super("Commands")
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		this.entries = {} as TEntries
 
 		for (const rawEntry of commands) {

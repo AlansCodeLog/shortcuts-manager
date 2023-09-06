@@ -1,6 +1,6 @@
 import type { DeepPartial, MakeRequired, Mutable } from "@alanscodelog/utils"
 
-import type { HookableOpts } from "./base.js"
+import type { StringifierOpts } from "./base.js"
 import type { ERROR, KEY_SORT_POS } from "./enums.js"
 import type { BaseHookType, CollectionHookType } from "./hooks.js"
 
@@ -14,6 +14,7 @@ import type { KnownError } from "../helpers/index.js"
 export type RawKey<T extends string = string> = {
 	id: T
 	opts?: Mutable<DeepPartial<Omit<KeyOptions, "is">>>
+	& Partial<StringifierOpts>
 	& {
 		is?: {
 			toggle?: true | Mutable<KeyOptions["is"]["toggle"]>
@@ -43,7 +44,7 @@ export type ToggleRootKey<
 
 export type AnyKey = Key | ToggleKey<any>
 
-export type KeyOptions = HookableOpts & {
+export type KeyOptions = StringifierOpts & {
 	/**
 	 * Whether the key is enabled.
 	 *
@@ -232,7 +233,7 @@ export type KeyOptions = HookableOpts & {
 	checkStateOnAllEvents: boolean
 }
 
-export type KeysOptions = HookableOpts & {
+export type KeysOptions = StringifierOpts & {
 	/**
 	 * Whether the instance automatically calculates the layout size ({@link Keys.layout}) from it's keys and adjusts to size/position changes using {@link Keys.recalculateLayout}.
 	 *

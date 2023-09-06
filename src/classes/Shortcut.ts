@@ -5,6 +5,7 @@ import { Condition } from "./Condition.js"
 import type { Context } from "./Context.js"
 import type { Key } from "./Key.js"
 import { defaultSorter } from "./KeysSorter.js"
+import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { chainContainsKey } from "../helpers/chainContainsKey.js"
@@ -44,6 +45,9 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 
 	forceUnequal: boolean = false
 
+	/** @inheritdoc */
+	stringifier: Stringifier
+
 	/**
 	 * # Shortcut
 	 *
@@ -57,6 +61,7 @@ export class Shortcut extends HookableBase<ShortcutHooks> implements ShortcutOpt
 		opts: RawShortcut["opts"] = {}
 	) {
 		super("Shortcut")
+		this.stringifier = opts.stringifier ?? defaultStringifier
 		if (opts.enabled) this.enabled = opts.enabled
 		if (opts.sorter) this.sorter = opts.sorter
 		if (opts.command) this.command = opts.command

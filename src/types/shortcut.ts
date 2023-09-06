@@ -1,4 +1,4 @@
-import type { HookableOpts } from "./base.js"
+import type { StringifierOpts } from "./base.js"
 import type { RawCondition } from "./condition.js"
 import type { ERROR } from "./enums.js"
 import type { BaseHookType, CollectionHookType } from "./hooks.js"
@@ -24,7 +24,7 @@ export type ExportedShortcut =
 		command: string
 	}
 
-export type ShortcutOptions = HookableOpts & {
+export type ShortcutOptions = StringifierOpts & {
 	/**
 	 * The {@link Command} to associate with the shortcut.
 	 *
@@ -49,7 +49,7 @@ export type ShortcutOptions = HookableOpts & {
 	sorter: KeysSorter
 }
 
-export type ShortcutsOptions = HookableOpts & {
+export type ShortcutsOptions = StringifierOpts & {
 	/** See {@link KeysSorter} */
 	sorter: KeysSorter
 	/** See {@link Shortcuts["conflictsWith"]} */
