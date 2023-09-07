@@ -29,4 +29,22 @@ module.exports =  {
 	validation: {
 		invalidLink: true,
 	},
+	pluginPages: {
+		source:"docs-src",
+		pages: [
+			{
+				name: "Additional Docs",
+				children: [
+					{
+						name: "Internal Docs",
+						source: 'internal_docs.md',
+					},
+						{
+						name: "Development",
+						source: 'DEVELOPMENT.md',
+					},
+				],
+			},
+		],
+	}
 }

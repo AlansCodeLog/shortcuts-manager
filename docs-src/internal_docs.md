@@ -1,3 +1,4 @@
+<!--
 The main functionality of the library is split across the following classes:
 
 Base Classes:
@@ -9,9 +10,9 @@ Collection Classes
 - [Keys](./Keys.ts)
 - [Shortcuts](./Shortcuts.ts)
 - [Commands](./Commands.ts)
-
 Helper Classes
 - [KeysSorter](./KeysSorter.ts)
+- [Stringifier](./Stringifier.ts)
 
 Property Classes
 - [Condition](./Condition.ts)
@@ -23,7 +24,7 @@ Plugin Classes
 
 
 That's how they are referred to in the code and documentation.
-
+-->
 # Shared Internal-ish Documentation
 
 ## Generics
@@ -32,43 +33,43 @@ Although it might be noisier, where possible generics are assigned a default val
 
 In general, the user should not really be needing to specify type parameters, as they should all be inferred correctly, unless otherwise noted.
 
-## Plugins
-
-All base classes take in `PluginBase` instances.
-All collection classes take in `PluginCollection` instances.
-
-At the top of all base classes you'll see something like this for the generics:
-
-```ts
-TPlugins extends PluginBase<any>[] = PluginBase<any>[],
-T extends OrToAnd<PluginInfo<TPlugins[number]>> = OrToAnd<PluginInfo<TPlugins[number]>>,
-
-// getting rid of the clutter we can read this like:
-TPlugins = PluginBase<any>[]
-T = OrToAnd<PluginInfo<TPlugins[number]>>,
-```
-
-This is what allows typescript to understand what properties are "allowed" (and therefore provide proper autocomplete) on the `info` property given the plugins passed.
-
-The important bit is the second line, the first is just "capturing" the `plugin` param as a generic we can use.
-
-What it's doing is for each plugin (`TPlugins[number]>`), it "iterates" through the return value of each pluginbase's `init` property (using a helper type `PluginInfo`) which is what determines what will be assigned to `info`/`T`. But we only get a union out of this, so there's helper `OrToAnd` that converts the type into to an intersection of all the pluginbase's properties to require them ALL to be in `T`.
-
-Something similar happens for all collections, although it's not important for autocomplete:
-
-```ts
-TPlugins extends Plugin<any, any>[] = Plugin<any, any>[],
-TPluginsBase extends TPlugins[number]["base"][] = TPlugins[number]["base"][],
-
-// getting rid of the clutter we can read this like:
-TPlugins = Plugin<any, any>[],
-TPluginsBase = TPlugins[number]["base"][],
-```
-
-Again, first line is just to capture the plugins argument.
-
-The we just extract the `base` of each plugin (which is a `PluginBase` instance) into an array of bases so we can type our entries, e.g. `Shortcut<TPluginsBase>`. This is why these two generics are always first, because when we want typed entries, we need to set them internally.
-
+<!-- ## Plugins -->
+<!---->
+<!-- All base classes take in `PluginBase` instances. -->
+<!-- All collection classes take in `PluginCollection` instances. -->
+<!---->
+<!-- At the top of all base classes you'll see something like this for the generics: -->
+<!---->
+<!-- ```ts -->
+<!-- TPlugins extends PluginBase<any>[] = PluginBase<any>[], -->
+<!-- T extends OrToAnd<PluginInfo<TPlugins[number]>> = OrToAnd<PluginInfo<TPlugins[number]>>, -->
+<!---->
+<!-- // getting rid of the clutter we can read this like: -->
+<!-- TPlugins = PluginBase<any>[] -->
+<!-- T = OrToAnd<PluginInfo<TPlugins[number]>>, -->
+<!-- ``` -->
+<!---->
+<!-- This is what allows typescript to understand what properties are "allowed" (and therefore provide proper autocomplete) on the `info` property given the plugins passed. -->
+<!---->
+<!-- The important bit is the second line, the first is just "capturing" the `plugin` param as a generic we can use. -->
+<!---->
+<!-- What it's doing is for each plugin (`TPlugins[number]>`), it "iterates" through the return value of each pluginbase's `init` property (using a helper type `PluginInfo`) which is what determines what will be assigned to `info`/`T`. But we only get a union out of this, so there's helper `OrToAnd` that converts the type into to an intersection of all the pluginbase's properties to require them ALL to be in `T`. -->
+<!---->
+<!-- Something similar happens for all collections, although it's not important for autocomplete: -->
+<!---->
+<!-- ```ts -->
+<!-- TPlugins extends Plugin<any, any>[] = Plugin<any, any>[], -->
+<!-- TPluginsBase extends TPlugins[number]["base"][] = TPlugins[number]["base"][], -->
+<!---->
+<!-- // getting rid of the clutter we can read this like: -->
+<!-- TPlugins = Plugin<any, any>[], -->
+<!-- TPluginsBase = TPlugins[number]["base"][], -->
+<!-- ``` -->
+<!---->
+<!-- Again, first line is just to capture the plugins argument. -->
+<!---->
+<!-- The we just extract the `base` of each plugin (which is a `PluginBase` instance) into an array of bases so we can type our entries, e.g. `Shortcut<TPluginsBase>`. This is why these two generics are always first, because when we want typed entries, we need to set them internally. -->
+<!---->
 ## Collection Entries
 
 All collections, except `Shortcuts` use an object to store their entries. This object is keyed by some property in the base class.
@@ -77,18 +78,22 @@ To get typescript to understand this, first that property in the base class must
 
 Then in collection classes we do:
 
+<!-- // T[TYPE] extends T[TYPE]<TPluginsBase> = T[TYPE]<TPluginsBase>, -->
+
 ```ts
-T[TYPE] extends T[TYPE]<TPluginsBase> = T[TYPE]<TPluginsBase>,
 TRaw[TYPE]s extends OnlyRequire<T[TYPE], "[KEY]">[] = OnlyRequire<T[TYPE], "[KEY]">[],
 TEntries extends RecordFromArray<TRaw[TYPE], "[KEY]", T[TYPE]> = RecordFromArray<TRaw[TYPE], "[KEY]", T[TYPE]>
+```
 
-// getting rid of the clutter we can read this like:
-T[TYPE] = T[TYPE]<TPluginsBase>,
+Getting rid of the clutter we can read this like:
+<!-- T[TYPE] = T[TYPE]<TPluginsBase>, -->
+<!-- TKey = Key<TPluginsBase>, -->
+```ts
 TRaw[TYPE]s = OnlyRequire<T[TYPE], "[KEY]">[],
 TEntries = RecordFromArray<TRaw[TYPE], "[KEY]", T[TYPE]>
 
 // real example (minus clutter):
-TKey = Key<TPluginsBase>,
+TKey = Key<...>
 TRawKeys = OnlyRequire<TKey, "id">[],
 TEntries = RecordFromArray<TRawKeys, "id", TKey>
 ```
@@ -102,7 +107,7 @@ new Keys([ // <= TRawKeys
 ])
 ```
 
-`RecordFromArray` creates a type like this where each `TKey` is unique. `TKey.id` is different for each key, and so are the plugin values, etc.
+`RecordFromArray` creates a type like this where each `TKey` is unique. `TKey.id` is different for each key<!-- , and so are the plugin values -->, etc.
 
 ```ts
 type TEntries = {

@@ -5,7 +5,7 @@ import { defaultStringifier, type Stringifier } from "./Stringifier.js"
 
 import { HookableBase } from "../bases/HookableBase.js"
 import { createInstance } from "../helpers/createInstance.js"
-import type { CommandHooks, CommandOptions, ExportedCommand, Optional, RawCommand } from "../types/index.js"
+import type { CommandHooks, CommandOptions, ERROR, ExportedCommand, Optional, RawCommand } from "../types/index.js"
 
 
 export class Command<
@@ -45,7 +45,7 @@ export class Command<
 	 *
 	 * @template TExec  Captures the type of the execute function. See {@link Command.execute}
 	 * @template TCondition  Captures the type of the condition. See {@link Command.condition}
-	 * @template TName **@internal** See {@link ./README.md Collection Entries}
+	 * @template TName **@internal** See {@page ../../docs-src/internal_docs.md}
 	 * @template TOpts **@internal** Makes the type of opts match depending on the execute function/condition passed.
 	 * @param name See {@link Command.name}
 	 * @param opts See {@link CommandOptions}

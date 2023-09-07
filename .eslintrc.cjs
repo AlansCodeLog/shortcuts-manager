@@ -15,6 +15,11 @@ module.exports = {
 		project: "./tsconfig.json"
 	},
 	rules: {
+		"jsdoc/no-undefined-types": ["warn", {
+				disableReporting:true,
+				markVariablesAsUsed:true
+			}
+		]
 		// "@typescript-eslint/non-nullable-type-assertion-style":"off"
 	},
 	settings: {
