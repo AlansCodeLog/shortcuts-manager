@@ -66,6 +66,8 @@ jobs:
 
     - run: pnpm doc
 
+    - run: pnpm demo:build
+
     - name: Documentation
       if: "env.ENABLE_DOCS == 'true'"
       uses: crazy-max/ghaction-github-pages@v2

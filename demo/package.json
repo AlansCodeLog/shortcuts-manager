@@ -5,7 +5,7 @@
 	"scripts": {
 		"debug": "ts-node -r tsconfig-paths/register -T --esm",
 		"dev": "vite",
-		"build": "npm run build:parent && vite build",
+		"build": "npm run build:parent && vite build && cp -r dist ../docs/demo",
 		"build:dev": "vite build --mode development",
 		"build:watch": "vite build --watch --mode production",
 		"lint:imports": "madge --circular --extensions ts ./src",
