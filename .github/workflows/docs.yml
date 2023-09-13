@@ -66,6 +66,9 @@ jobs:
 
     - run: pnpm doc
 
+    - run: pnpm install --frozen-lockfile
+      working-directory: demo
+
     - run: pnpm demo:build
 
     - name: Documentation
