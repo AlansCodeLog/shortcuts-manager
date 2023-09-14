@@ -4,6 +4,7 @@ import { defineConfig } from "vitest/config"
 
 import postcss from "./postcss.config.js"
 
+import pkg from "../package.json"
 
 // https://vitejs.dev/config/
 export default async ({ mode }: { mode: string }) => defineConfig({
@@ -15,7 +16,7 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 			},
 		}),
 	],
-	base: "/demo",
+	base: `/${pkg.name}/demo`,
 	build: {
 		outDir: "dist",
 		...(mode === "production" ? {
