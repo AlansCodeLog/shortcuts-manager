@@ -39,7 +39,7 @@ dependencies:
   '@fortawesome/free-regular-svg-icons': 6.4.0
   '@fortawesome/free-solid-svg-icons': 6.4.0
   metamorphosis: 0.2.3_tailwindcss@3.3.3
-  shortcuts-manager: link:..
+  shortcuts-manager: file:..
   tailwind-merge: 1.14.0
 
 devDependencies:
@@ -2985,3 +2985,12 @@ packages:
     optionalDependencies:
       commander: 9.5.0
     dev: true
+
+  file:..:
+    resolution: {directory: .., type: directory}
+    name: shortcuts-manager
+    version: 0.0.0-semantically-released
+    engines: {node: '>=18.0.0'}
+    dependencies:
+      '@alanscodelog/utils': 4.0.0-beta.10
+    dev: false
