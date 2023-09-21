@@ -1,0 +1,72 @@
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Development | shortcuts-manager</title><meta name="description" content="Documentation for shortcuts-manager"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script><link rel="stylesheet" href="../assets/pages.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container">
+<div class="table-cell" id="tsd-search" data-base="..">
+<div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
+<div class="field">
+<div id="tsd-toolbar-links"><a href="https://github.com/alanscodelog/shortcuts-manager">Github</a><a href="https://github.com/alanscodelog/shortcuts-manager/issues">Issues</a><a href="http://npmjs.com/shortcuts-manager">npm</a></div></div>
+<ul class="results">
+<li class="state loading">Preparing search index...</li>
+<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">shortcuts-manager</a></div>
+<div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
+<div class="container container-main">
+<div class="col-8 col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb">
+<li><a href="../modules.html">shortcuts-manager</a></li>
+<li><span>Additional Docs</span></li>
+<li><a href="DEVELOPMENT.html">Development</a></li></ul>
+<h1> Development</h1></div>
+<div class="tsd-panel tsd-typography">
+<a href="#file-structure" id="file-structure" style="color: inherit; text-decoration: none;">
+  <h2>File Structure</h2>
+</a>
+<p>This library makes use of a custom index file manager I wrote, called <a href="https://github.com/alanscodelog/indexit">indexit</a>.</p>
+<p>Whenever a file is added/removed, the <code>gen:exports</code> script should be called, it calls indexit with the right options and will update the necessary index files.</p>
+<p>Every function normally has it&#39;s own file and there should only be one export per file (indexit does not support multiple yet, and will just use the first export).</p>
+<pre><code><span class="hl-4">src</span><br/><span class="hl-2"> ┣ </span><span class="hl-4">bases</span><br/><span class="hl-2"> ┃ ┣ #</span><span class="hl-4">todo</span><span class="hl-2"> </span><span class="hl-4">explain</span><br/><span class="hl-2"> ┣ </span><span class="hl-4">classes</span><br/><span class="hl-2"> ┃ ┣ #</span><span class="hl-4">todo</span><span class="hl-2"> </span><span class="hl-4">explain</span><br/><span class="hl-2"> ┣ </span><span class="hl-4">helpers</span><br/><span class="hl-2"> ┣ </span><span class="hl-4">types</span><span class="hl-2"> - </span><span class="hl-4">all</span><span class="hl-2"> </span><span class="hl-4">the</span><span class="hl-2"> </span><span class="hl-4">types</span><span class="hl-2"> </span><span class="hl-4">and</span><span class="hl-2"> </span><span class="hl-4">enums</span><span class="hl-2"> </span><span class="hl-4">are</span><span class="hl-2"> </span><span class="hl-4">stored</span><span class="hl-2"> </span><span class="hl-4">here</span><span class="hl-2"> </span><span class="hl-1">in</span><span class="hl-2"> </span><span class="hl-4">their</span><span class="hl-2"> </span><span class="hl-4">respective</span><span class="hl-2"> </span><span class="hl-4">categories</span><br/><span class="hl-4">tests</span><br/><span class="hl-2"> ┣ </span><span class="hl-4">template</span><span class="hl-2">.</span><span class="hl-4">ts</span><span class="hl-2"> - </span><span class="hl-4">the</span><span class="hl-2"> </span><span class="hl-4">template</span><span class="hl-2"> </span><span class="hl-4">to</span><span class="hl-2"> </span><span class="hl-4">use</span><span class="hl-2"> </span><span class="hl-4">for</span><span class="hl-2"> </span><span class="hl-4">tests</span><span class="hl-2">, </span><span class="hl-4">just</span><span class="hl-2"> </span><span class="hl-4">copy</span><span class="hl-2"> </span><span class="hl-4">and</span><span class="hl-2"> </span><span class="hl-4">rename</span><span class="hl-2"> </span><span class="hl-4">to</span><span class="hl-2"> </span><span class="hl-4">the</span><span class="hl-2"> </span><span class="hl-4">name</span><span class="hl-2"> </span><span class="hl-1">of</span><span class="hl-2"> </span><span class="hl-4">the</span><span class="hl-2"> </span><span class="hl-4">test</span><span class="hl-2"> + </span><span class="hl-6">`.spec.ts`</span><br/><span class="hl-2"> ┗ </span><span class="hl-4">helpers</span><span class="hl-2">.</span><span class="hl-4">keys</span><span class="hl-2">.</span><span class="hl-4">ts</span><span class="hl-2"> - </span><span class="hl-4">contains</span><span class="hl-2"> </span><span class="hl-4">com</span><span class="hl-2"> </span><span class="hl-4">pre</span><span class="hl-2">-</span><span class="hl-4">configured</span><span class="hl-2"> </span><span class="hl-4">keys</span><span class="hl-2"> </span><span class="hl-4">used</span><span class="hl-2"> </span><span class="hl-1">in</span><span class="hl-2"> </span><span class="hl-4">tests</span><span class="hl-2">, </span><span class="hl-4">they</span><span class="hl-2"> </span><span class="hl-4">are</span><span class="hl-2"> </span><span class="hl-4">not</span><span class="hl-2"> </span><span class="hl-4">meant</span><span class="hl-2"> </span><span class="hl-4">to</span><span class="hl-2"> </span><span class="hl-4">be</span><span class="hl-2"> </span><span class="hl-4">very</span><span class="hl-2"> </span><span class="hl-4">realistic</span>
+</code></pre>
+
+<a href="#building" id="building" style="color: inherit; text-decoration: none;">
+  <h2>Building</h2>
+</a>
+<p>Run <code>pnpm run build</code> to build the library and the types. If you don&#39;t need to build the types you can use the <code>build:babel</code> or <code>build:babel:watch</code> commands.</p>
+
+<a href="#demo" id="demo" style="color: inherit; text-decoration: none;">
+  <h2>Demo</h2>
+</a>
+<p>The demo is mostly WIP, hardly demo. Am currently using it as a playground to check everything is ergnomic, etc.</p>
+<p>It uses vite and compiles the src of the library also, so changes in both the library and the demo should be instantaneous.</p>
+<p>Note that the out dir is <code>docs/demo</code> so that it can be seen from the docs site in the future.</p>
+</div></div>
+<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+<div class="tsd-navigation settings">
+<details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility">
+<h4 class="uppercase">Member Visibility</h4><form>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></form></div>
+<div class="tsd-theme-toggle">
+<h4 class="uppercase">Theme</h4><select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<nav class="tsd-navigation primary">
+<details class="tsd-index-accordion" open><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Modules</h3></summary>
+<div class="tsd-accordion-details">
+<ul>
+<li class="current"><a href="../modules.html">shortcuts-<wbr/>manager</a>
+<ul>
+<li class="current pages-entry pages-entry-menu pages-entry-depth-1"><a>Additional <wbr/>Docs</a>
+<ul>
+<li class="pages-entry pages-entry-page pages-entry-depth-2"><a href="internal_docs.html">Internal <wbr/>Docs</a></li>
+<li class="current selected pages-entry pages-entry-page pages-entry-depth-2"><a href="DEVELOPMENT.html">Development</a></li></ul></li>
+<li class="tsd-kind-module"><a href="../modules/bases.html">bases</a></li>
+<li class="tsd-kind-module"><a href="../modules/classes.html">classes</a></li>
+<li class="tsd-kind-module"><a href="../modules/helpers.html">helpers</a></li>
+<li class="tsd-kind-module"><a href="../modules/layouts.html">layouts</a></li>
+<li class="tsd-kind-module"><a href="../modules/types.html">types</a></li></ul></li></ul></div></details></nav>
+<nav class="tsd-navigation secondary menu-sticky"></nav></div></div>
+<div class="container tsd-generator">
+<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>
+<div class="overlay"></div><script src="../assets/main.js"></script></body></html>

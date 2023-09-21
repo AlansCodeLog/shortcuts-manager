@@ -1,0 +1,158 @@
+<!DOCTYPE html><html class="default" lang="en"><head><meta charSet="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>Internal Docs | shortcuts-manager</title><meta name="description" content="Documentation for shortcuts-manager"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="../assets/style.css"/><link rel="stylesheet" href="../assets/highlight.css"/><script async src="../assets/search.js" id="search-script"></script><link rel="stylesheet" href="../assets/pages.css"/></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os"</script><header class="tsd-page-toolbar">
+<div class="tsd-toolbar-contents container">
+<div class="table-cell" id="tsd-search" data-base="..">
+<div class="field"><label for="tsd-search-field" class="tsd-widget tsd-toolbar-icon search no-caption"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M15.7824 13.833L12.6666 10.7177C12.5259 10.5771 12.3353 10.499 12.1353 10.499H11.6259C12.4884 9.39596 13.001 8.00859 13.001 6.49937C13.001 2.90909 10.0914 0 6.50048 0C2.90959 0 0 2.90909 0 6.49937C0 10.0896 2.90959 12.9987 6.50048 12.9987C8.00996 12.9987 9.39756 12.4863 10.5008 11.6239V12.1332C10.5008 12.3332 10.5789 12.5238 10.7195 12.6644L13.8354 15.7797C14.1292 16.0734 14.6042 16.0734 14.8948 15.7797L15.7793 14.8954C16.0731 14.6017 16.0731 14.1267 15.7824 13.833ZM6.50048 10.499C4.29094 10.499 2.50018 8.71165 2.50018 6.49937C2.50018 4.29021 4.28781 2.49976 6.50048 2.49976C8.71001 2.49976 10.5008 4.28708 10.5008 6.49937C10.5008 8.70852 8.71314 10.499 6.50048 10.499Z" fill="var(--color-text)"></path></svg></label><input type="text" id="tsd-search-field" aria-label="Search"/></div>
+<div class="field">
+<div id="tsd-toolbar-links"><a href="https://github.com/alanscodelog/shortcuts-manager">Github</a><a href="https://github.com/alanscodelog/shortcuts-manager/issues">Issues</a><a href="http://npmjs.com/shortcuts-manager">npm</a></div></div>
+<ul class="results">
+<li class="state loading">Preparing search index...</li>
+<li class="state failure">The search index is not available</li></ul><a href="../index.html" class="title">shortcuts-manager</a></div>
+<div class="table-cell" id="tsd-widgets"><a href="#" class="tsd-widget tsd-toolbar-icon menu no-caption" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="3" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="7" width="14" height="2" fill="var(--color-text)"></rect><rect x="1" y="11" width="14" height="2" fill="var(--color-text)"></rect></svg></a></div></div></header>
+<div class="container container-main">
+<div class="col-8 col-content">
+<div class="tsd-page-title">
+<ul class="tsd-breadcrumb">
+<li><a href="../modules.html">shortcuts-manager</a></li>
+<li><span>Additional Docs</span></li>
+<li><a href="internal_docs.html">Internal Docs</a></li></ul>
+<h1> Internal Docs</h1></div>
+<div class="tsd-panel tsd-typography"><!--
+The main functionality of the library is split across the following classes:
+
+Base Classes:
+- [Key](./Key.ts)
+- [Shortcut](./Shortcut.ts)
+- [Command](./Command.ts)
+
+Collection Classes
+- [Keys](./Keys.ts)
+- [Shortcuts](./Shortcuts.ts)
+- [Commands](./Commands.ts)
+Helper Classes
+- [KeysSorter](./KeysSorter.ts)
+- [Stringifier](./Stringifier.ts)
+
+Property Classes
+- [Condition](./Condition.ts)
+- [Context](./Context.ts)
+
+Plugin Classes
+- [BasePlugin](./BasePlugin.ts)
+- [CollectionPlugin](./CollectionPlugin.ts)
+
+
+That's how they are referred to in the code and documentation.
+-->
+
+<a href="#shared-internal-ish-documentation" id="shared-internal-ish-documentation" style="color: inherit; text-decoration: none;">
+  <h1>Shared Internal-ish Documentation</h1>
+</a>
+
+<a href="#generics" id="generics" style="color: inherit; text-decoration: none;">
+  <h2>Generics</h2>
+</a>
+<p>Although it might be noisier, where possible generics are assigned a default value so we can easily use them without any type parameters.</p>
+<p>In general, the user should not really be needing to specify type parameters, as they should all be inferred correctly, unless otherwise noted.</p>
+<!-- ## Plugins -->
+<!---->
+<!-- All base classes take in `PluginBase` instances. -->
+<!-- All collection classes take in `PluginCollection` instances. -->
+<!---->
+<!-- At the top of all base classes you'll see something like this for the generics: -->
+<!---->
+<!-- ```ts -->
+<!-- TPlugins extends PluginBase<any>[] = PluginBase<any>[], -->
+<!-- T extends OrToAnd<PluginInfo<TPlugins[number]>> = OrToAnd<PluginInfo<TPlugins[number]>>, -->
+<!---->
+<!-- // getting rid of the clutter we can read this like: -->
+<!-- TPlugins = PluginBase<any>[] -->
+<!-- T = OrToAnd<PluginInfo<TPlugins[number]>>, -->
+<!-- ``` -->
+<!---->
+<!-- This is what allows typescript to understand what properties are "allowed" (and therefore provide proper autocomplete) on the `info` property given the plugins passed. -->
+<!---->
+<!-- The important bit is the second line, the first is just "capturing" the `plugin` param as a generic we can use. -->
+<!---->
+<!-- What it's doing is for each plugin (`TPlugins[number]>`), it "iterates" through the return value of each pluginbase's `init` property (using a helper type `PluginInfo`) which is what determines what will be assigned to `info`/`T`. But we only get a union out of this, so there's helper `OrToAnd` that converts the type into to an intersection of all the pluginbase's properties to require them ALL to be in `T`. -->
+<!---->
+<!-- Something similar happens for all collections, although it's not important for autocomplete: -->
+<!---->
+<!-- ```ts -->
+<!-- TPlugins extends Plugin<any, any>[] = Plugin<any, any>[], -->
+<!-- TPluginsBase extends TPlugins[number]["base"][] = TPlugins[number]["base"][], -->
+<!---->
+<!-- // getting rid of the clutter we can read this like: -->
+<!-- TPlugins = Plugin<any, any>[], -->
+<!-- TPluginsBase = TPlugins[number]["base"][], -->
+<!-- ``` -->
+<!---->
+<!-- Again, first line is just to capture the plugins argument. -->
+<!---->
+<!-- The we just extract the `base` of each plugin (which is a `PluginBase` instance) into an array of bases so we can type our entries, e.g. `Shortcut<TPluginsBase>`. This is why these two generics are always first, because when we want typed entries, we need to set them internally. -->
+<!---->
+
+<a href="#collection-entries" id="collection-entries" style="color: inherit; text-decoration: none;">
+  <h2>Collection Entries</h2>
+</a>
+<p>All collections, except <code>Shortcuts</code> use an object to store their entries. This object is keyed by some property in the base class.</p>
+<p>To get typescript to understand this, first that property in the base class must be using a generic, this is why you&#39;ll see a seemingly unused generic called <code>T[INSERT PROP NAME] extends string = string</code> in all base classes except <code>Shortcut</code>.</p>
+<p>Then in collection classes we do:</p>
+<!-- // T[TYPE] extends T[TYPE]<TPluginsBase> = T[TYPE]<TPluginsBase>, -->
+
+<pre><code class="language-ts"><span class="hl-4">TRaw</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">]</span><span class="hl-4">s</span><span class="hl-2"> </span><span class="hl-4">extends</span><span class="hl-2"> </span><span class="hl-4">OnlyRequire</span><span class="hl-2">&lt;</span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">&gt;[] = </span><span class="hl-4">OnlyRequire</span><span class="hl-2">&lt;</span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">&gt;[],</span><br/><span class="hl-4">TEntries</span><span class="hl-2"> </span><span class="hl-4">extends</span><span class="hl-2"> </span><span class="hl-4">RecordFromArray</span><span class="hl-2">&lt;</span><span class="hl-4">TRaw</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">, </span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">]&gt; = </span><span class="hl-4">RecordFromArray</span><span class="hl-2">&lt;</span><span class="hl-4">TRaw</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">, </span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">]&gt;</span>
+</code></pre>
+<p>Getting rid of the clutter we can read this like:</p>
+<!-- T[TYPE] = T[TYPE]<TPluginsBase>, -->
+<!-- TKey = Key<TPluginsBase>, -->
+<pre><code class="language-ts"><span class="hl-4">TRaw</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">]</span><span class="hl-4">s</span><span class="hl-2"> = </span><span class="hl-4">OnlyRequire</span><span class="hl-2">&lt;</span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">&gt;[],</span><br/><span class="hl-4">TEntries</span><span class="hl-2"> = </span><span class="hl-4">RecordFromArray</span><span class="hl-2">&lt;</span><span class="hl-4">TRaw</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">], </span><span class="hl-6">&quot;[KEY]&quot;</span><span class="hl-2">, </span><span class="hl-3">T</span><span class="hl-2">[</span><span class="hl-3">TYPE</span><span class="hl-2">]&gt;</span><br/><br/><span class="hl-0">// real example (minus clutter):</span><br/><span class="hl-4">TKey</span><span class="hl-2"> = </span><span class="hl-4">Key</span><span class="hl-2">&lt;...&gt;</span><br/><span class="hl-4">TRawKeys</span><span class="hl-2"> = </span><span class="hl-4">OnlyRequire</span><span class="hl-2">&lt;</span><span class="hl-4">TKey</span><span class="hl-2">, </span><span class="hl-6">&quot;id&quot;</span><span class="hl-2">&gt;[],</span><br/><span class="hl-4">TEntries</span><span class="hl-2"> = </span><span class="hl-4">RecordFromArray</span><span class="hl-2">&lt;</span><span class="hl-4">TRawKeys</span><span class="hl-2">, </span><span class="hl-6">&quot;id&quot;</span><span class="hl-2">, </span><span class="hl-4">TKey</span><span class="hl-2">&gt;</span>
+</code></pre>
+<p>And it&#39;s easier to show how this works than explain it:</p>
+<pre><code class="language-ts"><span class="hl-1">new</span><span class="hl-2"> </span><span class="hl-5">Keys</span><span class="hl-2">([ </span><span class="hl-0">// &lt;= TRawKeys</span><br/><span class="hl-2">    { </span><span class="hl-4">id:</span><span class="hl-2"> </span><span class="hl-6">&quot;a&quot;</span><span class="hl-2">}, </span><span class="hl-0">// &lt;= OnlyRequire&lt;TKey, &quot;id&quot;&gt;</span><br/><span class="hl-2">    { </span><span class="hl-4">id:</span><span class="hl-2"> </span><span class="hl-6">&quot;b&quot;</span><span class="hl-2">},</span><br/><span class="hl-2">    { </span><span class="hl-4">id:</span><span class="hl-2"> </span><span class="hl-6">&quot;c&quot;</span><span class="hl-2">},</span><br/><span class="hl-2">])</span>
+</code></pre>
+<p><code>RecordFromArray</code> creates a type like this where each <code>TKey</code> is unique. <code>TKey.id</code> is different for each key<!-- , and so are the plugin values -->, etc.</p>
+<pre><code class="language-ts"><span class="hl-1">type</span><span class="hl-2"> </span><span class="hl-8">TEntries</span><span class="hl-2"> = {</span><br/><span class="hl-2">    </span><span class="hl-6">&quot;a&quot;</span><span class="hl-2">: </span><span class="hl-8">TKey</span><span class="hl-2"> </span><span class="hl-0">// TKey.id = a</span><br/><span class="hl-2">    </span><span class="hl-6">&quot;b&quot;</span><span class="hl-2">: </span><span class="hl-8">TKey</span><span class="hl-2"> </span><span class="hl-0">// TKey.id = b</span><br/><span class="hl-2">    </span><span class="hl-6">&quot;c&quot;</span><span class="hl-2">: </span><span class="hl-8">TKey</span><span class="hl-2"> </span><span class="hl-0">// TKey.id = c</span><br/><span class="hl-2">}</span>
+</code></pre>
+
+<a href="#shortcuts" id="shortcuts" style="color: inherit; text-decoration: none;">
+  <h3>Shortcuts</h3>
+</a>
+<p>Shortcuts are the exception to the above because there is not a single key they can be indexed by. You can have shortcuts with the exact same keys and properties except for one property (e.g. two shortcuts that fire under different conditions) and it would still be perfectly valid to store these in a collection and for them not to be considered duplicates*.</p>
+<p>So unlike other collection classes, they must be stored in an array and the class&#39;s methods differ from other collections.</p>
+<p>* In general, checking if shortcuts are duplicates is a bad idea if using boolean conditions. See <!-- Todo --></p>
+<hr>
+<p>draft</p>
+<pre><code><span class="hl-2">    </span><span class="hl-1">type</span><span class="hl-2"> </span><span class="hl-8">ExtendedHooks</span><span class="hl-2"> = </span><span class="hl-8">CommandHooks</span><span class="hl-2"> &amp; {</span><span class="hl-4">a</span><span class="hl-2">:</span><span class="hl-8">BaseHookType</span><span class="hl-2">&lt;</span><span class="hl-8">Bases</span><span class="hl-2">, </span><span class="hl-8">string</span><span class="hl-2">, </span><span class="hl-8">never</span><span class="hl-2">&gt;}</span><br/><span class="hl-2">    </span><span class="hl-1">class</span><span class="hl-2"> </span><span class="hl-8">Test</span><span class="hl-2"> </span><span class="hl-1">extends</span><span class="hl-2"> </span><span class="hl-8">Command</span><span class="hl-2"> {</span><br/><span class="hl-2">        </span><span class="hl-1">override</span><span class="hl-2"> </span><span class="hl-5">set</span><span class="hl-2">&lt;</span><span class="hl-8">T</span><span class="hl-2"> </span><span class="hl-1">extends</span><span class="hl-2"> </span><span class="hl-1">keyof</span><span class="hl-2"> </span><span class="hl-8">ExtendedHooks</span><span class="hl-2">&gt;(</span><span class="hl-4">key</span><span class="hl-2">: </span><span class="hl-8">T</span><span class="hl-2">, </span><span class="hl-4">val</span><span class="hl-2">: </span><span class="hl-8">ExtendedHooks</span><span class="hl-2">[</span><span class="hl-8">T</span><span class="hl-2">][</span><span class="hl-6">&quot;excludeSet&quot;</span><span class="hl-2">] </span><span class="hl-1">extends</span><span class="hl-2"> </span><span class="hl-8">true</span><span class="hl-2"> ? </span><span class="hl-8">never</span><span class="hl-2"> : </span><span class="hl-8">ExtendedHooks</span><span class="hl-2">[</span><span class="hl-8">T</span><span class="hl-2">][</span><span class="hl-6">&quot;value&quot;</span><span class="hl-2">]): </span><span class="hl-8">void</span><span class="hl-2"> {</span><br/><br/><span class="hl-2">        }</span><br/><span class="hl-2">    }</span><br/><span class="hl-2">    </span><span class="hl-1">new</span><span class="hl-2"> </span><span class="hl-5">Test</span><span class="hl-2">(</span><span class="hl-6">&quot;jhlkjh&quot;</span><span class="hl-2">).</span><span class="hl-5">set</span><span class="hl-2">(</span><span class="hl-6">&quot;execute&quot;</span><span class="hl-2">, ()</span><span class="hl-1">=&gt;</span><span class="hl-2">{})</span><br/><span class="hl-2">    </span><span class="hl-1">new</span><span class="hl-2"> </span><span class="hl-5">Test</span><span class="hl-2">(</span><span class="hl-6">&quot;jhlkjh&quot;</span><span class="hl-2">).</span><span class="hl-5">set</span><span class="hl-2">(</span><span class="hl-6">&quot;a&quot;</span><span class="hl-2">, </span><span class="hl-6">&quot;jg&quot;</span><span class="hl-2">)</span>
+</code></pre>
+</div></div>
+<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+<div class="tsd-navigation settings">
+<details class="tsd-index-accordion"><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Settings</h3></summary>
+<div class="tsd-accordion-details">
+<div class="tsd-filter-visibility">
+<h4 class="uppercase">Member Visibility</h4><form>
+<ul id="tsd-filter-options">
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li>
+<li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li></ul></form></div>
+<div class="tsd-theme-toggle">
+<h4 class="uppercase">Theme</h4><select id="theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div>
+<nav class="tsd-navigation primary">
+<details class="tsd-index-accordion" open><summary class="tsd-accordion-summary">
+<h3><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4.93896 8.531L12 15.591L19.061 8.531L16.939 6.409L12 11.349L7.06098 6.409L4.93896 8.531Z" fill="var(--color-text)"></path></svg> Modules</h3></summary>
+<div class="tsd-accordion-details">
+<ul>
+<li class="current"><a href="../modules.html">shortcuts-<wbr/>manager</a>
+<ul>
+<li class="current pages-entry pages-entry-menu pages-entry-depth-1"><a>Additional <wbr/>Docs</a>
+<ul>
+<li class="current selected pages-entry pages-entry-page pages-entry-depth-2"><a href="internal_docs.html">Internal <wbr/>Docs</a></li>
+<li class="pages-entry pages-entry-page pages-entry-depth-2"><a href="DEVELOPMENT.html">Development</a></li></ul></li>
+<li class="tsd-kind-module"><a href="../modules/bases.html">bases</a></li>
+<li class="tsd-kind-module"><a href="../modules/classes.html">classes</a></li>
+<li class="tsd-kind-module"><a href="../modules/helpers.html">helpers</a></li>
+<li class="tsd-kind-module"><a href="../modules/layouts.html">layouts</a></li>
+<li class="tsd-kind-module"><a href="../modules/types.html">types</a></li></ul></li></ul></div></details></nav>
+<nav class="tsd-navigation secondary menu-sticky"></nav></div></div>
+<div class="container tsd-generator">
+<p>Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></div>
+<div class="overlay"></div><script src="../assets/main.js"></script></body></html>
