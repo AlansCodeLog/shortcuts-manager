@@ -1,0 +1,75 @@
+name: Pull Request Checks
+
+env:
+  USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
+
+on:
+  pull_request:
+    branches: [ master, alpha, beta ]
+
+jobs:
+  pull-request:
+    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["lts/*", "latest"]
+
+    steps:
+
+    # region Setup
+    - uses: actions/checkout@v2
+
+    - name: Setting Up Node.js (${{ matrix.node-version }})
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+
+    - uses: pnpm/action-setup@v2.0.1
+      name: Install pnpm
+      id: pnpm-install
+      with:
+        version: latest
+
+    - name: Get Pnpm Cache Path
+      id: pnpm-cache
+      run: |
+        echo "::set-output name=dir::$(pnpm store path)"
+
+    - uses: actions/cache@v3
+      name: pnpm cache
+      with:
+        path: ${{ steps.pnpm-cache.outputs.dir }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
+
+    - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
+    - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
+    - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
+    # regionend
+
+    # region Steps
+    - run: pnpm install --frozen-lockfile
+      if: "env.USE_LOCKFILE == 'true'"
+
+    - run: pnpm install --no-lockfile
+      if: "env.USE_LOCKFILE != 'true'"
+
+    - name: Commits to Lint
+      run: git log ${{github.event.pull_request.base.sha}}..${{github.event.pull_request.head.sha}} --graph --abbrev-commit --decorate --format=format:'%h%d%n%s (%cr) - %an (%ae)%n%b'
+
+    - name: Lint Commits
+      run: yarn commitlint --from ${{github.event.pull_request.base.sha}} --to ${{github.event.pull_request.head.sha}}
+
+    - run: pnpm build
+
+    - run: pnpm lint
+
+    - run: pnpm coverage
+
+    - name: Coverage
+      uses: romeovs/lcov-reporter-action@v0.2.16
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    # regionend

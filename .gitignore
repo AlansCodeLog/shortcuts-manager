@@ -1,0 +1,10 @@
+**/*.log*
+pnpm-lock.yaml
+!demo/pnpm-lock.yaml
+.vscode
+node_modules
+worktree*/**/*
+docs
+coverage
+
+dist

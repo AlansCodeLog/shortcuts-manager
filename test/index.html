@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+	<style>
+		#div1 {
+			width: 350px;
+			height: 70px;
+			padding: 10px;
+			border: 1px solid #aaaaaa;
+		}
+	</style>
+	<script>
+
+
+		function drag(ev) {
+			console.log("tretert")
+			// ev.dataTransfer.setData("Text", ev.target.id);
+		}
+
+	</script>
+</head>
+
+<body style="margin-left:300px;">
+
+	<br>
+	<br>
+	<br>
+	<br>
+	<p id="drag1" draggable="true" ondragstart="drag(event)">This is a draggable paragraph. Drag this element into the
+		rectangle.</p>
+	<br>
+
+	<p draggable="true" ondragstart="drag(event)">No id here fa sf asdfas df saf asdfasfdjd</p>
+	<br>
+	<p draggable="true">Only draggable asdfsadf asd f asdf asdf</p>
+
+	<p id="tsfsdfdf" draggable="true" ondragstart="drag(event)">Only draggable asdfsadf asd f asdf asdf</p>
+
+
+</body>
+
+</html>

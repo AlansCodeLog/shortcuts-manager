@@ -1,0 +1,40 @@
+// https://www.typescriptlang.org/tsconfig/
+{
+	// ./node_modules/@alanscodelog/tsconfigs/tsconfig.json
+	// https://github.com/AlansCodeLog/tsconfigs
+	"extends": "@alanscodelog/tsconfigs",
+	"compilerOptions": {
+		"skipLibCheck": true,
+		"module": "esnext",
+		"target": "esnext",
+		"moduleResolution": "bundler",
+		"outDir": "dist",
+		// "baseUrl": "src",
+		"paths": {}
+	},
+	"types": [
+		// "node"
+	],
+	"lib": [
+		"esnext",
+		"dom"
+	],
+	"include": [
+		"src/**/*.ts",
+		"src/**/*.js",
+		"src/**/*.vue",
+		// so eslint doesn't bother us, we don't build with tsc anyways, and to emit types, there's tsconfig.types.json
+		"*.ts",
+		"*.cjs",
+		"*.js"
+	],
+	"exclude": [],
+	"tsc-alias": {
+		"resolveFullPaths": true // for esm compatibility
+	},
+	"ts-node": {
+		"moduleTypes": {
+			"postcss.config.ts": "cjs"
+		}
+	}
+}
