@@ -12,38 +12,37 @@
 
 		[&>div:nth-of-type(2n+1)]:border-r
 		[&>div:nth-last-of-type(n+3)]:border-b
-
 	`"
 	>
 		<!-- new command -->
 		<LibInput
 			:border="false"
 			:model-value="newCommand.name"
-			@update:model-value="notifyIfError(newCommand.safeSet('name', $event))"
-			@submit="addCommand(toRaw(newCommand as Command))"
+			@update:model-value="notifyIfError(setCommandProp(newCommand, 'name', $event, manager))"
+			@submit="addCommand(newCommand)"
 		/>
 		<div class="items-center px-1">
 			<LibButton :border="false"
 				icon="solid plus"
 				aria-label="Add Command"
 				auto-title-from-aria
-				@click="addCommand(toRaw(newCommand as Command))"
+				@click="addCommand(newCommand)"
 			/>
 		</div>
 
 		<!-- existing -->
-		<template v-for="({value:command }) of commands" :key="command.name">
+		<template v-for="command of commands" :key="command.name">
 			<div class="grid grid-cols-[minmax(0,1fr),min-content]">
 				<LibInput
 					:border="false"
-					:model-value="toRaw(temporaryCommand.command) === toRaw(command) ? temporaryCommand.name : command.name"
+					:model-value="temporaryCommand.command === command ? temporaryCommand.name : command.name"
 					
 					@focus="setTemporary(command)"
 					@blur="handleBlur(command)"
 					@update:model-value="updateCommandName(command, $event)"
-					@submit="notifyIfError(command.safeSet('name', $event))"
+					@submit="notifyIfError(setCommandProp(command, 'name', $event, manager))"
 				/>
-				<LibButton v-if="toRaw(temporaryCommand.command) === toRaw(command) && temporaryCommand.name !== command.name"
+				<LibButton v-if="temporaryCommand.command === command && temporaryCommand.name !== command.name"
 					:border="false"
 					icon="solid save"
 					aria-label="Save Command"
@@ -59,7 +58,7 @@
 					icon="solid trash"
 					aria-label="Delete Command"
 					auto-title-from-aria
-					@click="notifyIfError(manager.commands.safeRemove(toRaw(command)))"
+					@click="notifyIfError(managerRemoveCommand(command, manager))"
 				/>
 			</div>
 		</template>
@@ -67,19 +66,20 @@
 </div>
 </template>
 <script setup lang="ts">
-import { type Ref, ref, toRaw } from "vue"
-
-import { Command, type Manager } from "shortcuts-manager/classes/index.js"
+import { addCommand as managerAddCommand, createCommand, removeCommand as managerRemoveCommand, setCommandProp } from "shortcuts-manager"
+import type { Command, Manager } from "shortcuts-manager/types"
+import { computed, ref } from "vue"
 
 import { notifyIfError } from "../common/notifyIfError.js"
 
 
 const props = defineProps<{
 	manager: Manager
-	commands: Ref<Command>[]
 }>()
+const commands = computed(() => Object.values(props.manager.commands.entries))
+
 const saveOnBlur = ref(false)
-const newCommand = ref(new Command(""))
+const newCommand = ref(createCommand(""))
 const temporaryCommand = ref<{
 	command: Command | undefined
 	name: string
@@ -89,10 +89,9 @@ const temporaryCommand = ref<{
 })
 
 function addCommand(command: Command): void {
-	const res = props.manager.commands.safeAdd(command)
-	notifyIfError(res)
+	const res = notifyIfError(managerAddCommand(command, props.manager))
 	if (res.isOk) {
-		newCommand.value = new Command("")
+		newCommand.value = createCommand("")
 	}
 }
 function clearTemporary() {
@@ -108,14 +107,14 @@ function setTemporary(command: Command) {
 	}
 }
 function updateCommandName(command: Command, val: string) {
-	if (toRaw(temporaryCommand.value.command) === toRaw(command)) {
+	if (temporaryCommand.value.command === command) {
 		temporaryCommand.value.name = val
 	} else {
-		notifyIfError(command.safeSet("name", val))
+		notifyIfError(setCommandProp(command, "name", val, props.manager))
 	}
 }
 function saveCommandName(command: Command) {
-	notifyIfError(command.safeSet("name", temporaryCommand.value.name))
+	notifyIfError(setCommandProp(command, "name", temporaryCommand.value.name, props.manager))
 	clearTemporary()
 }
 function handleBlur(command: Command) {
@@ -126,3 +125,4 @@ function handleBlur(command: Command) {
 	clearTemporary()
 }
 </script>
+

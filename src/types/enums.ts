@@ -1,34 +1,26 @@
-import type { BaseHook } from "./hooks.js"
-import type { ManagerListener } from "./index.js"
-import type { AnyInputEvent } from "./manager.js"
+import type { AnyInputEvent, Command, Commands, Key, Keys, Shortcut, Shortcuts } from "./index.js"
 
-import type { Command, Commands, Key, Keys, Shortcut, Shortcuts } from "../classes/index.js"
-import type { Manager } from "../classes/Manager.js"
 import type { KnownError } from "../helpers/index.js"
 
 
 /**
  * All possible errors.
- *
- * Normally thrown errors can be avoided by checking if an instance allows setting/adding something, but there is one instance they might still be thrown, when instantiating an instance. And we can't allow callbacks to be passed for errors in constructors since the instance still gets constructed unless an error is thrown.
- *
  */
 export enum ERROR {
 	// === shortcut init related problems
 	CHORD_W_ONLY_MODIFIERS = "CHORD_W_ONLY_MODIFIERS",
-	CHORD_W_MULTIPLE_NORMAL_KEYS = "CHORD_W_MULTIPLE_NORMAL_KEYS",
+	CHORD_W_MULTIPLE_TRIGGER_KEYS = "CHORD_W_MULTIPLE_TRIGGER_KEYS",
 	CHORD_W_MULTIPLE_WHEEL_KEYS = "CHORD_W_MULTIPLE_WHEEL_KEYS",
 	CHORD_W_DUPLICATE_KEY = "CHORD_W_DUPLICATE_KEY",
 	IMPOSSIBLE_TOGGLE_SEQUENCE = "IMPOSSIBLE_TOGGLE_SEQUENCE",
-	INVALID_KEY_OPTIONS = "INVALID_KEY_OPTIONS",
 	MISSING = "MISSING", // removing
 	INVALID_VARIANT = "VARIANT_EXISTS_AS_KEY",
+	INVALID_VARIANT_PAIR = "INVALID_VARIANT_PAIR",
 
 	// === duplicate "bases"
 	DUPLICATE_KEY = "DUPLICATE_KEY",
 	DUPLICATE_COMMAND = "DUPLICATE_COMMAND",
 	DUPLICATE_SHORTCUT = "DUPLICATE_SHORTCUT",
-	KEYS_CANNOT_ADD_TOGGLE = "KEYS_CANNOT_ADD_TOGGLE",
 
 	// === other
 	INVALID_SWAP_CHORDS = "INCORRECT_SWAP_PARAMS",
@@ -38,26 +30,22 @@ export enum ERROR {
 	MULTIPLE_MATCHING_SHORTCUTS = "MULTIPLE_MATCHING_SHORTCUTS",
 	INCORRECT_TOGGLE_STATE = "INCORRECT_TOGGLE_STATE",
 	NO_MATCHING_SHORTCUT = "NO_MATCHING_SHORTCUT",
-	UNKNOWN_KEYS_IN_SHORTCUTS = "UNKNOWN_KEYS_IN_SHORTCUTS",
-	UNKNOWN_COMMANDS_IN_SHORTCUTS = "UNKNOWN_COMMANDS_IN_SHORTCUTS",
-	UNKNOWN_KEYS_IN_SHORTCUT = "UNKNOWN_KEYS_IN_SHORTCUT",
-	UNKNOWN_COMMAND_IN_SHORTCUT = "UNKNOWN_COMMANDS_IN_SHORTCUT",
+	UNKNOWN_KEY = "UNKNOWN_KEYS",
+	UNKNOWN_COMMAND = "UNKNOWN_COMMANDS",
 	KEY_IN_USE = "KEYS_IN_USE",
 	COMMAND_IN_USE = "COMMANDS_IN_USE",
 	UNKNOWN_KEY_EVENT = "UNKNOWN_KEY_EVENT",
-	// internal
-	RECORDING = "RECORDING",
-	IMPORT_COMMAND = "IMPORT_KEY",
-	IMPORT_SHORTCUT_COMMAND = "IMPORT_SHORTCUT_COMMAND",
-	IMPORT_SHORTCUT_KEY = "IMPORT_SHORTCUT_KEY",
+	// for when we must return multiple custom errors
+	MULTIPLE_ERRORS = "MULTIPLE_ERRORS",
 }
 
 export type ChainErrors =
-	| ERROR.CHORD_W_DUPLICATE_KEY
-	| ERROR.CHORD_W_ONLY_MODIFIERS
-	| ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS
-	| ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS
-	| ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE
+| ERROR.UNKNOWN_KEY
+| ERROR.CHORD_W_DUPLICATE_KEY
+| ERROR.CHORD_W_ONLY_MODIFIERS
+| ERROR.CHORD_W_MULTIPLE_TRIGGER_KEYS
+| ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS
+| ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE
 
 /** Errors that will throw since they should be caught at production. */
 export enum TYPE_ERROR {
@@ -66,27 +54,21 @@ export enum TYPE_ERROR {
 	FILTER_DOES_NOT_EXIST = "FILTER_DOES_NOT_EXIST",
 }
 
-/** Note the input event can be undefined if you set the manager chain directly since it will check if it should trigger shortcuts. */
-export type ManagerErrorCallback<T extends ERROR > = (error: KnownError<T>, manager: Manager, e?: AnyInputEvent) => void
-
 /**
  * Defines the properties attached to each error.
  *
  * Makes it easy to define the properties attached to each error by just allowing passing the error (regardless of error type) as T in [[KnownError]] and [[InternalError]].
- *
- * Note that errors that return union types only return one or the other depending on a single condition, whether the instance is initiated at the time it was thrown.
- * For example, if you create an invalid shortcut it might throw with [[ERROR_Info.CHORD_W_ONLY_MODIFIERS]] and it's `shortcut` property will be of type `{keys: Key[][]}` because the instance won't be available.
- *
- * On the other hand, if you instantiate a shortcut then set it's `keys` property, the error will throw with the full shortcut instance on the `shortcut` property.
  */
 
 export type ErrorInfo<T extends ERROR | TYPE_ERROR> =
 	T extends ERROR
 	? ERROR_Info[T]
-
-	: T extends TYPE_ERROR
-	? TYPE_ERROR_Info[T]
 	: never
+
+/** Type multiple {@link KnownError} errors to work like a discriminated union. */
+export type MultipleErrors<T extends ERROR | TYPE_ERROR> = {
+	[k in T]: KnownError<k>
+}[T]
 
 // note all these error types could be kept in the same type, but then we'd have to make all the keys unique and we can't because internal errors should use the same key
 
@@ -94,48 +76,44 @@ export type ErrorInfo<T extends ERROR | TYPE_ERROR> =
 type ERROR_Info = {
 	// === shortcut init related problems
 	[ERROR.CHORD_W_ONLY_MODIFIERS]: {
-		self: Shortcut | Manager | undefined
-		chord: Key[]
+		chord: string[]
 		i: number
-		keys: Key[]
+		keys: string[]
 	}
-	[ERROR.CHORD_W_MULTIPLE_NORMAL_KEYS]: {
-		self: Shortcut | Manager | undefined
-		chord: Key[]
+	[ERROR.CHORD_W_MULTIPLE_TRIGGER_KEYS]: {
+		chord: string[]
 		i: number
-		keys: Key[]
+		keys: string[]
 	}
 	[ERROR.CHORD_W_MULTIPLE_WHEEL_KEYS]: {
-		self: Shortcut | Manager | undefined
-		chord: Key[]
+		chord: string[]
 		i: number
-		keys: Key[]
+		keys: string[]
 	}
 	[ERROR.CHORD_W_DUPLICATE_KEY]: {
-		self: Shortcut | Manager | undefined
-		chord: Key[]
+		chord: string[]
 		i: number
-		keys: Key[]
+		keys: string[]
 	}
 	[ERROR.IMPOSSIBLE_TOGGLE_SEQUENCE]: {
-		self: Shortcut | Manager | undefined
-		chain: Key[][]
+		chain: string[][]
 		i: number
 		key: Key
 	}
-	[ERROR.INVALID_KEY_OPTIONS]: {
-		self: Key
-	}
 	[ERROR.MISSING]: {
 		entry: Key | Shortcut | Command | string
-		collection: Keys | Shortcuts | Commands
+		self: Keys | Shortcuts | Commands
 	}
 	[ERROR.INVALID_VARIANT]: {
 		variants: string[]
 		id: string
 	}
-
-	// === duplicate "bases"
+	[ERROR.INVALID_VARIANT_PAIR]: {
+		variants: Key[]
+		key: Key
+		otherKey: Key
+	}
+	
 	[ERROR.DUPLICATE_KEY]: {
 		existing: Key
 		self: Keys
@@ -151,23 +129,21 @@ type ERROR_Info = {
 		existing: Command
 		self: Commands
 	}
-	[ERROR.KEYS_CANNOT_ADD_TOGGLE]: {
-		entry: Key
-	}
+	
 
 	// === other
 	[ERROR.INVALID_SWAP_CHORDS]:
 	{
-		chord: Key[][]
+		chord: string[][]
 	} |
 	{
-		chordsA: Key[][]
-		chordsB: Key[][]
+		chordsA: string[][]
+		chordsB: string[][]
 	}
 
 	[ERROR.CANNOT_SET_WHILE_DISABLED]:
 	{
-		instance: { id: string, label: string, enabled: boolean }
+		key: Key
 	}
 
 	// === manager
@@ -178,56 +154,31 @@ type ERROR_Info = {
 		key: Key
 	}
 	[ERROR.NO_MATCHING_SHORTCUT]: {
-		chain: Key[][]
+		chain: string[][]
 	}
-	[ERROR.UNKNOWN_KEYS_IN_SHORTCUTS]: {
-		entries: { shortcut: Shortcut | Pick<Shortcut, "chain" | "command">, keys: Key[] }[]
+	[ERROR.UNKNOWN_KEY]: {
+		shortcut?: Pick<Shortcut, "chain">
+		keys: string[] | Keys
 	}
-	[ERROR.UNKNOWN_KEYS_IN_SHORTCUT]: {
-		shortcut: Shortcut
-		keys: Key[]
+	[ERROR.UNKNOWN_COMMAND]: {
+		shortcut?: Pick<Shortcut, "chain" | "command">
+		command: string
+		commands: string[] | Commands
 	}
-	[ERROR.UNKNOWN_COMMANDS_IN_SHORTCUTS]: {
-		entries: { shortcut: Shortcut | Pick<Shortcut, "chain" | "command">, command: Command }[]
-	}
-	[ERROR.UNKNOWN_COMMAND_IN_SHORTCUT]: {
-		shortcut: Shortcut
-		command: Command
+	[ERROR.MULTIPLE_ERRORS]: {
+		errors: Error[]
 	}
 	[ERROR.KEY_IN_USE]: {
-		entries: Shortcut[]
+		inUseShortcuts: Shortcut[]
 	}
 	[ERROR.COMMAND_IN_USE]: {
-		entries: Shortcut[]
+		inUseShortcuts: Shortcut[]
 	}
 	[ERROR.UNKNOWN_KEY_EVENT]: {
-		e: KeyboardEvent
+		e: AnyInputEvent
 	}
-	[ERROR.IMPORT_COMMAND]: { command: ReturnType<Command["export"]>, commands: Commands }
-	[ERROR.IMPORT_SHORTCUT_COMMAND]: {
-		command: string
-		shortcut: ReturnType<Shortcut["export"]>
-	}
-	[ERROR.IMPORT_SHORTCUT_KEY]: { id: string, shortcut: ReturnType<Shortcut["export"]> }
-	// internal
-	[ERROR.RECORDING]: undefined
 }
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-type TYPE_ERROR_Info = {
-	[TYPE_ERROR.ILLEGAL_OPERATION]: undefined
-	[TYPE_ERROR.HOOK_OR_LISTENER_DOES_NOT_EXIST]: {
-		hook: BaseHook<any, any>
-		hooks: BaseHook<any, any>[]
-	} | {
-		listener: ManagerListener
-		listeners: ManagerListener[]
-	}
-	[TYPE_ERROR.FILTER_DOES_NOT_EXIST]: {
-		filter: ManagerListener
-		filters: ManagerListener[]
-	}
-}
 
 export enum MOUSE {
 	R = "R",

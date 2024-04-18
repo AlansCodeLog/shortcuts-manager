@@ -9,8 +9,12 @@
 		"target": "esnext",
 		"moduleResolution": "bundler",
 		"outDir": "dist",
-		// "baseUrl": "src",
-		"paths": {}
+		"baseUrl": "src",
+		"paths": {
+			"shortcuts-manager/*": [
+				"../src/*"
+			]
+		}
 	},
 	"types": [
 		// "node"
@@ -28,10 +32,8 @@
 		"*.cjs",
 		"*.js"
 	],
+	"plugins": [{ "name": "@vue/typescript-plugin" }],
 	"exclude": [],
-	"tsc-alias": {
-		"resolveFullPaths": true // for esm compatibility
-	},
 	"ts-node": {
 		"moduleTypes": {
 			"postcss.config.ts": "cjs"

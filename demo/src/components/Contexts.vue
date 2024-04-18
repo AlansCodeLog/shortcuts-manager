@@ -20,14 +20,14 @@
 			after:absolute
 			disabled:text-transparent
 			`,
-				activeContexts.length > 0 && `
+				activeContexts.length > 1 && `
 				after:border-accent-400
 				hover:after:border-accent-600
 				after:border-dashed
 				text-accent-400
 				hover:text-accent-600
 			`)"
-			:disabled="activeContexts.length === 0"
+			:disabled="activeContexts.length <= 1"
 			:border="false"
 			aria-label="Clear Active Contexts"
 			auto-title-from-aria
@@ -52,19 +52,20 @@
 					isActive && `border-accent-400 bg-accent-100`
 				)"
 				tabindex="0"
-				aria-label="Toggle Context"
-				auto-title-from-aria
-				v-for="[context,isActive] in contexts.entries()"
-				:key="context"
-				@click="emit(isActive ? 'deactivate' : 'activate' as any /* wat */, context)"
+				:aria-label="'Toggle Context'"
+				:title="'Toggle Context'"
+				v-for="[name,isActive] in Object.entries(contexts.isActive)"
+				:key="name"
+				@click="emit(isActive ? 'deactivate' : 'activate' as any /* wat */, name)"
 			>
-				<span>{{ context }}</span>
+				<span>{{ name }}</span>
 				<lib-button
 					:border="false"
-					aria-label="Remove Context"
+					:aria-label="contexts.count[name] > 0 ? `Cannot remove, ${contexts.count[name]} shortcuts using this context.` : 'Remove Context'"
 					auto-title-from-aria
-					class="p-0"
-					@click="emit( 'remove', context )"
+					class="p-0 disabled:cursor-not-allowed"
+					:disabled="contexts.count[name] > 0"
+					@click="emit( 'remove', name )"
 				>
 					<template #icon>
 						<fa class="" :fixed-width="false" icon="fa times"/>
@@ -77,7 +78,7 @@
 				class="min-w-[0] w-[20ch]"
 				placeholder="Add Context"
 				wrapper-class="pr-0"
-				:valid="!contexts.has(tempValue)"
+				:valid="contexts.isActive[tempValue] === undefined"
 				v-model="tempValue"
 				@submit="addContext"
 				@enter.prevent
@@ -101,16 +102,18 @@
 </template>
 
 <script setup lang="ts">
-import { isBlank } from "@alanscodelog/utils"
+import { isBlank } from "@alanscodelog/utils/isBlank.js"
+import { keys } from "@alanscodelog/utils/keys.js"
 import { twMerge } from "tailwind-merge"
 import { computed, inject, type PropType, ref } from "vue"
 
 import { notificationHandlerSymbol } from "../injectionSymbols.js"
+import type { ContextInfo } from "../types/index.js"
 
 
-const props = defineProps({
-	contexts: { type: Map as PropType<Map<string, boolean>>, required: true, default: () => []},
-})
+const props = defineProps<{
+	contexts: ContextInfo
+}>()
 const emit = defineEmits<{
 	add: [val: string]
 	activate: [val:string]
@@ -131,7 +134,7 @@ const addContext = (): void => {
 	}
 }
 
-const activeContexts = computed(() => [...props.contexts.entries()]
+const activeContexts = computed(() => [...Object.entries(props.contexts.isActive)]
 	.filter(([_, isActive]) => isActive)
 	.map(([context]) => context),
 )

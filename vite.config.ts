@@ -3,7 +3,6 @@ import glob from "fast-glob"
 import path from "path"
 import type { PluginOption } from "vite"
 import { externalizeDeps } from "vite-plugin-externalize-deps"
-import tsconfigPaths from "vite-tsconfig-paths"
 import { defineConfig } from "vitest/config"
 
 
@@ -17,16 +16,14 @@ const typesPlugin = (): PluginOption => ({
 export default async ({ mode }: { mode: string }) => defineConfig({
 	plugins: [
 		// it isn't enough to just pass the deps list to rollup.external since it will not exclude subpath exports
-		externalizeDeps({}),
-		// only for tests, not for src since I can't get the demo to work with code directly from src if using baseUrl/alias imports, so not using them so for the moment
-		tsconfigPaths(),
-		// runs build:types script which takes care of generating types and fixing type aliases and baseUrl imports
+		externalizeDeps({ include: ["@alanscodelog/utils"]}),
+		// runs build:types script which takes care of generating types
 		typesPlugin(),
 	],
 	build: {
 		outDir: "dist",
 		lib: {
-			entry: glob.sync(path.resolve(__dirname, "src/**/*.ts")),
+			entry: glob.sync(path.resolve(import.meta.dirname, "src/**/*.ts")),
 			formats: ["es"],
 		},
 		rollupOptions: {

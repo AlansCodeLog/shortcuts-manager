@@ -1,27 +1,31 @@
-import { type Result } from "@alanscodelog/utils"
-
-import type { Key } from "shortcuts-manager/classes/Key.js"
-import type { Stringifier } from "shortcuts-manager/classes/Stringifier.js"
-import { equalsKeys, type KnownError } from "shortcuts-manager/helpers/index.js"
-import { ERROR } from "shortcuts-manager/types/enums.js"
-import type { KeysErrors } from "shortcuts-manager/types/shortcut.js"
+import { type Result } from "@alanscodelog/utils/Result.js"
+import { type KnownError } from "shortcuts-manager/helpers"
+import { ERROR, type Manager, type ManagerSetEntries, type MultipleErrors, type PickManager, type ShortcutSetEntries } from "shortcuts-manager/types"
+import { equalsKeys } from "shortcuts-manager/utils"
 
 
 export const transformShortcutAllowsChainRes = (
-	res: Result<true, any>,
-	oldChain: Key[][],
-	newChain: Key[][],
-	stringifier: Stringifier
+	res: Result<
+		any,
+		Error | MultipleErrors<
+			| ShortcutSetEntries["chain"]["error"]
+			| ManagerSetEntries["state.chain"]["error"]
+		>
+	>,
+	oldChain: string[][],
+	newChain: string[][],
+	manager: Pick<Manager, "keys"> & PickManager<"options", "stringifier">
 ): boolean | string => {
 	if (res.isOk) return true
 	if (res.isError) {
-		const isSelf = equalsKeys(oldChain, newChain)
+		const s = manager.options.stringifier
+		const isSelf = equalsKeys(oldChain, newChain, manager.keys)
 		if (isSelf) return false
-		if (res.error.code === ERROR.DUPLICATE_SHORTCUT as KeysErrors) {
-			const error = res.error as any as KnownError<ERROR.DUPLICATE_SHORTCUT>
+		if ("code" in res.error && res.error.code === ERROR.DUPLICATE_SHORTCUT) {
+			const err = res.error as KnownError<ERROR.DUPLICATE_SHORTCUT>
 
-			const chainWanted = stringifier.stringify(error.info.value)
-			const chainOfConflicting = stringifier.stringify(error.info.existing.chain)
+			const chainWanted = s.stringify(newChain, manager)
+			const chainOfConflicting = s.stringify(err.info.existing, manager)
 			return `Cannot move, shortcut to:\n${chainWanted}\nit conflicts in the current context with:\n${chainOfConflicting}`
 		} else {
 			return res.error.message

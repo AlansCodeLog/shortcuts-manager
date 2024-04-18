@@ -1,3 +1,5 @@
+import { TypedError } from "@alanscodelog/utils"
+
 import type { ERROR, ErrorInfo, TYPE_ERROR } from "../types/index.js"
 
 
@@ -7,19 +9,5 @@ import type { ERROR, ErrorInfo, TYPE_ERROR } from "../types/index.js"
  */
 export class KnownError<
 	T extends ERROR | TYPE_ERROR = ERROR | TYPE_ERROR,
-	TInfo extends ErrorInfo<T> = ErrorInfo<T>,
-> extends Error {
-	code: T
-
-	info: TInfo
-
-	constructor(
-		code: T,
-		str: string,
-		info: TInfo,
-	) {
-		super(str)
-		this.code = code
-		this.info = info
-	}
-}
+	// TInfo extends ErrorInfo<T> = ErrorInfo<T>,
+> extends TypedError<T, ErrorInfo<T>> {}

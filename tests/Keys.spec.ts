@@ -1,64 +1,80 @@
-import { catchError, testName } from "@alanscodelog/utils"
+import { catchError } from "@alanscodelog/utils"
 import { describe, expect, it, vi } from "vitest"
 
-import { Key } from "shortcuts-manager/classes/Key.js"
-import { Keys } from "shortcuts-manager/classes/Keys.js"
-import { ERROR } from "shortcuts-manager/types/enums.js"
+import { manager } from "./helpers.keys.js"
+
+import { addKey } from "../src/addKey.js"
+import { createKey } from "../src/createKey.js"
+import { createKeys } from "../src/createKeys.js"
+import { ERROR, type Key } from "../src/types/index.js"
 
 
-describe(testName(), () => {
-	it("should add keys", () => {
-		const keymap = new Keys([
-			new Key("a"),
-			new Key("b"),
-		])
-		expect(keymap.entries.a).to.exist
-		expect(keymap.entries.b).to.exist
-		const keymap2 = new Keys([
-			new Key("a"),
-		])
-		keymap2.add(new Key("b"))
+it("should add keys", () => {
+	const keys = createKeys([
+		createKey("a").unwrap(),
+		createKey("b").unwrap(),
+	], manager).unwrap()
+	expect(keys.entries.a).to.exist
+	expect(keys.entries.b).to.exist
+	const keys2 = createKeys([
+		createKey("a").unwrap(),
+	]).unwrap()
 
-		expect(keymap.entries.a).to.exist
-		expect(keymap.entries.b).to.exist
-	})
-	it("should throw on duplicate keys", () => {
-		expect(catchError(() => {
-			new Keys([
-				new Key("a"),
-				new Key("a"),
-			])
-		}).code).to.equal(ERROR.DUPLICATE_KEY)
-		expect(catchError(() => {
-			const keys = new Keys([
-				new Key("a"),
-			])
-			keys.allows("add", new Key("a")).unwrap()
-		}).code).to.equal(ERROR.DUPLICATE_KEY)
-	})
-	it("should not throw on duplicate keys with different ids", () => {
-		expect(() => {
-			new Keys([
-				new Key("a1", { variants: ["a"]}),
-				new Key("a2", { variants: ["a"]}),
-			])
-		}).to.not.throw()
-	})
-	describe("methods", () => {
-		const keyA = new Key("a")
-		const keys = new Keys([
-			keyA,
-			new Key("b"),
-			new Key("c"),
-		])
-		it("exists", () => {
-			const filter = vi.fn((key: Key) => {
-				expect(key).to.not.equal(undefined)
-				return key.id === "a"
-			})
-			expect(keys.get("a")).to.equal(keyA)
-			expect(keys.query(filter, false)).to.equal(keyA)
-			expect(keys.query(filter, true)![0]).to.equal(keyA)
-		})
-	})
+	addKey(createKey("b").unwrap(), { ...manager, keys })
+	addKey(createKey("b").unwrap(), { ...manager, keys: keys2 })
+
+	expect(keys.entries.a).to.exist
+	expect(keys.entries.b).to.exist
 })
+it("should throw on duplicate keys", () => {
+	expect(catchError(() => {
+		createKeys([
+			createKey("a").unwrap(),
+			createKey("a").unwrap(),
+		]).unwrap()
+	}).code).to.equal(ERROR.DUPLICATE_KEY)
+	expect(catchError(() => {
+		const keys = createKeys([
+			createKey("a").unwrap(),
+		]).unwrap()
+		addKey(createKey("a").unwrap(), { ...manager, keys }).unwrap()
+	}).code).to.equal(ERROR.DUPLICATE_KEY)
+})
+it("should not throw on \"duplicate\" keys with different ids", () => {
+	expect(() => {
+		createKeys([
+			createKey("a1", { variants: ["a"]}).unwrap(),
+			createKey("a2", { variants: ["a"]}).unwrap(),
+		]).unwrap()
+	}).to.not.throw()
+})
+it("should throw on invalid variant pairs", () => {
+	expect(() => {
+		createKeys([
+			createKey("a1", { variants: ["a"], isModifier: "native" }).unwrap(),
+			createKey("a2", { variants: ["a"]}).unwrap(),
+		]).unwrap()
+	}).to.throw()
+	expect(() => {
+		createKeys([
+			createKey("a1", { variants: ["a"], isToggle: "native" }).unwrap(),
+			createKey("a2", { variants: ["a"]}).unwrap(),
+		]).unwrap()
+	}).to.throw()
+})
+	
+it("should not throw on compatible variant pairs", () => {
+	expect(() => {
+		createKeys([
+			createKey("a1", { variants: ["a"], isModifier: "native" }).unwrap(),
+			createKey("a2", { variants: ["a"], isModifier: "emulated" }).unwrap(),
+		]).unwrap()
+	}).to.not.throw()
+	expect(() => {
+		createKeys([
+			createKey("a1", { variants: ["a"], isToggle: "native" }).unwrap(),
+			createKey("a2", { variants: ["a"], isToggle: "emulated" }).unwrap(),
+		]).unwrap()
+	}).to.not.throw()
+})
+	

@@ -15,41 +15,46 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"@alanscodelog/utils": "4.0.0-beta.10"
+			"vue": "^3.4.26"
 		}
 	},
 	"dependencies": {
-		"@alanscodelog/utils": "4.0.0-beta.10",
-		"@alanscodelog/vue-components": "2.0.0-beta.5",
-		"@fortawesome/fontawesome-svg-core": "^6.4.2",
-		"@fortawesome/free-brands-svg-icons": "^6.4.2",
-		"@fortawesome/free-regular-svg-icons": "^6.4.2",
-		"@fortawesome/free-solid-svg-icons": "^6.4.2",
+		"@alanscodelog/utils": "^4.0.0",
+		"@alanscodelog/vue-components": "2.0.0-beta.7",
+		"@fortawesome/fontawesome-svg-core": "^6.5.2",
+		"@fortawesome/free-brands-svg-icons": "^6.5.2",
+		"@fortawesome/free-regular-svg-icons": "^6.5.2",
+		"@fortawesome/free-solid-svg-icons": "^6.5.2",
+		"@witchcraft/expressit": "^0.1.1",
 		"metamorphosis": "^0.2.3",
-		"shortcuts-manager": "file:..",
-		"tailwind-merge": "^1.14.0"
+		"shortcuts-manager": "workspace:../../shortcuts-manager",
+		"tailwind-merge": "^2.3.0"
 	},
 	"devDependencies": {
-		"@types/node": "^20.6.0",
-		"@vitejs/plugin-vue": "^4.3.4",
-		"autoprefixer": "^10.4.15",
-		"madge": "^6.1.0",
-		"postcss": "^8.4.29",
+		"@types/node": "^20.12.12",
+		"@vitejs/plugin-vue": "^5.0.4",
+		"autoprefixer": "^10.4.19",
+		"madge": "^7.0.0",
+		"postcss": "^8.4.38",
 		"postcss-comment": "^2.0.0",
-		"postcss-import": "^15.1.0",
+		"postcss-import": "^16.1.0",
 		"shortcuts-manager": "file:../",
-		"tailwindcss": "^3.3.3",
-		"ts-node": "^10.9.1",
-		"typescript": "^5.2.2",
-		"vite": "^4.4.9",
-		"vite-plugin-dts": "^3.5.3",
-		"vite-plugin-externalize-deps": "^0.7.0",
-		"vite-tsconfig-paths": "^4.2.1",
-		"vitest": "^0.34.4",
-		"vue": "^3.3.4",
-		"vue-tsc": "^1.8.11"
+		"tailwindcss": "^3.4.3",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.4.5",
+		"vite": "^5.2.12",
+		"vite-plugin-dts": "^3.9.1",
+		"vite-plugin-externalize-deps": "^0.8.0",
+		"vite-tsconfig-paths": "^4.3.2",
+		"vitest": "^1.6.0",
+		"vue": "^3.4.27",
+		"vue-tsc": "^2.0.19"
 	},
 	"author": "Alan <alanscodelog@gmail.com>",
 	"repository": "https://github.com/alanscodelog/shortcuts-manager",
-	"@comments": {}
+	"@comments": {
+		"dependencies": {
+			"shortcuts-manager": "This is only so we get the correct types. Vite uses the library directly from the src folder."
+		}
+	}
 }

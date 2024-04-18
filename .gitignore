@@ -1,6 +1,8 @@
 **/*.log*
-pnpm-lock.yaml
-!demo/pnpm-lock.yaml
+
+*lock*
+!demo/*lock* 
+
 .vscode
 node_modules
 worktree*/**/*
@@ -8,3 +10,5 @@ docs
 coverage
 
 dist
+!flake.lock
+.direnv

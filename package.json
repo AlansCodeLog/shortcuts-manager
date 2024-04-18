@@ -1,6 +1,6 @@
 {
-	"name": "shortcuts-manager",
-	"description": "TOCONFIGURE",
+	"name": "@witchcraft/shortcuts-manager",
+	"description": "A shortcut manager library for handling ALL the shortcut needs of an application.",
 	"version": "0.0.0-semantically-released",
 	"types": "./dist/index.d.ts",
 	"type": "module",
@@ -13,25 +13,41 @@
 			"types": "./dist/*",
 			"import": "./dist/*"
 		},
-		"./bases": {
-			"types": "./dist/bases/index.d.ts",
-			"import": "./dist/bases/index.js"
+		"./utils": {
+			"types": "./dist/utils/index.d.ts",
+			"import": "./dist/utils/index.js"
 		},
-		"./classes": {
-			"types": "./dist/classes/index.d.ts",
-			"import": "./dist/classes/index.js"
+		"./utils/*": {
+			"types": "./dist/utils/*",
+			"import": "./dist/utils/*"
 		},
 		"./helpers": {
 			"types": "./dist/helpers/index.d.ts",
 			"import": "./dist/helpers/index.js"
 		},
+		"./helpers/*": {
+			"types": "./dist/helpers/*",
+			"import": "./dist/helpers/*"
+		},
 		"./layouts": {
 			"types": "./dist/layouts/index.d.ts",
 			"import": "./dist/layouts/index.js"
 		},
+		"./layouts/*": {
+			"types": "./dist/layouts/*",
+			"import": "./dist/layouts/*"
+		},
 		"./types": {
 			"types": "./dist/types/index.d.ts",
 			"import": "./dist/types/index.js"
+		},
+		"./types/*": {
+			"types": "./dist/types/*",
+			"import": "./dist/types/*"
+		},
+		"./internal/*": {
+			"types": "./dist/internal/internal/*",
+			"import": "./dist/internal/internal/*"
 		}
 	},
 	"scripts": {
@@ -41,69 +57,65 @@
 		"build:watch": "vite build --watch --mode production",
 		"build:types": "tsc -p tsconfig.types.json --emitDeclarationOnly && npm run build:types:fix",
 		"build:types:fix": "tsc-alias -p tsconfig.types.json --debug",
-		"lint:eslint": "eslint \"{src,tests,demo}/**/*.{cjs,js,ts,vue}\" \"*.{cjs,js,ts}\" --max-warnings=0 --report-unused-disable-directives",
+		"lint:eslint": "eslint \"{src,tests,demo/src}/**/*.{cjs,js,ts,vue}\" \"*.{cjs,js,ts}\" --max-warnings=1 --report-unused-disable-directives",
 		"lint:types": "tsc --noEmit --pretty -p tsconfig.types.json",
 		"lint:commits": "commitlint --from $(git rev-list --max-parents=0 HEAD) --to HEAD --verbose",
 		"lint:imports": "madge --circular --extensions ts ./src",
 		"lint": "npm run lint:types && npm run lint:eslint",
-		"coverage": "vitest --coverage",
-		"coverage:dev": "vitest --watch --coverage",
-		"test": "npm run lint:types && vitest run",
-		"test:watch": "vitest --watch",
+		"coverage": "vitest --exclude '.direnv/**/*' --coverage",
+		"coverage:dev": "vitest --exclude '.direnv/**/*'  --watch --coverage",
+		"test": "npm run lint:types && vitest run --exclude '.direnv/**/*'",
+		"test:watch": "vitest --watch --exclude '.direnv/**/*'",
 		"test:inspect-errors": "cross-env INSPECT_ERRORS=true npm run test",
-		"doc": "typedoc --options typedoc.config.cjs --tsconfig tsconfig.types.json",
+		"doc": "typedoc --options typedoc.config.cjs",
 		"doc:watch": "onchange -i \"src/**/*.ts\" \"typedoc.config.cjs\" -- npm run doc",
 		"doc:serve": "http-server docs --port=5001",
 		"doc:dev": "concurrently \"npm run doc:watch\" \"npm run doc:serve\"",
 		"doc:check-invalid": "typedoc --options typedoc.config.cjs --listInvalidSymbolLinks",
 		"actions:debug": "act -r -v -j build",
 		"gen:exports": "indexit update -o '${path}.js'",
-		"prepare": "husky install && npm run build",
 		"demo:dev": "cd demo && concurrently \"vite\" \"npm run build:watch\"",
-		"demo:build": "cd demo && npm run build"
+		"demo:build": "cd demo && npm run build",
+		"prepare": "husky && npm run build"
 	},
 	"dependencies": {
-		"@alanscodelog/utils": "4.0.0-beta.10"
+		"@alanscodelog/utils": "^4.0.0"
 	},
 	"devDependencies": {
-		"@alanscodelog/commitlint-config": "^2.0.0",
-		"@alanscodelog/eslint-config": "^4.1.0",
-		"@alanscodelog/semantic-release-config": "^3.0.0",
-		"@alanscodelog/tsconfigs": "^3.0.0",
-		"@knodes/typedoc-plugin-pages": "^0.23.4",
-		"@types/node": "^20.5.9",
-		"@typescript-eslint/eslint-plugin": "^6.6.0",
-		"@typescript-eslint/parser": "^6.6.0",
+		"@alanscodelog/commitlint-config": "^3.0.1",
+		"@alanscodelog/eslint-config": "5.0.0-beta.4",
+		"@alanscodelog/semantic-release-config": "^4.1.2",
+		"@alanscodelog/tsconfigs": "^4.0.1",
+		"@commitlint/cli": "^19.3.0",
+		"@types/node": "^20.12.12",
 		"@vitest/coverage-c8": "^0.33.0",
-		"@vue/eslint-config-typescript": "^11.0.3",
-		"autoprefixer": "^10.4.15",
-		"commitlint": "^17.7.1",
-		"concurrently": "^8.2.1",
+		"@vue/typescript-plugin": "^2.0.19",
+		"autoprefixer": "^10.4.19",
+		"concurrently": "^8.2.2",
 		"cross-env": "^7.0.3",
-		"eslint": "^8.48.0",
-		"eslint-import-resolver-typescript": "^3.6.0",
-		"eslint-plugin-import": "^2.28.1",
-		"eslint-plugin-jsdoc": "^46.5.1",
-		"eslint-plugin-simple-import-sort": "^10.0.0",
-		"eslint-plugin-vue": "^9.17.0",
-		"fast-glob": "^3.3.1",
+		"fast-glob": "^3.3.2",
 		"http-server": "^14.1.1",
-		"husky": "^8.0.3",
+		"husky": "^9.0.11",
 		"indexit": "2.1.0-beta.3",
-		"madge": "^6.1.0",
+		"madge": "^7.0.0",
 		"onchange": "^7.1.0",
-		"postcss": "^8.4.29",
-		"semantic-release": "^21.1.1",
-		"tailwindcss": "^3.3.3",
-		"ts-node": "^10.9.1",
-		"tsc-alias": "^1.8.7",
-		"typedoc": "~0.23.1",
-		"typescript": "^5.2.2",
-		"vite": "^4.4.9",
-		"vite-plugin-externalize-deps": "^0.7.0",
-		"vite-tsconfig-paths": "^4.2.0",
-		"vitest": "^0.34.3",
-		"vue-tsc": "^1.8.8"
+		"postcss": "^8.4.38",
+		"semantic-release": "^23.1.1",
+		"tailwindcss": "^3.4.3",
+		"ts-node": "^10.9.2",
+		"tsc-alias": "^1.8.10",
+		"typedoc": "0.26.0-beta.1",
+		"typescript": "^5.4.5",
+		"typescript-language-server": "^4.3.3",
+		"vite": "^5.2.12",
+		"vite-plugin-externalize-deps": "^0.8.0",
+		"vitest": "^1.6.0",
+		"vue-tsc": "^2.0.19"
+	},
+	"pnpm": {
+		"overrides": {
+			"vue": "^3.4.26"
+		}
 	},
 	"author": "Alan <alanscodelog@gmail.com>",
 	"repository": "https://github.com/alanscodelog/shortcuts-manager",
@@ -136,9 +148,10 @@
 	},
 	"browserslist": "> 0.5%, last 2 versions, not dead, not < 0.25%, not IE > 0, maintained node versions",
 	"engines": {
-		"node": ">=18.0.0"
+		"node": ">=20.0.0"
 	},
 	"@comments": {
+		"devDependencies": {},
 		"scripts": {
 			"test": "Runs `lint:types` before (so that flags can be passed to the test command) so that we can test type assertions. See expect_type function in @alanscodelog/utils.",
 			"lint:commits": "Lints all unpushed commits in the active branch.",

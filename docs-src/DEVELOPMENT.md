@@ -8,20 +8,18 @@ Every function normally has it's own file and there should only be one export pe
 
 ```
 src
- ┣ bases
- ┃ ┣ #todo explain
- ┣ classes
- ┃ ┣ #todo explain
- ┣ helpers
+ ┣ defaults - default implementations for some options such as the stringifier/sorter/etc
+ ┣ demo - the demo is set up so it can use the library straight from src, see the vite config for details
+ ┣ helpers - more complex helper functions that require some parts of the manager
+ ┣ utils - small utility functions, do not require complex options
+ ┣ internal - internal helpers/utils - their apis for the moment are not considered stable, many will be moved to helpers in the future
  ┣ types - all the types and enums are stored here in their respective categories
 tests
  ┣ template.ts - the template to use for tests, just copy and rename to the name of the test + `.spec.ts`
- ┗ helpers.keys.ts - contains com pre-configured keys used in tests, they are not meant to be very realistic
+ ┗ helpers.keys.ts 
+	- contains custom pre-configured keys used in tests, they are not meant to be very realistic
+	- the manager it exposes should be deep cloned in tests before modifications
 ```
-
-## Building
-
-Run `pnpm run build` to build the library and the types. If you don't need to build the types you can use the `build:babel` or `build:babel:watch` commands.
 
 ## Demo
 

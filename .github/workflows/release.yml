@@ -21,14 +21,14 @@ jobs:
     steps:
 
     # region Setup
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
-    - name: Setting Up Node.js (${{ matrix.node-version }})
-      uses: actions/setup-node@v3
+    - uses: actions/setup-node@v4
+      name: Setting Up Node.js (${{ matrix.node-version }})
       with:
         node-version: ${{ matrix.node-version }}
 
-    - uses: pnpm/action-setup@v2.0.1
+    - uses: pnpm/action-setup@v4
       name: Install pnpm
       id: pnpm-install
       with:
@@ -36,10 +36,9 @@ jobs:
 
     - name: Get Pnpm Cache Path
       id: pnpm-cache
-      run: |
-        echo "::set-output name=dir::$(pnpm store path)"
+      run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       name: pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.dir }}
@@ -50,15 +49,15 @@ jobs:
     - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
     - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
     - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
-    # regionend
 
-    # region Steps
     - run: pnpm install --frozen-lockfile
       if: "env.USE_LOCKFILE == 'true'"
 
-    - run: pnpm install
+    - run: pnpm install --no-lockfile
       if: "env.USE_LOCKFILE != 'true'"
+    # regionend
 
+      # region Steps
     - run: pnpm build
 
     - run: pnpm lint:eslint # test command will lint types
