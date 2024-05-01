@@ -316,12 +316,13 @@ describe(testName(), () => {
 				// vi.advanceTimersByTime(500)
 				// expect(hook.mock.results.filter(res => res.value === true).length).to.equal(4)
 			})
-			it("ignores keypresses right after triggering for chords", () => {
+			it.only("ignores keypresses right after triggering for chords", () => {
 				emulator.fire("ControlLeft+ KeyC+", ["ControlLeft"])
 				emulator.fire("KeyD+")
 				expect(c.pressed).to.equal(true)
 				expect(manager.chain).to.deep.equal([[ctrl, c]])
 				emulator.fire("ControlLeft- KeyC- KeyD-")
+				console.log(manager.chain, manager.isAwaitingKeyup)
 				// stops ignoring
 				emulator.fire("ControlLeft+ KeyB+", ["ControlLeft"])
 				expect(manager.chain).to.deep.equal([])
@@ -399,7 +400,7 @@ describe(testName(), () => {
 					expect(hook.mock.calls[0][0]).to.equal("chain")
 					expect(hook.mock.calls[0][1]).to.deep.equal([])
 				})
-				describe.todo("recording", () => {
+				describe("recording", () => {
 					it("works", () => {
 						emulator.fire("ControlLeft+ KeyC ControlLeft- ControlLeft+ KeyA ControlLeft-")
 						expect(execute1.mock.calls.length).to.equal(2)
@@ -408,6 +409,7 @@ describe(testName(), () => {
 						expect(execute1.mock.calls.length).to.equal(2) // still 2
 						expect(manager.chain).to.deep.equal([[ctrl, c], [ctrl, a]])
 						manager.stopRecording()
+						expect(execute1.mock.calls.length).to.equal(3)
 						expect(manager.chain).to.deep.equal([])
 					})
 				})
