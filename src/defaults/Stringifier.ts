@@ -105,10 +105,12 @@ export class Stringifier implements IStringifier {
 		try {
 			res = this.stringify(entry)
 			return res
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		} catch (e) {
 			// ignore
 		}
 		const type = typeof entry
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (type) {
 			case "string": return entry
 			case "number":

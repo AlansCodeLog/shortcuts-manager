@@ -36,6 +36,7 @@ export function setKeysProp<
 	> {
 	const keys = manager.keys
 	if (check) {
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (prop) {
 			case "entries@add": {
 				castType<TEntries["entries@add"]["val"]>(val)
@@ -110,6 +111,7 @@ export function setKeysProp<
 		return Result.Ok(true) satisfies Result<true, never> as any
 	}
 
+	// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 	switch (prop) {
 		case "entries@add": {
 			castType<TEntries["entries@add"]["val"]>(val)

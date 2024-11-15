@@ -90,7 +90,7 @@ export type PickManager<
 	TKeys extends keyof TManager[TType],
 	TManager extends Manager = Manager,
 > =
-	{[k in TType]: Pick<TManager[TType], TKeys> }
+	Record<TType, Pick<TManager[TType], TKeys>>
 	
 export type PickManagerHooks<T extends Manager["hooks"]> = {
 	hooks?: T

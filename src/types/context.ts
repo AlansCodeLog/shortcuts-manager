@@ -11,7 +11,7 @@ export interface RecursiveRecord {
  * @template TValue **@internal** Captures the type of the context value.
  */
 
-export type Context<TValue extends {} = any> = {
+export type Context<TValue extends object = any> = {
 	type: "context"
 	/** Where the context object is stored. */
 	value: TValue

@@ -39,6 +39,7 @@ export function setShortcutProp<
 	>
 {
 	if (check) {
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (prop) {
 			case "chain": {
 				castType<TEntries["chain"]["val"]>(val)

@@ -1,16 +1,8 @@
-import { run } from "@alanscodelog/utils/node"
 import glob from "fast-glob"
 import path from "path"
-import type { PluginOption } from "vite"
 import { externalizeDeps } from "vite-plugin-externalize-deps"
 import { defineConfig } from "vitest/config"
 
-
-const typesPlugin = (): PluginOption => ({
-	name: "typesPlugin",
-	// eslint-disable-next-line no-console
-	writeBundle: async () => run(`npm run build:types`).promise.catch(e => { console.log(e.stdout); process.exit(1) }).then(() => undefined),
-})
 
 // https://vitejs.dev/config/
 export default async ({ mode }: { mode: string }) => defineConfig({
@@ -18,7 +10,7 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 		// it isn't enough to just pass the deps list to rollup.external since it will not exclude subpath exports
 		externalizeDeps({ include: ["@alanscodelog/utils"]}),
 		// runs build:types script which takes care of generating types
-		typesPlugin(),
+		// typesPlugin(),
 	],
 	build: {
 		outDir: "dist",
@@ -40,13 +32,5 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 	},
 	test: {
 		cache: process.env.CI ? false : undefined,
-	},
-	server: {
-		watch: {
-			// for pnpm
-			followSymlinks: true,
-			// watch changes in linked repos
-			ignored: ["!**/node_modules/@alanscodelog/**"],
-		},
 	},
 })

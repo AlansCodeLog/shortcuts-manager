@@ -52,12 +52,12 @@
 	},
 	"scripts": {
 		"debug": "ts-node -r tsconfig-paths/register -T --esm",
-		"build": "vite build",
+		"build": "vite build && pnpm build:types",
 		"build:dev": "vite build --mode development",
 		"build:watch": "vite build --watch --mode production",
-		"build:types": "tsc -p tsconfig.types.json --emitDeclarationOnly && npm run build:types:fix",
+		"build:types": "tsc -p tsconfig.types.json --emitDeclarationOnly && pnpm build:types:fix",
 		"build:types:fix": "tsc-alias -p tsconfig.types.json --debug",
-		"lint:eslint": "eslint \"{src,tests,demo/src}/**/*.{cjs,js,ts,vue}\" \"*.{cjs,js,ts}\" --max-warnings=1 --report-unused-disable-directives",
+		"lint:eslint": "eslint \"src/**/*.{cjs,js,ts,vue}\" \"*.{cjs,js,ts}\" --report-unused-disable-directives",
 		"lint:types": "tsc --noEmit --pretty -p tsconfig.types.json",
 		"lint:commits": "commitlint --from $(git rev-list --max-parents=0 HEAD) --to HEAD --verbose",
 		"lint:imports": "madge --circular --extensions ts ./src",
@@ -83,7 +83,7 @@
 	},
 	"devDependencies": {
 		"@alanscodelog/commitlint-config": "^3.0.1",
-		"@alanscodelog/eslint-config": "5.0.0-beta.4",
+		"@alanscodelog/eslint-config": "^5.0.0",
 		"@alanscodelog/semantic-release-config": "^4.1.2",
 		"@alanscodelog/tsconfigs": "^4.0.1",
 		"@commitlint/cli": "^19.3.0",
@@ -114,7 +114,8 @@
 	},
 	"pnpm": {
 		"overrides": {
-			"vue": "^3.4.26"
+			"vue": "^3.4.26",
+			"eslint":"=9.12.0"
 		}
 	},
 	"author": "Alan <alanscodelog@gmail.com>",

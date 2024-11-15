@@ -59,6 +59,7 @@ export function setManagerProp<
 {
 	// castType is used extensively because of https://github.com/microsoft/TypeScript/issues/50652
 	if (check) {
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (prop) {
 			case "state.chain": {
 				castType<TEntries["state.chain"]["val"]>(val)

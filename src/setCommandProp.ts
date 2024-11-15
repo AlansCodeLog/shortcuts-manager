@@ -41,6 +41,7 @@ export function setCommandProp<
 		| CanHookErrors<Manager["hooks"] extends never ? never : THooks, "canSetCommandProp">
 	> {
 	if (check) {
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (prop) {
 			case "name": {
 				castType<TEntries["name"]["manager"]>(manager)

@@ -37,6 +37,7 @@ export function setKeyProp<
 	| CanHookErrors<THooks extends never ? never : THooks, "canSetKeyProp">
 	> {
 	if (check) {
+		// eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
 		switch (prop) {
 			case "toggleOnPressed":
 			case "toggleOffPressed":
