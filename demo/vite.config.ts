@@ -16,6 +16,7 @@ export default async ({ mode }: { mode: string }) => defineConfig({
 			},
 		}),
 	],
+	base: "/shortcuts-manager/demo/",
 	// base: `/${pkg.name}/demo`,
 	build: {
 		outDir: "dist",
