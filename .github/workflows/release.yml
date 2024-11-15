@@ -3,82 +3,49 @@ name: Release
 env:
   USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
   ENABLE_RELEASE: ${{ secrets.ENABLE_RELEASE }}
+  ENABLE_BUILD: ${{ secrets.ENABLE_BUILD }}
 
 on:
   push:
-    branches: [ master, alpha, beta ]
+    branches: [ master, alpha, beta, build ]
   repository_dispatch:
     types: [ release ]
 
 jobs:
   release:
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]') && ! contains(toJSON(github.event.commits.*.message), '(no-release)')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
         node-version: ["lts/*"]
 
     steps:
-
-    # region Setup
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v4
-      name: Setting Up Node.js (${{ matrix.node-version }})
+    - name: Setup
+      uses: ./.github/actions/composite-setup
       with:
-        node-version: ${{ matrix.node-version }}
+        USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
 
-    - uses: pnpm/action-setup@v4
-      name: Install pnpm
-      id: pnpm-install
+    - name: Build 
+      if: "env.ENABLE_BUILD == 'true'"
+      uses: ./.github/actions/composite-build
       with:
-        version: latest
+        USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
 
-    - name: Get Pnpm Cache Path
-      id: pnpm-cache
-      run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-    - uses: actions/cache@v4
-      name: pnpm cache
-      with:
-        path: ${{ steps.pnpm-cache.outputs.dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-
-    - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
-    - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
-    - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
-
-    - run: pnpm install --frozen-lockfile
-      if: "env.USE_LOCKFILE == 'true'"
-
-    - run: pnpm install --no-lockfile
-      if: "env.USE_LOCKFILE != 'true'"
-    # regionend
-
-      # region Steps
-    - run: pnpm build
-
-    - run: pnpm lint:eslint # test command will lint types
-
-    - run: pnpm test
 
     - name: Release
-      if: "env.ENABLE_RELEASE == 'true'"
+      if: "env.ENABLE_RELEASE == 'true' && ! contains('refs/heads/build ', github.ref)"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: npx semantic-release
+      run: pnpm semantic-release
 
     - name: Release Dry Run
+      if: "env.ENABLE_RELEASE != 'true' || contains('refs/heads/build ', github.ref)"
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-      run: npx semantic-release --dry-run 
-      if: "env.ENABLE_RELEASE != 'true'"
+      run: pnpm semantic-release --dry-run 
 
-
-    - run: echo "env.ENABLE_RELEASE is ${{ env.ENABLE_RELEASE }}, no release can be published" && exit 1
-      if: "env.ENABLE_RELEASE != 'true'"
-    # regionend
+    - run: echo "env.ENABLE_RELEASE is ${{ env.ENABLE_RELEASE == 'true' }} and branch is ${{ github.ref }}, no release can be published." && exit 1
+      if: "env.ENABLE_RELEASE != 'true' || contains('refs/heads/build ', github.ref)"

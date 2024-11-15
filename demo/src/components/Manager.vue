@@ -28,7 +28,7 @@
 			:trigger-state="triggerState"
 			:manager="manager"
 			:listeners="listeners"
-			v-model:isDragging="isDragging"
+			v-model:is-dragging="isDragging"
 		/>
 	</div>
 	<div class="

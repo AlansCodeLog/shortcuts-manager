@@ -1,0 +1,35 @@
+name: Setup
+inputs:
+  USE_LOCKFILE:
+    required: true
+    type: boolean
+
+# note it cannot contain the checkout, the must be checked out in the calling workflow or it will not be able to find the composite action
+runs:
+  using: "composite"
+  steps:
+    - uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
+    - uses: actions/setup-node@v4
+      name: Setting up node.js (${{ matrix.node-version }})
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: ${{ inputs.USE_LOCKFILE == 'true' && 'pnpm' || '' }}
+
+    - uses: pnpm/action-setup@v4
+      with:
+        version: latest
+
+
+    - run: pnpm install --frozen-lockfile
+      name: Installing Dependencies
+      if: "inputs.USE_LOCKFILE == 'true'"
+      shell: bash
+
+    - run: pnpm install --no-lockfile
+      name: Installing Dependencies
+      if: "inputs.USE_LOCKFILE != 'true'"
+      shell: bash
+

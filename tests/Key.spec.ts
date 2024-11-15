@@ -9,8 +9,8 @@ import { defaultStringifier, Stringifier } from "../src/defaults/Stringifier.js"
 import { getLabel } from "../src/helpers/getLabel.js"
 import { virtualPress } from "../src/helpers/virtualPress.js"
 import { setKeyProp } from "../src/setKeyProp.js"
-import { equalsKey } from "../src/utils/equalsKey.js"
 import { ERROR } from "../src/types/enums.js"
+import { equalsKey } from "../src/utils/equalsKey.js"
 
 
 it("should compare equality properly", () => {

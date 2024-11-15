@@ -1,4 +1,4 @@
-name: Docs
+name: Docs 
 
 env:
   USE_LOCKFILE: ${{ secrets.USE_LOCKFILE }}
@@ -12,59 +12,28 @@ on:
 
 jobs:
   docs:
-    if: "! contains(toJSON(github.event.commits.*.message), '[skip ci]')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: ["latest"]
-
+        node-version: ["lts/*"]
     steps:
-
-    # region Setup
     - uses: actions/checkout@v4
+      if: "env.ENABLE_DOCS == 'true'"
 
-    - uses: actions/setup-node@v4
-      name: Setting Up Node.js (${{ matrix.node-version }})
+    - name: Setup
+      uses: ./.github/actions/composite-setup
+      if: "env.ENABLE_DOCS == 'true'"
       with:
-        node-version: ${{ matrix.node-version }}
+        USE_LOCKFILE: ${{ env.USE_LOCKFILE }}
 
-    - uses: pnpm/action-setup@v4
-      name: Install pnpm
-      id: pnpm-install
+    - name: Build 
+      uses: ./.github/actions/composite-build
+      if: "env.ENABLE_DOCS == 'true'"
       with:
-        version: latest
-
-    - name: Get Pnpm Cache Path
-      id: pnpm-cache
-      run: echo "dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-    - uses: actions/cache@v4
-      name: pnpm cache
-      with:
-        path: ${{ steps.pnpm-cache.outputs.dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-        restore-keys: |
-          ${{ runner.os }}-pnpm-store-
-
-    - run: "echo Cache Key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}"
-    - run: "echo Cache Restore-Keys: ${{ runner.os }}-pnpm-store-"
-    - run: "echo Pnpm Cache Hit: ${{ steps.pnpm-cache.outputs.cache-hit }}"
-
-    - run: pnpm install --frozen-lockfile
-      if: "env.USE_LOCKFILE == 'true'"
-
-    - run: pnpm install --no-lockfile
-      if: "env.USE_LOCKFILE != 'true'"
-    # regionend
-
-    # region Steps
-    - run: pnpm build
-
-    - run: pnpm lint
-
-    - run: pnpm test
+        USE_LOCKFILE: ${{ env.USE_LOCKFILE }}
 
     - run: pnpm doc
+      if: "env.ENABLE_DOCS == 'true'"
 
     - run: pnpm install --frozen-lockfile
       working-directory: demo
@@ -72,15 +41,11 @@ jobs:
     - run: pnpm demo:build
 
     - name: Documentation
-      if: "env.ENABLE_DOCS == 'true'"
       uses: crazy-max/ghaction-github-pages@v4
+      if: "env.ENABLE_DOCS == 'true'"
       with:
         jekyll: false
         target_branch: gh-pages
         build_dir: docs
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - run: echo "env.ENABLE_DOCS is ${{ env.ENABLE_DOCS }}, no documentation can be published" && exit 1
-      if: "env.ENABLE_DOCS != 'true'"
-    # regionend
